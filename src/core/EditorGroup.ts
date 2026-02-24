@@ -132,10 +132,19 @@ export class EditorGroup {
         contentPanel.dataset.tabId = config.id;
 
         this.tabs.set(config.id, tab);
-        this.tabOrder.push(config.id);
         this.contentPanels.set(config.id, contentPanel);
 
-        this.tabsContainer.appendChild(tab.getElement());
+        // Insert new tab before any pinned tabs
+        const firstPinnedIndex = this.tabOrder.findIndex(tid => this.tabs.get(tid)?.getConfig().isPinned);
+        if (firstPinnedIndex !== -1) {
+            this.tabOrder.splice(firstPinnedIndex, 0, config.id);
+            const beforeTab = this.tabs.get(this.tabOrder[firstPinnedIndex + 1]);
+            this.tabsContainer.insertBefore(tab.getElement(), beforeTab?.getElement() || null);
+        } else {
+            this.tabOrder.push(config.id);
+            this.tabsContainer.appendChild(tab.getElement());
+        }
+
         this.bodyContainer.appendChild(contentPanel);
 
         this.ide.commands.emit(EditorEvents.EDITOR_TAB_OPENED, { tabId: config.id, config, groupId: this.id });
@@ -251,12 +260,22 @@ export class EditorGroup {
         this.tabs.set(config.id, tab);
         this.contentPanels.set(config.id, panel);
 
-        if (index >= this.tabOrder.length) {
+        let finalIndex = index;
+        if (config.isPinned) {
+            finalIndex = this.tabOrder.length;
+        } else {
+            const firstPinnedIndex = this.tabOrder.findIndex(tid => this.tabs.get(tid)?.getConfig().isPinned);
+            if (firstPinnedIndex !== -1 && finalIndex > firstPinnedIndex) {
+                finalIndex = firstPinnedIndex;
+            }
+        }
+
+        if (finalIndex >= this.tabOrder.length) {
             this.tabOrder.push(config.id);
             this.tabsContainer.appendChild(tab.getElement());
         } else {
-            this.tabOrder.splice(index, 0, config.id);
-            const beforeId = this.tabOrder[index + 1];
+            this.tabOrder.splice(finalIndex, 0, config.id);
+            const beforeId = this.tabOrder[finalIndex + 1];
             const beforeTab = this.tabs.get(beforeId);
             this.tabsContainer.insertBefore(tab.getElement(), beforeTab?.getElement() || null);
         }
@@ -297,6 +316,33 @@ export class EditorGroup {
         this.tabs.get(id)?.setDirty(dirty);
     }
 
+    public setTabPinned(id: string, pinned: boolean): void {
+        const tab = this.tabs.get(id);
+        if (!tab) return;
+
+        tab.setPinned(pinned);
+
+        // Re-sort tabOrder: unpinned first, then pinned.
+        const unpinned: string[] = [];
+        const pinnedTabs: string[] = [];
+        for (const tid of this.tabOrder) {
+            if (this.tabs.get(tid)?.getConfig().isPinned) {
+                pinnedTabs.push(tid);
+            } else {
+                unpinned.push(tid);
+            }
+        }
+        this.tabOrder = [...unpinned, ...pinnedTabs];
+
+        // Rebuild DOM order
+        for (const tid of this.tabOrder) {
+            const t = this.tabs.get(tid);
+            if (t) {
+                this.tabsContainer.appendChild(t.getElement());
+            }
+        }
+    }
+
     public hasTab(id: string): boolean {
         return this.tabs.has(id);
     }
@@ -314,7 +360,7 @@ export class EditorGroup {
             { separator: true },
             {
                 label: isPinned ? 'Unpin Tab' : 'Pin Tab',
-                action: () => tab.setPinned(!isPinned)
+                action: () => this.setTabPinned(tabId, !isPinned)
             },
             { separator: true },
             { label: 'Close', action: () => this.closeTab(tabId, true) },
