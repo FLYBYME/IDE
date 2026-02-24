@@ -36,4 +36,10 @@ export class Header {
     public getElement(): HTMLElement {
         return this.container;
     }
+
+    public dispose(): void {
+        this.menuBar.dispose();
+        this.titleBar.dispose();
+        this.container.remove();
+    }
 }

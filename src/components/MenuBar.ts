@@ -29,4 +29,10 @@ export class MenuBar {
     public getElement(): HTMLElement {
         return this.container;
     }
+
+    public dispose(): void {
+        this.items.forEach(item => item.dispose());
+        this.items = [];
+        this.container.remove();
+    }
 }

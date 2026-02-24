@@ -13,6 +13,9 @@ export class ViewRegistry {
     // Track active DOM containers associated with providers
     private activeContainers: Map<string, HTMLElement> = new Map();
 
+    // Track active event disposables for each provider container
+    private activeDisposables: Map<string, { dispose: () => void }[]> = new Map();
+
     constructor(ide: IDE) {
         this.ide = ide;
 
@@ -64,6 +67,13 @@ export class ViewRegistry {
                 container.parentNode.removeChild(container);
             }
             this.activeContainers.delete(providerId);
+
+            // Clean up any event listeners inside the view
+            const disposables = this.activeDisposables.get(providerId);
+            if (disposables) {
+                disposables.forEach(d => d.dispose());
+            }
+            this.activeDisposables.delete(providerId);
 
             this.ide.notifications?.setStatusMessage(`Unregistered View: ${provider.name}`);
         }
@@ -129,9 +139,17 @@ export class ViewRegistry {
             // Append it to the panel
             targetPanel.appendChild(container);
 
+            // Prepare disposables
+            const oldDisposables = this.activeDisposables.get(providerId);
+            if (oldDisposables) {
+                oldDisposables.forEach(d => d.dispose());
+            }
+            const disposables: { dispose: () => void }[] = [];
+            this.activeDisposables.set(providerId, disposables);
+
             // Allow the provider to render
             try {
-                await provider.resolveView(container);
+                await provider.resolveView(container, disposables);
                 this.activeContainers.set(providerId, container);
 
                 // Show the panel via the layout manager
@@ -162,8 +180,15 @@ export class ViewRegistry {
                 container.style.boxSizing = 'border-box';
                 contentPanel.appendChild(container);
 
+                const oldDisposables = this.activeDisposables.get(providerId);
+                if (oldDisposables) {
+                    oldDisposables.forEach(d => d.dispose());
+                }
+                const disposables: { dispose: () => void }[] = [];
+                this.activeDisposables.set(providerId, disposables);
+
                 try {
-                    await provider.resolveView(container);
+                    await provider.resolveView(container, disposables);
                     this.activeContainers.set(providerId, container);
                 } catch (error) {
                     console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);

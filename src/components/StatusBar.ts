@@ -57,4 +57,10 @@ export class StatusBar {
     public getElement(): HTMLElement {
         return this.container;
     }
+
+    public dispose(): void {
+        this.items.forEach(item => item.dispose());
+        this.items.clear();
+        this.container.remove();
+    }
 }

@@ -20,9 +20,12 @@ export interface ViewProvider {
      * Called when the IDE is ready to render the view.
      * The provider should append its UI to the provided container element.
      * The container's lifecycle is managed by the IDE.
+     * A disposables array is provided for the extension to push event listener cleanup functions,
+     * ensuring they are properly destroyed when the view is unmounted.
      * @param container An empty DOM element where the UI should be mounted
+     * @param disposables Array to push cleanup handlers (e.g. for window/document events)
      */
-    resolveView(container: HTMLElement): void | Promise<void>;
+    resolveView(container: HTMLElement, disposables: { dispose: () => void }[]): void | Promise<void>;
 
     /**
      * Optional: Called by the IDE when context changes

@@ -55,6 +55,18 @@ export class EditorGrid {
         if (this.groups.size > 1) {
             const group = this.groups.get(groupId);
             if (group) {
+                // Find and remove the preceding resizer if it exists
+                const resizer = group.element.previousElementSibling;
+                if (resizer && resizer.classList.contains('editor-resizer')) {
+                    resizer.remove();
+                } else {
+                    // It might be the first group, so remove the next resizer
+                    const nextResizer = group.element.nextElementSibling;
+                    if (nextResizer && nextResizer.classList.contains('editor-resizer')) {
+                        nextResizer.remove();
+                    }
+                }
+
                 group.dispose();
                 this.groups.delete(groupId);
             }

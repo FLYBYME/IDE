@@ -54,4 +54,8 @@ export class StatusItem {
     public getElement(): HTMLElement {
         return this.container;
     }
+
+    public dispose(): void {
+        this.container.remove();
+    }
 }

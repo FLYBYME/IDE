@@ -22,4 +22,8 @@ export class TitleBar {
     public getElement(): HTMLElement {
         return this.container;
     }
+
+    public dispose(): void {
+        this.container.remove();
+    }
 }

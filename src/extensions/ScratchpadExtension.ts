@@ -28,7 +28,7 @@ export const ScratchpadExtension: Extension = {
         const scratchpadSidebarProvider: ViewProvider = {
             id: 'tools.scratchpad.sidebarView',
             name: 'Quick Notes',
-            resolveView: (container) => {
+            resolveView: (container, disposables) => {
                 // Build the UI using standard DOM manipulation
                 container.innerHTML = `
                     <div style="padding: 15px; display: flex; flex-direction: column; height: 100%; gap: 10px; color: var(--text-main); font-family: var(--font-ui);">

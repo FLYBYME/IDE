@@ -23,7 +23,7 @@ monaco.editor.setTheme('ide-dark');
 export class MonacoService {
     private ide: IDE;
     private editors: Map<string, monaco.editor.IStandaloneCodeEditor> = new Map();
-    private models: Map<string, monaco.editor.ITextModel> = new Map();
+    private modelListeners: Map<string, monaco.IDisposable> = new Map();
 
     constructor(ide: IDE) {
         this.ide = ide;
@@ -147,7 +147,6 @@ export class MonacoService {
         if (!model) {
             model = monaco.editor.createModel(content, language, uri);
         }
-        this.models.set(fileId, model);
 
         // Read current settings
         const fontSize = this.ide.settings.get<number>('editor.fontSize') ?? 14;
@@ -176,9 +175,12 @@ export class MonacoService {
         this.editors.set(fileId, editor);
 
         // Track dirty state
-        model.onDidChangeContent(() => {
-            this.ide.editor.setTabDirty(fileId, true);
-        });
+        if (!this.modelListeners.has(fileId)) {
+            const listener = model.onDidChangeContent(() => {
+                this.ide.editor.setTabDirty(fileId, true);
+            });
+            this.modelListeners.set(fileId, listener);
+        }
 
         // Track cursor position
         editor.onDidChangeCursorPosition((e) => {
@@ -202,7 +204,8 @@ export class MonacoService {
      * Get a text model for a file
      */
     public getModel(fileId: string): monaco.editor.ITextModel | undefined {
-        return this.models.get(fileId);
+        const uri = monaco.Uri.parse(`file:///${fileId}`);
+        return monaco.editor.getModel(uri) || undefined;
     }
 
     /**
@@ -215,10 +218,10 @@ export class MonacoService {
             this.editors.delete(fileId);
         }
 
-        const model = this.models.get(fileId);
-        if (model) {
-            model.dispose();
-            this.models.delete(fileId);
+        const listener = this.modelListeners.get(fileId);
+        if (listener) {
+            listener.dispose();
+            this.modelListeners.delete(fileId);
         }
     }
 

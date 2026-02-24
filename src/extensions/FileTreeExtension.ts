@@ -117,7 +117,7 @@ export const FileTreeExtension: Extension = {
         const fileTreeProvider: ViewProvider = {
             id: 'core.fileTree.sidebar',
             name: 'Explorer',
-            resolveView: (container) => {
+            resolveView: (container, disposables) => {
                 container.innerHTML = '';
                 const tree = document.createElement('div');
                 tree.className = 'file-tree';

@@ -43,7 +43,7 @@ export const SettingsEditorExtension: Extension = {
             id: 'core.settingsEditor.view',
             name: 'Settings',
 
-            resolveView(container: HTMLElement) {
+            resolveView(container: HTMLElement, disposables: { dispose: () => void }[]) {
                 container.innerHTML = '';
 
                 const wrapper = document.createElement('div');
@@ -91,7 +91,7 @@ export const SettingsEditorExtension: Extension = {
                 resetAll.addEventListener('click', async () => {
                     await ide.settings.resetAll();
                     // Re-render to reflect default values
-                    settingsProvider.resolveView(container);
+                    settingsProvider.resolveView(container, disposables);
                     ide.notifications.notify('All settings reset to defaults', 'info');
                 });
                 header.appendChild(resetAll);
