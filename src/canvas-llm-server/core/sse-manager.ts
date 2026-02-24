@@ -1,5 +1,6 @@
 import { ServerResponse, createServer, Server } from 'http';
 import { ConsoleLogger } from 'tool-ms';
+import { config } from '../config';
 
 /**
  * SseManager – handles real-time Server-Sent Events (SSE).
@@ -77,10 +78,12 @@ export class SseManager {
         res.write('event: connected\ndata: {"status": "ok"}\n\n');
 
         this.clients.add(res);
+        this.logger.info(`🔌 SSE Client connected. Total clients: ${this.clients.size}`);
 
         // Remove client on connection close
         res.on('close', () => {
             this.clients.delete(res);
+            this.logger.info(`🔌 SSE Client disconnected. Total clients: ${this.clients.size}`);
         });
     }
 
@@ -90,6 +93,10 @@ export class SseManager {
     public broadcast(event: string, data?: any): void {
         const payload = data ? `data: ${JSON.stringify(data)}\n\n` : '';
         const message = `event: ${event}\n${payload}`;
+
+        if (config.debug) {
+            this.logger.info(`📡 Broadcasting event: ${event}`, data);
+        }
 
         for (const client of this.clients) {
             try {
@@ -104,6 +111,9 @@ export class SseManager {
      * Send raw message to all clients
      */
     private broadcastRaw(message: string): void {
+        if (config.debug) {
+            this.logger.info(`📡 Broadcasting raw message: ${message.trim()}`);
+        }
         for (const client of this.clients) {
             try {
                 client.write(message);

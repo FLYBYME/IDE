@@ -1,4 +1,4 @@
-import { ServiceAction } from 'tool-ms';
+import { ServiceAction, Adapter } from 'tool-ms';
 import { z } from 'zod';
 import {
     AIChatInput,
@@ -8,6 +8,8 @@ import {
     AIRefactorInput,
 } from '../../models/schemas';
 import * as crypto from 'crypto';
+import { AdapterPromptState } from 'tool-ms/dist/lib/Adapter';
+
 
 // ── ai.chat ──────────────────────────────────────────
 export const aiChatAction: ServiceAction = {
@@ -27,10 +29,26 @@ export const aiChatAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const params = ctx.params as z.infer<typeof AIChatInput>;
+
+
+        const aiAdapter = new Adapter.Adapter(ctx.serviceManager);
+
+        const actions = await ctx.serviceManager.getAll();
+
+        const state: AdapterPromptState = {
+            messages: params.messages,
+            model: "claude-3-haiku-20240307",
+            actions: actions,
+        };
+
+        const result = await aiAdapter.prompt(state);
+        console.log(result);
+
+
         // Placeholder — integrate with OpenAI/Anthropic SDK
         return {
             id: crypto.randomUUID(),
-            message: 'AI integration pending. Configure your AI provider in the server config.',
+            message: result.message.content,
             suggestions: [],
             tokens: { prompt: 0, completion: 0 },
         };

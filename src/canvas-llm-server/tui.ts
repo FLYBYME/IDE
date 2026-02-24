@@ -523,7 +523,7 @@ class IDESession {
             this.term.log('Connecting to server & logging in...');
 
             // Auto-login with default dev credentials
-            //await this.login('admin', 'admin123');
+            await this.login('admin', 'admin123');
 
             this.term.log('');
             this.term.log('Type a command or chat with AI. Type "help" for commands.');

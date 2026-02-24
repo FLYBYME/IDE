@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 /**
  * Application configuration loaded from environment variables.
  */
@@ -5,6 +8,7 @@ export const config = {
     port: parseInt(process.env.PORT || '3001', 10),
     host: process.env.HOST || '0.0.0.0',
     apiPrefix: process.env.API_PREFIX || '/api',
+    debug: process.env.DEBUG === 'true',
 
     docsPath: process.env.DOCS_PATH || '/_meta/routes',
 

@@ -1,4 +1,4 @@
-import { ServiceManager, HttpServerManager, ConsoleLogger } from 'tool-ms';
+import { ServiceManager, HttpServerManager, ConsoleLogger, Adapter } from 'tool-ms';
 import { config } from './config';
 import { authGuard } from './middleware/auth-guard';
 import { vfsManager } from './core/vfs-manager';
@@ -13,6 +13,8 @@ import aiActions from './actions/ai/ai.actions';
 import realtimeActions from './actions/realtime/realtime.actions';
 import metaActions from './actions/meta/meta.actions';
 import { sseManager } from './core/sse-manager';
+
+
 
 async function bootstrap() {
     const logger = new ConsoleLogger();
