@@ -6,6 +6,7 @@ import { EditorManager } from './EditorManager';
 import { MonacoService } from './MonacoService';
 import { ShortcutManager } from './ShortcutManager';
 import { ConfigurationRegistry } from './configuration/ConfigurationRegistry';
+import { InlineEditWidget } from '../components/InlineEditWidget';
 import { ConfigurationService } from './configuration/ConfigurationService';
 import { WorkerFileSystemProvider } from './vfs/WorkerFileSystemProvider';
 import { MonacoVFSBridge } from './vfs/MonacoVFSBridge';
@@ -199,6 +200,36 @@ export class IDE {
                         this.commands.execute(selected.id);
                     }
                 }
+            }
+        });
+
+        this.commands.register({
+            id: 'agent.inlineEdit',
+            label: 'Inline AI Edit',
+            category: 'Agent',
+            keybinding: 'Ctrl+K',
+            when: () => !!this.editor.getActiveTabId(),
+            handler: () => {
+                const activeId = this.editor.getActiveTabId();
+                if (!activeId) return;
+
+                const editor = this.monaco.getEditor(activeId);
+                if (!editor) return;
+
+                const position = editor.getPosition();
+                const lineNumber = position ? position.lineNumber : 1;
+
+                new InlineEditWidget({
+                    ide: this,
+                    editorId: activeId,
+                    lineNumber,
+                    onSubmit: async (prompt, context) => {
+                        this.notifications.notify(`AI Edit: "${prompt}"`, 'info', 3000);
+                        // TODO: LLM integration - use prompt + context to generate edits
+                        console.log('[InlineEdit] Prompt:', prompt);
+                        console.log('[InlineEdit] Context:', context);
+                    },
+                });
             }
         });
 

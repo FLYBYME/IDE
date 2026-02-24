@@ -16,6 +16,7 @@ import './css/filetree.css';
 import './css/notifications.css';
 import './css/settings.css';
 import './css/dialog.css';
+import './css/inline-edit.css';
 
 /**
  * Main application initialization

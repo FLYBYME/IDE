@@ -24,6 +24,7 @@ export class MonacoService {
     private ide: IDE;
     private editors: Map<string, monaco.editor.IStandaloneCodeEditor> = new Map();
     private modelListeners: Map<string, monaco.IDisposable> = new Map();
+    private activeWidgets: Map<string, { id: string; domNode: HTMLElement; editorId: string }> = new Map();
 
     constructor(ide: IDE) {
         this.ide = ide;
@@ -223,6 +224,54 @@ export class MonacoService {
             listener.dispose();
             this.modelListeners.delete(fileId);
         }
+
+        // Clean up any active inline widgets for this editor
+        for (const [zoneId, widget] of this.activeWidgets) {
+            if (widget.editorId === fileId) {
+                this.activeWidgets.delete(zoneId);
+            }
+        }
+    }
+
+    /**
+     * Inject a DOM node between lines in a specific editor using ViewZones.
+     * Returns the zone ID, or null if the editor was not found.
+     */
+    public showInlineWidget(editorId: string, lineNumber: number, domNode: HTMLElement, heightInLines: number): string | null {
+        const editor = this.editors.get(editorId);
+        if (!editor) return null;
+
+        let zoneId: string | null = null;
+
+        editor.changeViewZones((accessor) => {
+            zoneId = accessor.addZone({
+                afterLineNumber: lineNumber,
+                heightInLines: heightInLines,
+                domNode: domNode,
+            });
+        });
+
+        if (zoneId) {
+            this.activeWidgets.set(zoneId, { id: zoneId, domNode, editorId });
+        }
+
+        return zoneId;
+    }
+
+    /**
+     * Remove an inline widget zone, collapsing the code back together.
+     */
+    public closeInlineWidget(zoneId: string): void {
+        const widget = this.activeWidgets.get(zoneId);
+        if (!widget) return;
+
+        const editor = this.editors.get(widget.editorId);
+        if (editor) {
+            editor.changeViewZones((accessor) => {
+                accessor.removeZone(zoneId);
+            });
+        }
+        this.activeWidgets.delete(zoneId);
     }
 
     /**
