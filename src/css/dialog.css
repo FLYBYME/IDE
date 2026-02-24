@@ -156,3 +156,164 @@
         opacity: 0;
     }
 }
+
+/* Destructive / Danger Button */
+.dialog-btn-danger {
+    background: #e51400;
+    /* Red */
+    color: #fff;
+    border: none;
+}
+
+.dialog-btn-danger:hover {
+    background: #f14c4c;
+}
+
+.dialog-btn-danger:active {
+    background: #d11200;
+}
+
+/* ── Quick Pick System ─────────────────────────────────────── */
+
+.quick-pick-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 21000;
+    display: flex;
+    justify-content: center;
+    background: transparent;
+    /* No dark backdrop */
+}
+
+.quick-pick-widget {
+    position: fixed;
+    top: 50px;
+    width: 600px;
+    max-width: 90vw;
+    background: var(--bg-panel, #252526);
+    border: 1px solid var(--border-color, #454545);
+    border-radius: 6px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    animation: dialog-fade-in 0.1s ease, dialog-slide-in 0.1s ease;
+}
+
+.quick-pick-title {
+    padding: 8px 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted, #858585);
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--border-color, #454545);
+}
+
+.quick-pick-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--border-color, #454545);
+    background: var(--bg-input, #3c3c3c);
+    color: var(--text-main, #cccccc);
+    padding: 10px 14px;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.quick-pick-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.quick-pick-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+
+.quick-pick-message {
+    padding: 10px 14px;
+    color: var(--text-muted, #858585);
+    font-size: 13px;
+    text-align: center;
+}
+
+.quick-pick-category {
+    padding: 4px 14px;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted, #858585);
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.quick-pick-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 6px 14px;
+    cursor: pointer;
+    color: var(--text-main, #cccccc);
+    transition: background 0.05s, color 0.05s;
+    user-select: none;
+}
+
+.quick-pick-item.active {
+    background: var(--accent, #007acc);
+    color: #ffffff;
+}
+
+.quick-pick-item-icon {
+    width: 20px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    font-size: 13px;
+    color: inherit;
+    padding-top: 2px;
+}
+
+.quick-pick-item-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.quick-pick-item-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quick-pick-item-label {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quick-pick-item-description {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quick-pick-item.active .quick-pick-item-description {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.quick-pick-item-detail {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quick-pick-item.active .quick-pick-item-detail {
+    color: rgba(255, 255, 255, 0.7);
+}

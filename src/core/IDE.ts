@@ -165,8 +165,28 @@ export class IDE {
             id: 'view.commandPalette',
             label: 'Command Palette',
             keybinding: 'Ctrl+Shift+P',
-            handler: () => {
-                this.notifications.notify('Command Palette is not yet implemented', 'info');
+            handler: async () => {
+                const items = [
+                    { id: 'file:new', label: 'New File', icon: 'fas fa-file-alt', category: 'File' },
+                    { id: 'file:open', label: 'Open File', icon: 'fas fa-folder-open', category: 'File' },
+                    { id: 'file.save', label: 'Save File', icon: 'fas fa-save', category: 'File' },
+                    { id: 'view:split-right', label: 'Split Editor Right', icon: 'fas fa-columns', category: 'View' },
+                    { id: 'settings', label: 'Preferences: Open Settings', icon: 'fas fa-cog', category: 'Preferences' }
+                ];
+
+                const selected = await this.dialogs.showQuickPick(items, {
+                    placeholder: 'Type a command...',
+                    matchOnDescription: true
+                });
+
+                if (selected) {
+                    if (selected.id === 'settings') {
+                        // Special case - assuming there's an event or command for settings
+                        this.commands.emit('ide:open_settings', {});
+                    } else {
+                        this.commands.execute(selected.id);
+                    }
+                }
             }
         });
 

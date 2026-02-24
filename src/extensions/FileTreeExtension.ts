@@ -160,7 +160,11 @@ export const FileTreeExtension: Extension = {
                                             return null;
                                         };
 
-                                        const newName = await context.ide.dialogs.prompt(`Rename ${node.name} to:`, node.name, 'Rename', validator);
+                                        const newName = await context.ide.dialogs.prompt(`Rename ${node.name} to:`, {
+                                            title: 'Rename',
+                                            defaultValue: node.name,
+                                            validateInput: validator
+                                        });
                                         if (newName && newName !== node.name) {
                                             const parts = node.fullPath.split('/');
                                             parts.pop();
@@ -178,7 +182,10 @@ export const FileTreeExtension: Extension = {
                                     label: 'Delete',
                                     icon: 'fas fa-trash',
                                     action: async () => {
-                                        const confirmed = await context.ide.dialogs.confirm(`Are you sure you want to delete ${node.name}?`, 'Delete');
+                                        const confirmed = await context.ide.dialogs.confirm(`Are you sure you want to delete ${node.name}?`, {
+                                            title: 'Delete',
+                                            isDestructive: true
+                                        });
                                         if (confirmed) {
                                             try {
                                                 await vfs.delete(node.fullPath);
