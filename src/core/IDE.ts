@@ -99,7 +99,19 @@ export class IDE {
 
             this.initialized = true;
             this.commands.emit(IDEEvents.APP_READY, { timestamp: Date.now() });
-            this.notifications.notify('CanvasLLM IDE Ready', 'success');
+
+            this.notifications.notify({
+                message: 'Successfully launched browser.',
+                detail: 'The browser extension has connected to the active session and is ready for commands.',
+                severity: 'success',
+                source: { id: 'extension.browserLauncher', label: 'Browser Launcher' },
+                progress: true,
+                timeout: 8000,
+                actions: [
+                    { label: 'View Logs', action: () => console.log('Viewing logs...') },
+                    { label: 'Configure', action: () => console.log('Configuring...'), isPrimary: true }
+                ]
+            });
 
         } catch (error) {
             console.error('❌ Failed to initialize IDE:', error);

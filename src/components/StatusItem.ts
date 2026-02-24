@@ -32,6 +32,15 @@ export class StatusItem {
         }
         this.textElement.textContent = config.label;
         this.container.appendChild(this.textElement);
+
+        if (config.onClick) {
+            this.container.addEventListener('click', config.onClick);
+            this.container.style.cursor = 'pointer';
+        }
+
+        if (config.disabled) {
+            this.container.classList.add('disabled');
+        }
     }
 
     public updateLabel(label: string): void {
