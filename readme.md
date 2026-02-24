@@ -1,153 +1,115 @@
-### **CanvasLLM IDE Specification**
+# CanvasLLM IDE
 
-## **1. Layout Overview**
+CanvasLLM IDE is a VS Code-like integrated development environment built with TypeScript and modern web technologies. It provides a robust, extensible, and browser-ready code editing experience using Monaco Editor and a Web Worker-based Virtual File System.
 
-The CanvasLLM IDE features a modular and customizable interface with the following core components:
+## Features
 
-### **Top Bar**
+* 
+**Monaco Editor Integration:** Full Monaco Editor support, configured with TypeScript defaults for proper module resolution and syntax highlighting.
 
-#### **1.1 Menu Bar (`#menu-bar`)**
 
-* Provides dropdown menus: **File, Edit, View, Run, Tools, Help**.
-* Supports keyboard shortcuts (e.g., `Ctrl + S` for saving).
-* Clicking a menu item reveals sub-options.
+* 
+**Split-Pane Layout & Tabs:** A resizable split-pane layout supporting multiple editor groups, drag-and-drop tab reordering, and dirty (unsaved) state indicators.
 
-#### **1.2 Toolbar (`#toolbar`)**
 
-* Quick-access buttons for **Save, Undo/Redo, Run, Debug, Formatting**.
-* Tooltips for all buttons.
-* Customizable with drag-and-drop reordering.
+* 
+**Virtual File System (VFS):** An in-memory file system powered by a Web Worker to keep the main thread unblocked. Includes a `MonacoVFSBridge` to sync the VFS to Monaco editor models for cross-file imports and IntelliSense.
 
-### **Panels (Draggable & Resizable)**
 
-#### **2.1 Left Panel (`#left-panel`)**
+* 
+**Extensibility System:** A fully-fledged extension API allowing developers to register commands, menu items, and custom UI views (via `ViewProvider`) in various layout slots (Left, Right, Bottom, Center) .
 
-* Used for **file explorer, project navigation, debugging tools**.
-* Supports collapsible sections.
 
-#### **2.2 Center Panel (`#center-panel`)**
+* 
+**Theming Engine:** Dynamic CSS-variable-based theming that matches Monaco editor themes (e.g., `ide-dark`, `vs-dark`, `vs-light`, `hc-black`) .
 
-* Main **code editor** with multiple **tabs**.
-* Features: **syntax highlighting, auto-indent, line numbers, split view (vertical/horizontal)**.
 
-#### **2.3 Right Panel (`#right-panel`)**
+* 
+**Global Command & Shortcut Registry:** Centralized command registration mapped to a global keyboard shortcut manager.
 
-* Houses **minimap, outline view, debugging panel**.
-* Can be toggled on/off.
 
-#### **2.4 Bottom Panel (`#bottom-panel`)**
+* 
+**Custom UI Components:** Themed modal dialogs (replacing native prompt and confirm) , toast notifications, context menus, and a functional status bar.
 
-* Displays **terminal, logs, search results**.
-* Supports tabbed views (e.g., Terminal, Debug Console, Problems).
-* Expandable/collapsible.
 
-### **Status Bar (`#status-bar`)**
 
-* Displays **cursor position, file type, Git branch, notifications, quick actions (indentation, encoding, theme selection)**.
+## Architecture Overview
 
----
+The IDE is composed of several core managers and services initialized by a central `IDE` class :
 
-## **2. Behavior & Interaction**
+* 
+**`LayoutManager`**: Manages the DOM grid areas, panel resizing handles, and visibility of the header, workspace (sidebars, center editor), bottom panel, and status bar .
 
-1. **Draggable Panels:** Users can move and resize panels.
-2. **Tabbed Interface:** Editor and bottom panel support multiple tabs.
-3. **Context Menus:** Right-click options for actions like **close, split view**.
-4. **Keyboard Shortcuts:** Keybindings for efficient navigation.
-5. **Collapsible Sections:** Maximize space as needed.
 
----
+* **`EditorManager` & `EditorGrid**`: Central controller for the center panel tab system. Manages `EditorGroup` instances in a split-pane layout.
 
-## **3. Core Services**
 
-### **3.1 API Service**
+* 
+**`EventBus`**: The central Pub/Sub system acting as the "nervous system" of the IDE for inter-component communication.
 
-* Manages backend communication, authentication, secure data exchange.
-* Provides standardized APIs for plugin integration.
-* Implements caching and rate limiting.
 
-### **3.2 Config Service**
+* 
+**`CommandRegistry` & `ShortcutManager**`: Maps executable functions to command IDs and keyboard events, normalizing key combinations across platforms (e.g., treating macOS Meta as Ctrl).
 
-* Stores and retrieves user preferences.
-* Manages theme customization and layout persistence.
-* Synchronizes settings across devices (if cloud-enabled).
 
-### **3.3 Plugin Service**
+* **`ConfigurationRegistry` & `ConfigurationService**`: The runtime settings engine and schema store. Manages user overrides, schema defaults, and emits configuration change events.
 
-* Handles **installation, updates, removal** of plugins.
-* Resolves compatibility and conflicts.
-* Provides APIs for plugin development.
-* Supports a plugin marketplace.
 
----
 
-## **4. Plugin Structure**
+## Included Extensions
 
-### **4.1 Metadata**
+CanvasLLM IDE ships with a set of core extensions that demonstrate its API capabilities:
 
-* Includes **name, version, author, description**.
+* 
+**File Explorer (`FileTreeExtension`)**: Provides a file explorer in the left sidebar that reads from the VFS and opens files via Monaco Editor. Includes renaming and deletion capabilities.
 
-### **4.2 Lifecycle**
 
-* Stages: **activation, deactivation, updates**.
+* 
+**Settings Editor (`SettingsEditorExtension`)**: A visual settings editor that opens as a center-panel tab, rendering typed form controls for user preferences.
 
-### **4.3 Inter-Plugin Communication**
 
-* Event-driven architecture for interaction.
-* Error handling and logging mechanisms.
+* 
+**Scratchpad (`ScratchpadExtension`)**: Provides a quick notes tool that can be opened as a temporary markdown file in the editor or as a custom UI ViewProvider in the right panel.
 
----
 
-## **5. Performance Metrics**
+* 
+**Hello World (`HelloWorldExtension`)**: A sample extension demonstrating how to register commands, menu items, and custom sidebar views.
 
-* Tracks IDE efficiency, load times, response times.
-* Monitors **CPU and memory usage**.
-* Provides **benchmarking tools** and optimization strategies.
 
----
 
-## **6. AI-Powered Features**
+## Default Keybindings
 
-1. **Code Completion:** Context-based intelligent suggestions.
-2. **Error Detection:** Real-time linting and error highlighting.
-3. **Refactoring Tools:** Automated code improvements.
-4. **Documentation Generation:** Auto-generates documentation.
-5. **Code Snippets:** Predefined templates for common structures.
+The IDE comes configured with standard developer keyboard shortcuts:
 
----
+* 
+**Save File:** `Ctrl+S` 
 
-## **7. Workspaces**
 
-### **7.1 Structure**
+* 
+**Save As:** `Ctrl+Shift+S` 
 
-* Supports multiple **project folders**.
-* Syntax highlighting and code completion per file type.
-* Built-in **Git/version control**.
 
-### **7.2 Management**
+* 
+**Close Tab:** `Ctrl+W` 
 
-* **Create/Import Workspaces**.
-* Custom **workspace settings**.
-* Save/load workspace state (files, layout, settings).
 
-### **7.3 Navigation**
+* 
+**New File:** `Ctrl+N` 
 
-* **File Explorer** for project structure.
-* **Search** for files/symbols.
-* **Bookmarks** for important files/lines.
 
-### **7.4 Collaboration**
+* 
+**Open File:** `Ctrl+O` 
 
-* **Real-time collaboration** with live updates.
-* **Commenting System** for code discussions.
-* **Change Tracking** with visual indicators.
 
-### **7.5 Customization**
+* 
+**Open Settings:** `Ctrl+,` 
 
-* **Theme selection**.
-* **Flexible layout** options.
 
----
+* 
+**Command Palette:** `Ctrl+Shift+P` (UI pending implementation) 
 
-## **8. Conclusion**
 
-CanvasLLM IDE is designed to be **user-friendly, efficient, and highly customizable**. With powerful AI integration, a modular panel system, and collaboration features, it aims to enhance coding productivity in modern development workflows.
+
+## Initialization
+
+The IDE is bootstrapped in `index.ts`. On DOM ready, it creates an `IDE` instance, registers the default extensions, and initializes the layout, VFS (with demo files), and UI . If initialization fails, an error screen provides a reload action .
