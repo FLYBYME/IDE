@@ -244,6 +244,17 @@
      opacity: 1;
  }
 
+ .tab.pinned {
+     min-width: 40px;
+     padding: 8px 10px;
+ }
+
+ .tab.pinned .tab-close.pinned-indicator {
+     opacity: 1;
+     color: var(--text-muted);
+     font-size: 11px;
+ }
+
  /* --- CONTEXT MENU --- */
  .context-menu {
      position: fixed;

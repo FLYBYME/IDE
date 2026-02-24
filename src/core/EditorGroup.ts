@@ -171,10 +171,14 @@ export class EditorGroup {
         this.ide.commands.emit(EditorEvents.EDITOR_ACTIVE_CHANGED, { tabId: id, groupId: this.id });
     }
 
-    public closeTab(id: string): void {
+    public closeTab(id: string, force: boolean = false): void {
         const tab = this.tabs.get(id);
         const contentPanel = this.contentPanels.get(id);
         if (!tab) return;
+
+        if (tab.getConfig().isPinned && !force) {
+            return; // Prevent closing pinned tabs unless forced
+        }
 
         const wasActive = this.activeTabId === id;
 
@@ -267,11 +271,12 @@ export class EditorGroup {
         }
     }
 
-    public closeAllTabs(): void {
-        [...this.tabOrder].forEach(id => this.closeTab(id));
+    public closeAllTabs(force: boolean = false): void {
+        [...this.tabOrder].forEach(id => this.closeTab(id, force));
     }
 
     public closeOtherTabs(keepId: string): void {
+        // Pinned tabs won't close unless forced, so we just call closeTab normally
         this.tabOrder.filter(id => id !== keepId).forEach(id => this.closeTab(id));
     }
 
@@ -299,10 +304,20 @@ export class EditorGroup {
     private showTabContextMenu(tabId: string, x: number, y: number): void {
         if (this.activeContextMenu) this.activeContextMenu.dispose();
 
+        const tab = this.tabs.get(tabId);
+        if (!tab) return;
+
+        const isPinned = tab.getConfig().isPinned;
+
         const items: ContextMenuItem[] = [
             { label: 'Split Right', action: () => this.ide.commands.execute('editor.splitRight') },
             { separator: true },
-            { label: 'Close', action: () => this.closeTab(tabId) },
+            {
+                label: isPinned ? 'Unpin Tab' : 'Pin Tab',
+                action: () => tab.setPinned(!isPinned)
+            },
+            { separator: true },
+            { label: 'Close', action: () => this.closeTab(tabId, true) },
             { label: 'Close Others', action: () => this.closeOtherTabs(tabId) },
             { label: 'Close to the Right', action: () => this.closeTabsToRight(tabId) },
             { label: 'Close All in Group', action: () => this.closeAllTabs() },
@@ -334,7 +349,8 @@ export class EditorGroup {
     }
 
     public dispose(): void {
-        this.closeAllTabs();
+        // Force close all tabs
+        this.closeAllTabs(true);
         if (this.activeContextMenu) this.activeContextMenu.dispose();
         if (this.element.parentNode) this.element.parentNode.removeChild(this.element);
     }

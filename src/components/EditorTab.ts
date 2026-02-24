@@ -12,6 +12,7 @@ export interface EditorTabConfig {
     icon?: string;          // FontAwesome class (e.g., "fab fa-js")
     isDirty?: boolean;      // True if there are unsaved changes
     providerId?: string;    // If this is a custom extension view rather than a text file
+    isPinned?: boolean;     // True if the tab is pinned
 }
 
 export interface EditorTabCallbacks {
@@ -28,11 +29,13 @@ export class EditorTab {
     private closeBtn: HTMLElement;
     private callbacks: EditorTabCallbacks;
     private dirty: boolean = false;
+    private pinned: boolean = false;
 
     constructor(config: EditorTabConfig, callbacks: EditorTabCallbacks) {
         this.config = config;
         this.callbacks = callbacks;
         this.dirty = config.isDirty || false;
+        this.pinned = config.isPinned || false;
         this.element = this.createElement();
         this.closeBtn = this.element.querySelector('.tab-close') as HTMLElement;
     }
@@ -43,6 +46,10 @@ export class EditorTab {
         tab.dataset.tabId = this.config.id;
         tab.draggable = true;
         tab.title = this.config.id;
+
+        if (this.pinned) {
+            tab.classList.add('pinned');
+        }
 
         // Icon
         if (this.config.icon) {
@@ -60,7 +67,11 @@ export class EditorTab {
 
         // Close / Dirty indicator
         const closeBtn = document.createElement('i');
+        // If pinned, we show a pin icon instead of close/dirty, logic handled in CSS/setPinned
         closeBtn.className = this.dirty ? 'fas fa-circle dirty-indicator tab-close' : 'fas fa-times tab-close';
+        if (this.pinned) {
+            closeBtn.className = 'fas fa-thumbtack tab-close pinned-indicator';
+        }
         tab.appendChild(closeBtn);
 
         // Click to activate
@@ -118,10 +129,25 @@ export class EditorTab {
 
     public setDirty(dirty: boolean): void {
         this.dirty = dirty;
-        if (this.closeBtn) {
+        if (this.closeBtn && !this.pinned) {
             this.closeBtn.className = dirty
                 ? 'fas fa-circle dirty-indicator tab-close'
                 : 'fas fa-times tab-close';
+        }
+    }
+
+    public setPinned(pinned: boolean): void {
+        this.pinned = pinned;
+        this.config.isPinned = pinned;
+        this.element.classList.toggle('pinned', pinned);
+        if (this.closeBtn) {
+            if (pinned) {
+                this.closeBtn.className = 'fas fa-thumbtack tab-close pinned-indicator';
+            } else {
+                this.closeBtn.className = this.dirty
+                    ? 'fas fa-circle dirty-indicator tab-close'
+                    : 'fas fa-times tab-close';
+            }
         }
     }
 
