@@ -1,0 +1,101 @@
+/* ── Notification Toast System ──────────────────────────────── */
+
+#notification-container {
+    position: fixed;
+    bottom: 32px;           /* sits above the status bar */
+    right: 16px;
+    z-index: 10001;         /* above context menus */
+    display: flex;
+    flex-direction: column-reverse;   /* newest toast on bottom */
+    gap: 8px;
+    pointer-events: none;   /* let clicks pass through the container gap */
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
+}
+
+/* ── Individual Toast ─────────────────────────────────────── */
+
+.notification-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 320px;
+    max-width: 420px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    background: #252526;
+    border-left: 3px solid var(--accent, #007acc);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    color: #ccc;
+    font-family: var(--font-ui, sans-serif);
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.notification-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ── Dismiss animation ────────────────────────────────────── */
+
+@keyframes toast-fade-out {
+    to {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+}
+
+.notification-toast.hide {
+    animation: toast-fade-out 0.2s ease forwards;
+}
+
+/* ── Severity border colours ──────────────────────────────── */
+
+.notification-toast.severity-info    { border-left-color: #007acc; }
+.notification-toast.severity-success { border-left-color: #4ec866; }
+.notification-toast.severity-warning { border-left-color: #cca700; }
+.notification-toast.severity-error   { border-left-color: #f14c4c; }
+
+/* ── Icon colour per severity ─────────────────────────────── */
+
+.notification-toast.severity-info    .notification-icon { color: #007acc; }
+.notification-toast.severity-success .notification-icon { color: #4ec866; }
+.notification-toast.severity-warning .notification-icon { color: #cca700; }
+.notification-toast.severity-error   .notification-icon { color: #f14c4c; }
+
+/* ── Icon ─────────────────────────────────────────────────── */
+
+.notification-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+    margin-top: 1px;
+}
+
+/* ── Message ──────────────────────────────────────────────── */
+
+.notification-message {
+    flex: 1;
+    word-break: break-word;
+}
+
+/* ── Close button ─────────────────────────────────────────── */
+
+.notification-close {
+    flex-shrink: 0;
+    cursor: pointer;
+    font-size: 12px;
+    color: #858585;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.notification-close:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+}

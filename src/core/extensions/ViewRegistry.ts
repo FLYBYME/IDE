@@ -1,0 +1,175 @@
+import { ViewProvider, ViewLocation } from './ViewProvider';
+import { IDE } from '../IDE';
+
+/**
+ * Registry mapping providers to UI location slots
+ */
+export class ViewRegistry {
+    private ide: IDE;
+
+    // Maps defined by [Location -> Maps of [Provider ID -> Provider]]
+    private providers: Map<ViewLocation, Map<string, ViewProvider>> = new Map();
+
+    // Track active DOM containers associated with providers
+    private activeContainers: Map<string, HTMLElement> = new Map();
+
+    constructor(ide: IDE) {
+        this.ide = ide;
+
+        // Initialize location maps
+        this.providers.set('left-panel', new Map());
+        this.providers.set('right-panel', new Map());
+        this.providers.set('center-panel', new Map());
+        this.providers.set('bottom-panel', new Map());
+    }
+
+    /**
+     * Register a new UI provider for a specific location
+     * @param location Where the view should be mounted
+     * @param provider The provider implementation
+     */
+    public registerProvider(location: ViewLocation, provider: ViewProvider): void {
+        const locationMap = this.providers.get(location);
+        if (!locationMap) {
+            console.error(`ViewRegistry: Unknown location "${location}"`);
+            return;
+        }
+
+        if (locationMap.has(provider.id)) {
+            console.warn(`ViewRegistry: Provider "${provider.id}" is already registered in "${location}"`);
+            return;
+        }
+
+        locationMap.set(provider.id, provider);
+        this.ide.notifications?.setStatusMessage(`Registered View: ${provider.name} in ${location}`);
+    }
+
+    /**
+     * Unregister a provider (usually called during extension deactivation)
+     */
+    public unregisterProvider(location: ViewLocation, providerId: string): void {
+        const locationMap = this.providers.get(location);
+        if (!locationMap) return;
+
+        const provider = locationMap.get(providerId);
+        if (provider) {
+            if (provider.dispose) {
+                provider.dispose();
+            }
+            locationMap.delete(providerId);
+
+            // Clean up the active container if it exists
+            const container = this.activeContainers.get(providerId);
+            if (container && container.parentNode) {
+                container.parentNode.removeChild(container);
+            }
+            this.activeContainers.delete(providerId);
+
+            this.ide.notifications?.setStatusMessage(`Unregistered View: ${provider.name}`);
+        }
+    }
+
+    /**
+     * Retrieve a specific provider definition
+     */
+    public getProvider(location: ViewLocation, providerId: string): ViewProvider | undefined {
+        return this.providers.get(location)?.get(providerId);
+    }
+
+    /**
+     * Request the IDE to render a specific view provider.
+     * This creates an atomic container div and delegates to the provider's resolveView.
+     * @param location The target panel
+     * @param providerId The ID of the registered provider
+     */
+    public async renderView(location: ViewLocation, providerId: string): Promise<void> {
+        const provider = this.getProvider(location, providerId);
+        if (!provider) {
+            console.error(`ViewRegistry: Provider "${providerId}" not found in "${location}"`);
+            return;
+        }
+
+        // 1. Locate the target DOM panel. 
+        // In this architecture, panel IDs correspond exactly to the ViewLocation union types.
+        let targetPanel: HTMLElement | null = document.getElementById(location);
+        if (!targetPanel) {
+            console.error(`ViewRegistry: Target panel DOM element "#${location}" not found.`);
+            return;
+        }
+
+        // For sidebars, mount inside the .sidebar-content area (not the panel root which also has the activity bar)
+        if (location === 'left-panel' || location === 'right-panel') {
+            const sidebarContent = targetPanel.querySelector('.sidebar-content') as HTMLElement;
+            if (sidebarContent) {
+                targetPanel = sidebarContent;
+            }
+        }
+
+        // 2. Clear out any existing active view in this panel if required.
+        // For sidebars/bottom panel we typically replace. For center, we append a tab.
+        // For simplicity in this base spec, we'll replace the inner content, 
+        // preserving default handles.
+        if (location !== 'center-panel') {
+            // Remove previous active containers in this location
+            const oldContainer = targetPanel.querySelector('.extension-view-container');
+            if (oldContainer) {
+                oldContainer.remove();
+            }
+
+            // Create a fresh isolated container
+            const container = document.createElement('div');
+            container.className = 'extension-view-container';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.overflow = 'hidden';
+            container.style.boxSizing = 'border-box';
+
+            // Append it to the panel
+            targetPanel.appendChild(container);
+
+            // Allow the provider to render
+            try {
+                await provider.resolveView(container);
+                this.activeContainers.set(providerId, container);
+
+                // Show the panel via the layout manager
+                this.ide.layout.setPanelVisible(location, true);
+
+            } catch (error) {
+                console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
+                container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
+            }
+        } else {
+            // Center panel: open as a custom editor tab via EditorManager
+            this.ide.editor.openTab({
+                id: providerId,
+                title: provider.name,
+                providerId: providerId,
+            });
+
+            const contentPanel = this.ide.editor.getContentPanel(providerId);
+            if (contentPanel) {
+                // Create a container inside the editor content panel
+                const container = document.createElement('div');
+                container.className = 'extension-view-container';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.overflow = 'hidden';
+                container.style.boxSizing = 'border-box';
+                contentPanel.appendChild(container);
+
+                try {
+                    await provider.resolveView(container);
+                    this.activeContainers.set(providerId, container);
+                } catch (error) {
+                    console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
+                    container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
+                }
+            }
+        }
+    }
+}
