@@ -2,11 +2,14 @@
     "name": "IDE",
     "version": "1.0.0",
     "description": "AI powered web IDE",
+    "type": "commonjs",
     "main": "dist/index.js",
     "scripts": {
         "build": "webpack --mode production",
         "start": "webpack serve --mode development",
-        "watch": "webpack --watch"
+        "watch": "webpack --watch",
+        "server": "ts-node --project tsconfig.server.json src/canvas-llm-server/index.ts",
+        "tui": "ts-node --project tsconfig.server.json src/canvas-llm-server/tui.ts"
     },
     "keywords": [],
     "author": "",
@@ -14,13 +17,18 @@
     "dependencies": {
         "@fortawesome/fontawesome-free": "^6.7.2",
         "autoprefixer": "^10.4.2",
+        "eventsource": "^4.1.0",
         "html-webpack-plugin": "^5.6.3",
         "mini-css-extract-plugin": "^2.9.2",
         "monaco-editor": "^0.55.1",
         "monaco-editor-webpack-plugin": "^7.1.1",
         "monaco-languageclient": "^10.7.0",
         "path-browserify": "^1.0.1",
-        "postcss-loader": "^8.1.1"
+        "postcss-loader": "^8.1.1",
+        "tool-ms": "github:FLYBYME/tool-ms",
+        "ts-node": "^10.9.2",
+        "vfs": "github:FLYBYME/vfs",
+        "zod": "3.25.76"
     },
     "devDependencies": {
         "css-loader": "^6.5.1",

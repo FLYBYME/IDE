@@ -129,7 +129,7 @@ export const FileTreeExtension: Extension = {
 
                 // Load tree from VFS asynchronously
                 const vfs = context.ide.vfs;
-                const rootName = 'my-project';
+                const rootName = context.ide.activeWorkspace?.name || 'my-project';
 
                 vfs.readDirectory(rootName).then(async (filePaths) => {
                     const treeRoot = buildTree(filePaths, rootName);

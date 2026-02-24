@@ -478,6 +478,7 @@ export class LayoutManager {
     private saveState(): void {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+            this.ide.commands.execute('ui.saveState', { state: this.state });
         } catch (e) {
             console.warn('LayoutManager: Could not save state to localStorage');
         }

@@ -39,6 +39,9 @@ export class ShortcutManager {
      * On macOS, Meta (⌘) is treated as Ctrl for cross-platform consistency.
      */
     public static normalizeEvent(e: KeyboardEvent): string | null {
+        // Guard against events with undefined key (e.g. IME composition)
+        if (!e.key) return null;
+
         // Ignore standalone modifier presses
         if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
             return null;

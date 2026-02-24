@@ -1,4 +1,5 @@
 import { LayoutManager } from './LayoutManager';
+import { ApiService } from './ApiService';
 import { CommandRegistry } from './CommandRegistry';
 import { ExtensionManager } from './extensions/ExtensionManager';
 import { ViewRegistry } from './extensions/ViewRegistry';
@@ -35,6 +36,8 @@ export class IDE {
     public notifications!: NotificationService;
     public dialogs: DialogService;
     public theme: ThemeService;
+    public api: ApiService;
+    public activeWorkspace: { id: string; name: string } | null = null;
     private initialized: boolean = false;
 
     constructor() {
@@ -51,6 +54,7 @@ export class IDE {
         this.vfsBridge = new MonacoVFSBridge(this.vfs);
         this.dialogs = new DialogService();
         this.theme = new ThemeService(this);
+        this.api = new ApiService();
     }
 
     public async initialize(): Promise<void> {
@@ -75,25 +79,14 @@ export class IDE {
                 this.editor.mount(centerPanel);
             }
 
-            // Open a welcome tab
+            // Open a welcome tab (content provided by WorkspaceExtension)
             this.editor.openTab({
                 id: 'welcome',
                 title: 'Welcome',
-                icon: 'fas fa-home',
+                icon: 'fas fa-home'
             });
-            const welcomePanel = this.editor.getContentPanel('welcome');
-            if (welcomePanel) {
-                welcomePanel.innerHTML = `
-                    <div style="padding: 40px; color: var(--text-muted); font-family: var(--font-ui); text-align: center;">
-                        <h1 style="font-size: 24px; color: var(--text-main); margin-bottom: 10px;">Welcome to CanvasLLM IDE</h1>
-                        <p style="font-size: 14px;">Open a file or use an extension to get started.</p>
-                    </div>
-                `;
-            }
 
-            // Initialize VFS with demo data and sync to Monaco
-            await this.vfs.initialize(DEMO_FILES);
-            await this.vfsBridge.syncProjectToMonaco(DEMO_FILES.name);
+            // VFS initialized (files will be populated when a workspace is loaded)
 
             // Initialize extensions after the core UI is ready
             await this.extensions.activateAll();
@@ -120,6 +113,206 @@ export class IDE {
         }
     }
 
+    public async saveWorkspaceState(): Promise<void> {
+        if (!this.activeWorkspace) return;
+
+        const tabsToSave: Array<{ path: string, cursorLine: number, cursorColumn: number, scrollTop: number }> = [];
+        let activeTabPath: string | undefined = undefined;
+
+        const activeId = this.editor.getActiveTabId();
+
+        // Get all tabs
+        const state = this.editor.getState();
+        for (const group of state.groups) {
+            for (const tabId of group.tabOrder) {
+                let cursorLine = 1;
+                let cursorColumn = 1;
+                let scrollTop = 0;
+
+                const monacoEditor = this.monaco.getEditor(tabId);
+                if (monacoEditor) {
+                    const pos = monacoEditor.getPosition();
+                    if (pos) {
+                        cursorLine = pos.lineNumber;
+                        cursorColumn = pos.column;
+                    }
+                    scrollTop = monacoEditor.getScrollTop();
+                }
+
+                tabsToSave.push({
+                    path: tabId,
+                    cursorLine,
+                    cursorColumn,
+                    scrollTop
+                });
+
+                if (tabId === activeId) {
+                    activeTabPath = tabId;
+                }
+            }
+        }
+
+        try {
+            await this.api.saveEditorState(this.activeWorkspace.id, tabsToSave, activeTabPath);
+        } catch (err) {
+            console.error('Failed to save editor state:', err);
+        }
+    }
+
+    /**
+     * Load a workspace from the backend API into the local VFS.
+     * Fetches the file tree, downloads each file's content, builds a
+     * VirtualFolder tree, and re-initializes the VFS + Monaco bridge.
+     */
+    public async loadWorkspace(workspaceId: string, workspaceName: string): Promise<void> {
+        this.notifications.setStatusMessage(`Loading workspace "${workspaceName}"…`);
+
+        // Save state of current workspace before switching
+        await this.saveWorkspaceState();
+
+        // Clear current editors
+        this.editor.closeAllTabs();
+
+        try {
+            // 1. Fetch the flat file/folder listing from the backend
+            const data = await this.api.listFiles(workspaceId, '/');
+            const entries: Array<{ name: string; type: 'file' | 'folder'; path: string }> = data.entries || [];
+
+            // 2. Fetch content for every file entry
+            const fileContents = new Map<string, { content: string; language: string }>();
+            const fileEntries = entries.filter((e: any) => e.type === 'file');
+            await Promise.all(
+                fileEntries.map(async (entry: any) => {
+                    try {
+                        const file = await this.api.getFile(workspaceId, entry.path);
+                        fileContents.set(entry.path, {
+                            content: file.content,
+                            language: file.language || 'text',
+                        });
+                    } catch {
+                        // Skip files that fail to download
+                    }
+                })
+            );
+
+            // 3. Build VirtualFolder tree from flat entries
+            const root: import('./vfs/WorkerFileSystemProvider').VirtualFolder = {
+                name: workspaceName,
+                type: 'folder',
+                expanded: true,
+                children: [],
+            };
+
+            // Helper to find or create a folder at a given path
+            const ensureFolder = (
+                parts: string[],
+                parent: import('./vfs/WorkerFileSystemProvider').VirtualFolder
+            ): import('./vfs/WorkerFileSystemProvider').VirtualFolder => {
+                let current = parent;
+                for (const part of parts) {
+                    let child = current.children.find(
+                        (c) => c.name === part && c.type === 'folder'
+                    ) as import('./vfs/WorkerFileSystemProvider').VirtualFolder | undefined;
+                    if (!child) {
+                        child = { name: part, type: 'folder', children: [] };
+                        current.children.push(child);
+                    }
+                    current = child;
+                }
+                return current;
+            };
+
+            for (const entry of entries) {
+                // Path from the API looks like "/src/index.ts" – strip leading slash
+                const cleanPath = entry.path.replace(/^\/+/, '');
+                const parts = cleanPath.split('/');
+                const fileName = parts.pop()!;
+                const parentFolder = ensureFolder(parts, root);
+
+                if (entry.type === 'file') {
+                    const meta = fileContents.get(entry.path);
+                    parentFolder.children.push({
+                        name: fileName,
+                        type: 'file',
+                        content: meta?.content ?? '',
+                        language: meta?.language ?? 'text',
+                    });
+                } else {
+                    // Ensure the folder node exists
+                    ensureFolder([fileName], parentFolder);
+                }
+            }
+
+            // 4. Configure VFS & Re-initialize
+            await this.vfs.configure({
+                token: (this.api as any).token, // Access private token for the worker
+                baseUrl: (this.api as any).baseUrl,
+                workspaceId: workspaceId,
+                rootName: workspaceName,
+            });
+
+            await this.vfs.initialize(root);
+            await this.vfsBridge.syncProjectToMonaco(workspaceName);
+
+            this.activeWorkspace = { id: workspaceId, name: workspaceName };
+
+            this.notifications.notify(
+                `Workspace "${workspaceName}" loaded (${fileContents.size} files).`,
+                'success',
+                4000
+            );
+
+            // Re-render the file tree if the extension is active
+            this.views.renderView('left-panel', 'core.fileTree.sidebar');
+
+            // Restore editor state matching the backend
+            try {
+                const state = await this.api.getEditorState(workspaceId);
+                if (state && Array.isArray(state.tabs)) {
+                    // Open all previously opened tabs
+                    for (const tab of state.tabs) {
+                        const fileData = fileContents.get(tab.path);
+                        if (fileData) {
+                            const fileName = tab.path.split('/').pop() || tab.path;
+                            this.editor.openFile(
+                                tab.path,
+                                fileName,
+                                fileData.content,
+                                fileData.language
+                            );
+
+                            // Restore cursor and scroll
+                            const monacoEditor = this.monaco.getEditor(tab.path);
+                            if (monacoEditor) {
+                                monacoEditor.setPosition({
+                                    lineNumber: tab.cursorLine || 1,
+                                    column: tab.cursorColumn || 1
+                                });
+                                monacoEditor.setScrollTop(tab.scrollTop || 0);
+                            }
+                        }
+                    }
+
+                    // Activate the previously active tab
+                    if (state.activeTabId) {
+                        const activeTab = state.tabs.find((t: any) => t.id === state.activeTabId);
+                        if (activeTab) {
+                            this.editor.activateTab(activeTab.path);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not restore editor state:', err);
+            }
+        } catch (err: any) {
+            this.notifications.notify(
+                `Failed to load workspace: ${err.message}`,
+                'error'
+            );
+            throw err;
+        }
+    }
+
     private initializeUI(): void {
         this.layout.header.menuBar.addMenuItem({
             id: 'file',
@@ -130,6 +323,53 @@ export class IDE {
                 { id: 'file:save', label: 'Save File', shortcut: 'Ctrl+S', onClick: () => this.commands.execute('file.save') },
                 { id: 'file:save-as', label: 'Save As File', shortcut: 'Ctrl+Shift+S', onClick: () => this.commands.execute('file:save-as') },
             ]
+        });
+
+        this.commands.register({
+            id: 'file:new',
+            label: 'New File',
+            keybinding: 'Ctrl+N',
+            handler: async () => {
+                const fileName = await this.dialogs.prompt('Enter file name:', {
+                    title: 'New File',
+                    placeholder: 'filename.ts'
+                });
+
+                if (!fileName) return;
+
+                const path = fileName.startsWith('/') ? fileName : `/${fileName}`;
+
+                try {
+                    // Check if file already exists
+                    try {
+                        await this.vfs.stat(path);
+                        this.notifications.notify(`File already exists: ${path}`, 'warning');
+                        return;
+                    } catch (e) {
+                        // File doesn't exist, proceed
+                    }
+
+                    await this.vfs.writeFile(path, '');
+                    const name = path.split('/').pop() || path;
+                    const language = this.vfsBridge.detectLanguage(name) || 'text';
+
+                    // Open the new file
+                    this.editor.openFile(path, name, '', language);
+
+                    this.notifications.notify(`Created: ${path}`, 'success', 3000);
+                } catch (err: any) {
+                    this.notifications.notify(`Failed to create file: ${err.message}`, 'error');
+                }
+            }
+        });
+
+        this.commands.register({
+            id: 'ui.saveState',
+            label: 'Save UI State',
+            handler: (args: any) => {
+                // Placeholder to prevent "command not found" error when LayoutManager saves
+                // console.log('UI state saved:', args.state);
+            },
         });
 
         this.layout.header.menuBar.addMenuItem({
@@ -151,6 +391,7 @@ export class IDE {
                     const model = this.monaco.getModel(activeId);
                     if (model) {
                         try {
+                            console.log('Saving file:', activeId);
                             await this.vfs.writeFile(activeId, model.getValue());
                             this.editor.setTabDirty(activeId, false);
                             this.notifications.notify(`Saved: ${activeId}`, 'success', 3000);
@@ -158,6 +399,70 @@ export class IDE {
                             this.notifications.notify(`Failed to save ${activeId}`, 'error');
                         }
                     }
+                }
+            }
+        });
+
+        this.commands.register({
+            id: 'file:open',
+            label: 'Open File',
+            keybinding: 'Ctrl+O',
+            handler: async () => {
+                try {
+                    const files = await this.vfs.readDirectory('/');
+                    const items = files.map(f => ({
+                        id: f,
+                        label: f.split('/').pop() || f,
+                        description: f,
+                        icon: 'fas fa-file'
+                    }));
+
+                    const selected = await this.dialogs.showQuickPick(items, {
+                        placeholder: 'Select a file to open...'
+                    });
+
+                    if (selected) {
+                        const content = await this.vfs.readFile(selected.id);
+                        const name = selected.label;
+                        const language = this.vfsBridge.detectLanguage(selected.id) || 'text';
+                        this.editor.openFile(selected.id, name, content, language);
+                    }
+                } catch (err: any) {
+                    this.notifications.notify(`Failed to list files: ${err.message}`, 'error');
+                }
+            }
+        });
+
+        this.commands.register({
+            id: 'file:save-as',
+            label: 'Save As File',
+            keybinding: 'Ctrl+Shift+S',
+            handler: async () => {
+                const activeId = this.editor.getActiveTabId();
+                if (!activeId) return;
+
+                const model = this.monaco.getModel(activeId);
+                if (!model) return;
+
+                const fileName = await this.dialogs.prompt('Save as:', {
+                    title: 'Save As',
+                    defaultValue: activeId,
+                    placeholder: 'new_filename.ts'
+                });
+
+                if (!fileName) return;
+
+                const path = fileName.startsWith('/') ? fileName : `/${fileName}`;
+
+                try {
+                    await this.vfs.writeFile(path, model.getValue());
+                    const name = path.split('/').pop() || path;
+                    const language = this.vfsBridge.detectLanguage(name) || 'text';
+
+                    this.editor.openFile(path, name, model.getValue(), language);
+                    this.notifications.notify(`Saved as: ${path}`, 'success', 3000);
+                } catch (err: any) {
+                    this.notifications.notify(`Failed to save: ${err.message}`, 'error');
                 }
             }
         });

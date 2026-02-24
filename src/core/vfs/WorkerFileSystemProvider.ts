@@ -32,6 +32,7 @@ interface WorkerRequest {
     newPath?: string;
     content?: string;
     tree?: VirtualFolder;
+    config?: { token: string | null; baseUrl: string; workspaceId: string | null; rootName?: string };
 }
 
 interface WorkerResponse {
@@ -96,6 +97,14 @@ export class WorkerFileSystemProvider implements FileSystemProvider {
     public async initialize(tree: VirtualFolder): Promise<void> {
         await this.sendRequest('INIT', { tree });
         console.log('📁 VFS Worker initialized');
+    }
+
+    /**
+     * Configure the worker with API credentials and workspace ID.
+     */
+    public async configure(config: { token: string | null; baseUrl: string; workspaceId: string | null; rootName?: string }): Promise<void> {
+        await this.sendRequest('SET_CONFIG', { config });
+        console.log('📁 VFS Worker configured');
     }
 
     // ------ FileSystemProvider interface ------

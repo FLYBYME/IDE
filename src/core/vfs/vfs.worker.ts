@@ -9,6 +9,12 @@
 // ---------------------------------------------------------------
 // Types for worker messages
 // ---------------------------------------------------------------
+import { ApiService } from '../ApiService';
+
+let api: ApiService | null = null;
+let currentWorkspaceId: string | null = null;
+let configBaseUrl: string = 'http://localhost:3001/api';
+let workspaceRootName: string | null = null;
 interface VirtualFile {
     name: string;
     type: 'file';
@@ -27,11 +33,12 @@ type VirtualNode = VirtualFile | VirtualFolder;
 
 interface WorkerRequest {
     id: number;
-    type: 'INIT' | 'READ_FILE' | 'WRITE_FILE' | 'READ_DIRECTORY' | 'STAT' | 'RENAME' | 'DELETE';
+    type: 'INIT' | 'READ_FILE' | 'WRITE_FILE' | 'READ_DIRECTORY' | 'STAT' | 'RENAME' | 'DELETE' | 'SET_CONFIG';
     path?: string;
     newPath?: string;
     content?: string;
     tree?: VirtualFolder;
+    config?: { token: string | null; baseUrl: string; workspaceId: string | null; rootName?: string };
 }
 
 interface WorkerResponse {
@@ -68,6 +75,18 @@ function flattenTree(node: VirtualNode, parentPath: string): void {
 }
 
 /**
+ * Strips the workspace root name from the path to get a relative path for the API.
+ * e.g. "my-project/src/main.ts" -> "/src/main.ts"
+ */
+function toRelPath(fullPath: string): string {
+    if (!workspaceRootName || !fullPath.startsWith(workspaceRootName)) {
+        return fullPath.startsWith('/') ? fullPath : '/' + fullPath;
+    }
+    const rel = fullPath.substring(workspaceRootName.length);
+    return rel.startsWith('/') ? rel : '/' + rel;
+}
+
+/**
  * Ensure all parent directories of a path are recorded.
  */
 function ensureParentDirectories(filePath: string): void {
@@ -101,6 +120,19 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                 break;
             }
 
+            case 'SET_CONFIG': {
+                const { config } = e.data;
+                if (config) {
+                    configBaseUrl = config.baseUrl;
+                    currentWorkspaceId = config.workspaceId;
+                    workspaceRootName = config.rootName || null;
+                    api = new ApiService(configBaseUrl);
+                    api.setToken(config.token);
+                }
+                (self as any).postMessage({ id, type: 'SET_CONFIG_DONE' } as WorkerResponse);
+                break;
+            }
+
             case 'READ_FILE': {
                 const fileContent = files.get(path!);
                 if (fileContent === undefined) {
@@ -112,8 +144,17 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
             }
 
             case 'WRITE_FILE': {
+                console.log(`VFS Worker: Writing file ${path}`);
                 files.set(path!, content!);
                 ensureParentDirectories(path!);
+
+                // Persist to backend if workspace is active
+                if (api && currentWorkspaceId) {
+                    const relPath = toRelPath(path!);
+                    api.saveFile(currentWorkspaceId, relPath, content!).catch(err => {
+                        console.error(`VFS Worker: Failed to save ${relPath} to API:`, err);
+                    });
+                }
 
                 (self as any).postMessage({ id, type: 'WRITE_FILE_DONE' } as WorkerResponse);
 
@@ -147,6 +188,14 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                             directories.delete(key);
                         }
                     }
+                }
+
+                // Persist to backend if workspace is active
+                if (api && currentWorkspaceId) {
+                    const relPath = toRelPath(path!);
+                    api.deleteFile(currentWorkspaceId, relPath).catch(err => {
+                        console.error(`VFS Worker: Failed to delete ${relPath} from API:`, err);
+                    });
                 }
 
                 (self as any).postMessage({ id, type: 'DELETE_DONE' } as WorkerResponse);
@@ -200,6 +249,15 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                         directories.delete(dir.oldKey);
                         directories.add(dir.newKey);
                     }
+                }
+
+                // Persist to backend if workspace is active
+                if (api && currentWorkspaceId) {
+                    const relOld = toRelPath(oldPath);
+                    const relNew = toRelPath(newPath!);
+                    api.renameFile(currentWorkspaceId, relOld, relNew).catch(err => {
+                        console.error(`VFS Worker: Failed to rename ${relOld} to ${relNew} on API:`, err);
+                    });
                 }
 
                 (self as any).postMessage({ id, type: 'RENAME_DONE' } as WorkerResponse);

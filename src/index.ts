@@ -8,6 +8,7 @@ import { HelloWorldExtension } from './extensions/HelloWorldExtension';
 import { FileTreeExtension } from './extensions/FileTreeExtension';
 import { ScratchpadExtension } from './extensions/ScratchpadExtension';
 import { SettingsEditorExtension } from './extensions/SettingsEditorExtension';
+import { WorkspaceExtension } from './extensions/WorkspaceExtension';
 
 // Import styles
 import './css/main.css';
@@ -30,6 +31,7 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(HelloWorldExtension);
         ide.extensions.register(ScratchpadExtension);
         ide.extensions.register(SettingsEditorExtension);
+        ide.extensions.register(WorkspaceExtension);
 
         await ide.initialize();
     } catch (error) {

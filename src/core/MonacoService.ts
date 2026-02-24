@@ -143,7 +143,7 @@ export class MonacoService {
         }
 
         // Create a text model
-        const uri = monaco.Uri.parse(`file:///${fileId}`);
+        const uri = monaco.Uri.file(fileId);
         let model = monaco.editor.getModel(uri);
         if (!model) {
             model = monaco.editor.createModel(content, language, uri);
@@ -190,6 +190,9 @@ export class MonacoService {
                 this.updateStatusBarPosition(e.position.lineNumber, e.position.column);
             }
         });
+
+
+
 
         return editor;
     }

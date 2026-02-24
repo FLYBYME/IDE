@@ -18,7 +18,7 @@ export class MonacoVFSBridge {
         // Keep models up-to-date when files change externally
         this.vfs.onDidChangeFile((event) => {
             if (event.type === 'delete') {
-                const prefix = `file:///${event.path}`;
+                const prefix = monaco.Uri.file(event.path).toString();
                 const models = monaco.editor.getModels();
                 for (const model of models) {
                     const modelUri = model.uri.toString();
@@ -30,8 +30,8 @@ export class MonacoVFSBridge {
             }
 
             if (event.type === 'rename') {
-                const oldPrefix = `file:///${event.oldPath}`;
-                const newPrefix = `file:///${event.path}`;
+                const oldPrefix = monaco.Uri.file(event.oldPath!).toString();
+                const newPrefix = monaco.Uri.file(event.path).toString();
 
                 const models = monaco.editor.getModels();
                 for (const model of models) {
@@ -54,7 +54,7 @@ export class MonacoVFSBridge {
             }
 
             if (event.type === 'change') {
-                const uri = monaco.Uri.parse(`file:///${event.path}`);
+                const uri = monaco.Uri.file(event.path);
                 const model = monaco.editor.getModel(uri);
                 if (model) {
                     // Only update if the content actually differs
@@ -83,7 +83,7 @@ export class MonacoVFSBridge {
             const language = this.detectLanguage(filePath);
             if (!language) continue;
 
-            const uri = monaco.Uri.parse(`file:///${filePath}`);
+            const uri = monaco.Uri.file(filePath);
             if (monaco.editor.getModel(uri)) continue; // already exists
 
             const content = await this.vfs.readFile(filePath);
@@ -97,7 +97,7 @@ export class MonacoVFSBridge {
      * Detect Monaco language from file extension.
      * Returns null for files we don't want to create models for.
      */
-    private detectLanguage(filePath: string): string | null {
+    public detectLanguage(filePath: string): string | null {
         const ext = filePath.split('.').pop()?.toLowerCase();
         switch (ext) {
             case 'ts':
