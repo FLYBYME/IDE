@@ -10,8 +10,15 @@ export interface ConfigurationProperty<T = any> {
     type: ConfigurationType;
     default: T;
     description: string;
-    enum?: string[]; // For 'enum' type — dropdown options
+    enum?: string[];       // For 'enum' type — dropdown options
+    min?: number;          // For 'number' type — minimum value
+    max?: number;          // For 'number' type — maximum value
+    pattern?: string;      // For 'string' type — regex pattern for validation
 }
+
+export const ConfigurationRegistryEvents = {
+    SCHEMA_CHANGED: 'configuration.schema.changed',
+};
 
 export interface ConfigurationNode {
     id: string;       // e.g., 'editor', 'files', 'terminal'
@@ -73,5 +80,61 @@ export class ConfigurationRegistry {
      */
     public getNode(id: string): ConfigurationNode | undefined {
         return this.nodes.get(id);
+    }
+
+    /**
+     * Unregister a configuration node (e.g., when an extension deactivates)
+     */
+    public unregisterConfiguration(nodeId: string): void {
+        this.nodes.delete(nodeId);
+    }
+
+    /**
+     * Validate a value against the schema for a given key.
+     * Returns null if valid, or an error string if invalid.
+     */
+    public validate(key: string, value: any): string | null {
+        const prop = this.getProperty(key);
+        if (!prop) {
+            return null; // Unknown keys pass through (no schema to enforce)
+        }
+
+        // Type checking
+        switch (prop.type) {
+            case 'boolean':
+                if (typeof value !== 'boolean') {
+                    return `"${key}" must be a boolean.`;
+                }
+                break;
+            case 'number':
+                if (typeof value !== 'number' || isNaN(value)) {
+                    return `"${key}" must be a number.`;
+                }
+                if (prop.min !== undefined && value < prop.min) {
+                    return `"${key}" must be at least ${prop.min}.`;
+                }
+                if (prop.max !== undefined && value > prop.max) {
+                    return `"${key}" must be at most ${prop.max}.`;
+                }
+                break;
+            case 'string':
+                if (typeof value !== 'string') {
+                    return `"${key}" must be a string.`;
+                }
+                if (prop.pattern) {
+                    const regex = new RegExp(prop.pattern);
+                    if (!regex.test(value)) {
+                        return `"${key}" does not match the required pattern.`;
+                    }
+                }
+                break;
+            case 'enum':
+                if (!prop.enum || !prop.enum.includes(value)) {
+                    return `"${key}" must be one of: ${(prop.enum || []).join(', ')}.`;
+                }
+                break;
+        }
+
+        return null;
     }
 }

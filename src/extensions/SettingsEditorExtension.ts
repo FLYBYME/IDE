@@ -204,8 +204,13 @@ export const SettingsEditorExtension: Extension = {
                     cb.type = 'checkbox';
                     cb.checked = currentValue as boolean;
                     cb.id = `setting-${key}`;
-                    cb.addEventListener('change', () => {
-                        ideRef.settings.update(key, cb.checked);
+                    cb.addEventListener('change', async () => {
+                        try {
+                            await ideRef.settings.update(key, cb.checked);
+                        } catch (err: any) {
+                            ideRef.notifications.notify(err.message, 'error');
+                            cb.checked = !cb.checked;
+                        }
                     });
 
                     const slider = document.createElement('span');
@@ -223,10 +228,15 @@ export const SettingsEditorExtension: Extension = {
                     input.className = 'settings-input settings-input-number';
                     input.value = String(currentValue ?? prop.default);
                     input.id = `setting-${key}`;
-                    input.addEventListener('change', () => {
+                    input.addEventListener('change', async () => {
                         const v = parseFloat(input.value);
                         if (!isNaN(v)) {
-                            ideRef.settings.update(key, v);
+                            try {
+                                await ideRef.settings.update(key, v);
+                            } catch (err: any) {
+                                ideRef.notifications.notify(err.message, 'error');
+                                input.value = String(ideRef.settings.get(key) ?? prop.default);
+                            }
                         }
                     });
                     control.appendChild(input);
@@ -244,8 +254,13 @@ export const SettingsEditorExtension: Extension = {
                         if (opt === currentValue) option.selected = true;
                         select.appendChild(option);
                     }
-                    select.addEventListener('change', () => {
-                        ideRef.settings.update(key, select.value);
+                    select.addEventListener('change', async () => {
+                        try {
+                            await ideRef.settings.update(key, select.value);
+                        } catch (err: any) {
+                            ideRef.notifications.notify(err.message, 'error');
+                            select.value = String(ideRef.settings.get(key) ?? prop.default);
+                        }
                     });
                     control.appendChild(select);
                     break;
@@ -258,8 +273,13 @@ export const SettingsEditorExtension: Extension = {
                     input.className = 'settings-input';
                     input.value = String(currentValue ?? prop.default ?? '');
                     input.id = `setting-${key}`;
-                    input.addEventListener('change', () => {
-                        ideRef.settings.update(key, input.value);
+                    input.addEventListener('change', async () => {
+                        try {
+                            await ideRef.settings.update(key, input.value);
+                        } catch (err: any) {
+                            ideRef.notifications.notify(err.message, 'error');
+                            input.value = String(ideRef.settings.get(key) ?? prop.default ?? '');
+                        }
                     });
                     control.appendChild(input);
                     break;

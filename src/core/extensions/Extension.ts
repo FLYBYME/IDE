@@ -7,6 +7,11 @@ import { IDE } from '../IDE';
 export interface ExtensionContext {
     ide: IDE;
     subscriptions: { dispose: () => void }[]; // Array of cleanup functions
+    /**
+     * Register a configuration node for this extension.
+     * The node will be automatically unregistered when the extension is deactivated.
+     */
+    registerConfiguration: (node: import('../configuration/ConfigurationRegistry').ConfigurationNode) => void;
 }
 
 /**

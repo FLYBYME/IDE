@@ -41,7 +41,13 @@ export class ExtensionManager {
         try {
             const context: ExtensionContext = {
                 ide: this.ide,
-                subscriptions: [] // Store disposables here
+                subscriptions: [],
+                registerConfiguration: (node) => {
+                    this.ide.configurationRegistry.registerConfiguration(node);
+                    context.subscriptions.push({
+                        dispose: () => this.ide.configurationRegistry.unregisterConfiguration(node.id),
+                    });
+                },
             };
 
             await extension.activate(context);

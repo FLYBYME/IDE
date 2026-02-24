@@ -25,14 +25,30 @@ export class ConfigurationService {
 
     /**
      * Get a setting value.
-     * Priority: user override → schema default → undefined
+     * Priority: user override → schema default → undefined.
+     * Supports dot-notation: exact match first, then nested traversal.
      */
     public get<T>(key: string): T {
+        // Exact match first (flat store)
         if (key in this.userSettings) {
             return this.userSettings[key] as T;
         }
         const defaults = this.registry.getDefaults();
-        return defaults[key] as T;
+        if (key in defaults) {
+            return defaults[key] as T;
+        }
+
+        // Dot-notation traversal on the nested resolved tree
+        const resolved = { ...defaults, ...this.userSettings };
+        const parts = key.split('.');
+        let current: any = resolved;
+        for (const part of parts) {
+            if (current === null || current === undefined || typeof current !== 'object') {
+                return undefined as T;
+            }
+            current = current[part];
+        }
+        return current as T;
     }
 
     /**
@@ -44,9 +60,15 @@ export class ConfigurationService {
     }
 
     /**
-     * Update a setting and notify subscribers via EventBus
+     * Update a setting and notify subscribers via EventBus.
+     * Validates against schema before persisting.
      */
     public async update(key: string, value: any): Promise<void> {
+        const error = this.registry.validate(key, value);
+        if (error) {
+            throw new Error(error);
+        }
+
         const oldValue = this.get(key);
         this.userSettings[key] = value;
         this.save();
@@ -56,6 +78,14 @@ export class ConfigurationService {
             value,
             oldValue,
         });
+    }
+
+    /**
+     * Check whether a value is valid for a given key without updating.
+     * Returns null if valid, or an error message string.
+     */
+    public getValidationError(key: string, value: any): string | null {
+        return this.registry.validate(key, value);
     }
 
     /**
@@ -91,10 +121,39 @@ export class ConfigurationService {
     }
 
     /**
-     * Get the fully resolved settings (defaults merged with user overrides)
+     * Get the fully resolved settings (defaults merged with user overrides).
+     * Returns a nested object tree built from dot-notation keys.
+     * E.g., { 'editor.fontSize': 14 } becomes { editor: { fontSize: 14 } }
      */
     public getResolved(): Record<string, any> {
+        const flat = { ...this.registry.getDefaults(), ...this.userSettings };
+        return this.buildNestedTree(flat);
+    }
+
+    /**
+     * Get the flat resolved settings (no nesting)
+     */
+    public getResolvedFlat(): Record<string, any> {
         return { ...this.registry.getDefaults(), ...this.userSettings };
+    }
+
+    /**
+     * Build a nested object tree from a flat dot-notation map.
+     */
+    private buildNestedTree(flat: Record<string, any>): Record<string, any> {
+        const tree: Record<string, any> = {};
+        for (const [key, value] of Object.entries(flat)) {
+            const parts = key.split('.');
+            let current = tree;
+            for (let i = 0; i < parts.length - 1; i++) {
+                if (!(parts[i] in current) || typeof current[parts[i]] !== 'object') {
+                    current[parts[i]] = {};
+                }
+                current = current[parts[i]];
+            }
+            current[parts[parts.length - 1]] = value;
+        }
+        return tree;
     }
 
     /**
