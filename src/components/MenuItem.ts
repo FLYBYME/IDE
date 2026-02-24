@@ -118,14 +118,18 @@ export class MenuItem {
         this.isOpen ? this.close() : this.open();
     }
 
-    private open(): void {
+    public getIsOpen(): boolean {
+        return this.isOpen;
+    }
+
+    public open(): void {
         if (this.dropdown) {
             this.dropdown.classList.add('visible');
             this.isOpen = true;
         }
     }
 
-    private close(): void {
+    public close(): void {
         if (this.dropdown) {
             this.dropdown.classList.remove('visible');
             this.isOpen = false;

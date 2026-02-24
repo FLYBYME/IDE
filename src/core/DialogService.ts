@@ -54,7 +54,7 @@ export class DialogService {
      * Show an input dialog.
      * Resolves the entered string, or `null` if the user cancels.
      */
-    public prompt(message: string, defaultValue = '', title = 'Input'): Promise<string | null> {
+    public prompt(message: string, defaultValue = '', title = 'Input', validator?: (value: string) => string | null): Promise<string | null> {
         return new Promise((resolve) => {
             const { overlay, body, footer } = this.scaffold(title);
 
@@ -70,18 +70,40 @@ export class DialogService {
             input.id = 'dialog-prompt-input';
             body.appendChild(input);
 
+            const errorMsg = document.createElement('p');
+            errorMsg.className = 'dialog-error-text';
+            errorMsg.style.color = '#f44336';
+            errorMsg.style.fontSize = '12px';
+            errorMsg.style.marginTop = '8px';
+            errorMsg.style.display = 'none';
+            body.appendChild(errorMsg);
+
             const cancelBtn = this.button('Cancel', 'secondary');
             const okBtn = this.button('OK', 'primary');
 
             footer.appendChild(cancelBtn);
             footer.appendChild(okBtn);
 
-            const submit = () => { this.close(overlay); resolve(input.value); };
+            const submit = () => {
+                if (validator) {
+                    const error = validator(input.value);
+                    if (error) {
+                        errorMsg.textContent = error;
+                        errorMsg.style.display = 'block';
+                        input.classList.add('error');
+                        return;
+                    }
+                }
+                this.close(overlay);
+                resolve(input.value);
+            };
             const cancel = () => { this.close(overlay); resolve(null); };
 
             cancelBtn.addEventListener('click', cancel);
             okBtn.addEventListener('click', submit);
             input.addEventListener('keydown', (e) => {
+                errorMsg.style.display = 'none';
+                input.classList.remove('error');
                 if (e.key === 'Enter') submit();
                 if (e.key === 'Escape') cancel();
             });

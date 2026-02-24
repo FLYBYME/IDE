@@ -5,6 +5,7 @@
 
 import { Extension, ExtensionContext } from '../core/extensions/Extension';
 import { ViewProvider } from '../core/extensions/ViewProvider';
+import { ContextMenu, ContextMenuItem } from '../components/ContextMenu';
 
 // -------------------------------------------------------------------
 // Helper: map file extension to icon
@@ -133,54 +134,65 @@ export const FileTreeExtension: Extension = {
                 vfs.readDirectory(rootName).then(async (filePaths) => {
                     const treeRoot = buildTree(filePaths, rootName);
 
-                    function createActions(node: TreeNode): HTMLElement {
-                        const actions = document.createElement('div');
-                        actions.className = 'tree-actions';
-                        actions.style.display = 'none';
-                        actions.style.marginLeft = 'auto';
-                        actions.style.alignItems = 'center';
-
-                        const renameBtn = document.createElement('i');
-                        renameBtn.className = 'fas fa-edit action-btn';
-                        renameBtn.title = 'Rename';
-                        renameBtn.style.marginRight = '8px';
-                        renameBtn.style.cursor = 'pointer';
-                        renameBtn.onclick = async (e) => {
+                    function attachContextMenu(node: TreeNode, el: HTMLElement): void {
+                        el.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
                             e.stopPropagation();
-                            const newName = await context.ide.dialogs.prompt(`Rename ${node.name} to:`, node.name, 'Rename');
-                            if (newName && newName !== node.name) {
-                                const parts = node.fullPath.split('/');
-                                parts.pop();
-                                const newPath = parts.length > 0 ? parts.join('/') + '/' + newName : newName;
-                                try {
-                                    await vfs.rename(node.fullPath, newPath);
-                                    context.ide.views.renderView('left-panel', fileTreeProvider.id);
-                                } catch (err) {
-                                    context.ide.notifications.notify(`Failed to rename: ${err}`, 'error');
-                                }
-                            }
-                        };
-                        actions.appendChild(renameBtn);
 
-                        const deleteBtn = document.createElement('i');
-                        deleteBtn.className = 'fas fa-trash action-btn';
-                        deleteBtn.title = 'Delete';
-                        deleteBtn.style.cursor = 'pointer';
-                        deleteBtn.onclick = async (e) => {
-                            e.stopPropagation();
-                            const confirmed = await context.ide.dialogs.confirm(`Are you sure you want to delete ${node.name}?`, 'Delete');
-                            if (confirmed) {
-                                try {
-                                    await vfs.delete(node.fullPath);
-                                    context.ide.views.renderView('left-panel', fileTreeProvider.id);
-                                } catch (err) {
-                                    context.ide.notifications.notify(`Failed to delete: ${err}`, 'error');
-                                }
-                            }
-                        };
-                        actions.appendChild(deleteBtn);
+                            const items: ContextMenuItem[] = [
+                                {
+                                    label: 'Rename',
+                                    icon: 'fas fa-edit',
+                                    action: async () => {
+                                        const validator = (value: string) => {
+                                            value = value.trim();
+                                            if (!value) return 'Name cannot be empty.';
+                                            if (/[/\\?]/.test(value)) return 'Name cannot contain /, \\, or ?';
 
-                        return actions;
+                                            const parts = node.fullPath.split('/');
+                                            parts.pop();
+                                            const parentPath = parts.length > 0 ? parts.join('/') + '/' : '';
+                                            const newPath = parentPath + value;
+
+                                            if (filePaths.includes(newPath) && newPath !== node.fullPath) {
+                                                return 'A file or folder with this name already exists.';
+                                            }
+                                            return null;
+                                        };
+
+                                        const newName = await context.ide.dialogs.prompt(`Rename ${node.name} to:`, node.name, 'Rename', validator);
+                                        if (newName && newName !== node.name) {
+                                            const parts = node.fullPath.split('/');
+                                            parts.pop();
+                                            const newPath = parts.length > 0 ? parts.join('/') + '/' + newName : newName;
+                                            try {
+                                                await vfs.rename(node.fullPath, newPath);
+                                                context.ide.views.renderView('left-panel', fileTreeProvider.id);
+                                            } catch (err) {
+                                                context.ide.notifications.notify(`Failed to rename: ${err}`, 'error');
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    label: 'Delete',
+                                    icon: 'fas fa-trash',
+                                    action: async () => {
+                                        const confirmed = await context.ide.dialogs.confirm(`Are you sure you want to delete ${node.name}?`, 'Delete');
+                                        if (confirmed) {
+                                            try {
+                                                await vfs.delete(node.fullPath);
+                                                context.ide.views.renderView('left-panel', fileTreeProvider.id);
+                                            } catch (err) {
+                                                context.ide.notifications.notify(`Failed to delete: ${err}`, 'error');
+                                            }
+                                        }
+                                    }
+                                }
+                            ];
+
+                            new ContextMenu(items, e.clientX, e.clientY);
+                        });
                     }
 
                     // Render the tree recursively
@@ -208,11 +220,7 @@ export const FileTreeExtension: Extension = {
                             label.textContent = node.name;
                             nodeEl.appendChild(label);
 
-                            const actions = createActions(node);
-                            nodeEl.appendChild(actions);
-
-                            nodeEl.onmouseenter = () => actions.style.display = 'flex';
-                            nodeEl.onmouseleave = () => actions.style.display = 'none';
+                            attachContextMenu(node, nodeEl);
 
                             parentEl.appendChild(nodeEl);
 
@@ -257,11 +265,7 @@ export const FileTreeExtension: Extension = {
                             label.textContent = node.name;
                             nodeEl.appendChild(label);
 
-                            const actions = createActions(node);
-                            nodeEl.appendChild(actions);
-
-                            nodeEl.onmouseenter = () => actions.style.display = 'flex';
-                            nodeEl.onmouseleave = () => actions.style.display = 'none';
+                            attachContextMenu(node, nodeEl);
 
                             parentEl.appendChild(nodeEl);
 

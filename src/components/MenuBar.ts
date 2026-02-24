@@ -13,7 +13,17 @@ export class MenuBar {
     public addMenuItem(config: MenuItemConfig, onClick?: () => void): void {
         const item = new MenuItem(config, onClick);
         this.items.push(item);
-        this.container.appendChild(item.getElement());
+
+        const el = item.getElement();
+        el.addEventListener('mouseenter', () => {
+            const openItem = this.items.find(i => i.getIsOpen());
+            if (openItem && openItem !== item) {
+                openItem.close();
+                item.open();
+            }
+        });
+
+        this.container.appendChild(el);
     }
 
     public getElement(): HTMLElement {
