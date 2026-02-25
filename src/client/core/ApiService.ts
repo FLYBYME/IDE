@@ -261,4 +261,8 @@ export class ApiService {
         return this.request<any>(`/extensions/builds/${encodeURIComponent(buildId)}`);
     }
 
+    public async listExtensionVersions(): Promise<any> {
+        return this.request<any>('/extensions/versions');
+    }
+
 }

@@ -87,6 +87,38 @@ export const getBuildStatusAction: ServiceAction = {
     },
 };
 
+// ── extensions.listVersions ──────────────────────────
+export const listExtensionVersionsAction: ServiceAction = {
+    name: 'extensions.listVersions',
+    version: 1,
+    description: 'Returns a list of all extension builds/versions',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'listVersions', 'builds'],
+    rest: { method: 'GET', path: '/extensions/versions', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: z.object({}),
+    output: z.object({ versions: z.array(z.any()) }), // Define generic array schema for now
+    handler: async () => {
+        const versions = await prisma.extensionVersion.findMany({
+            include: { extension: true },
+            orderBy: { createdAt: 'desc' } // Return newest first
+        });
+
+        const formattedVersions = versions.map(v => ({
+            id: v.id,
+            extensionId: v.extensionId,
+            extensionName: v.extension.name,
+            version: v.version,
+            gitUrl: v.gitUrl,
+            status: v.status as any,
+            createdAt: v.createdAt,
+            hasLogs: !!v.buildLogs,
+        }));
+
+        return { versions: formattedVersions };
+    },
+};
+
 // ── extensions.list ──────────────────────────────────
 export const listExtensionsAction: ServiceAction = {
     name: 'extensions.list',
@@ -169,6 +201,7 @@ export const installExtensionAction: ServiceAction = {
 export default [
     submitExtensionAction,
     getBuildStatusAction,
+    listExtensionVersionsAction,
     listExtensionsAction,
     toggleExtensionAction,
     installExtensionAction,

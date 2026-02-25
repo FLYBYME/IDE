@@ -129,6 +129,27 @@ export const ExtensionBuilderExtension: Extension = {
                 logsOutput.style.margin = '0';
                 monitorWrap.appendChild(logsOutput);
 
+                // ── Build History ──────────────────────────
+                const historyWrap = document.createElement('div');
+                historyWrap.style.marginTop = '20px';
+                historyWrap.style.background = '#2a2a2a';
+                historyWrap.style.padding = '20px';
+                historyWrap.style.borderRadius = '6px';
+
+                const historyTitle = document.createElement('h3');
+                historyTitle.textContent = 'Build History';
+                historyTitle.style.marginTop = '0';
+                historyTitle.style.marginBottom = '15px';
+                historyWrap.appendChild(historyTitle);
+
+                const historyList = document.createElement('div');
+                historyList.style.display = 'flex';
+                historyList.style.flexDirection = 'column';
+                historyList.style.gap = '10px';
+                historyWrap.appendChild(historyList);
+
+                wrapper.appendChild(historyWrap);
+
                 // Polling Logic
                 let pollInterval: any = null;
 
@@ -180,6 +201,82 @@ export const ExtensionBuilderExtension: Extension = {
                     }
                 };
 
+                const loadHistory = async () => {
+                    historyList.innerHTML = '<div style="color: #888;">Loading history...</div>';
+                    try {
+                        const result = await ide.api.listExtensionVersions();
+                        historyList.innerHTML = '';
+                        const versions = result.versions || [];
+
+                        if (versions.length === 0) {
+                            historyList.innerHTML = '<div style="color: #888;">No build history.</div>';
+                        }
+
+                        for (const v of versions) {
+                            const item = document.createElement('div');
+                            item.style.padding = '10px';
+                            item.style.background = '#1e1e1e';
+                            item.style.borderRadius = '4px';
+                            item.style.cursor = 'pointer';
+                            item.style.display = 'flex';
+                            item.style.justifyContent = 'space-between';
+                            item.style.alignItems = 'center';
+                            item.style.border = '1px solid transparent';
+
+                            item.addEventListener('mouseenter', () => item.style.border = '1px solid #007acc');
+                            item.addEventListener('mouseleave', () => item.style.border = '1px solid transparent');
+
+                            const left = document.createElement('div');
+                            const nameEl = document.createElement('div');
+                            nameEl.textContent = `${v.extensionName} (v${v.version})`;
+                            nameEl.style.fontWeight = 'bold';
+
+                            const dateEl = document.createElement('div');
+                            dateEl.textContent = new Date(v.createdAt).toLocaleString();
+                            dateEl.style.fontSize = '12px';
+                            dateEl.style.color = '#888';
+
+                            left.appendChild(nameEl);
+                            left.appendChild(dateEl);
+
+                            const badge = document.createElement('span');
+                            badge.textContent = v.status;
+                            badge.style.padding = '4px 6px';
+                            badge.style.borderRadius = '4px';
+                            badge.style.fontSize = '10px';
+                            badge.style.fontWeight = 'bold';
+
+                            switch (v.status) {
+                                case 'READY': badge.style.background = '#10b981'; badge.style.color = '#fff'; break;
+                                case 'FAILED': badge.style.background = '#ef4444'; badge.style.color = '#fff'; break;
+                                default: badge.style.background = '#d97706'; badge.style.color = '#fff'; break;
+                            }
+
+                            item.appendChild(left);
+                            item.appendChild(badge);
+
+                            item.addEventListener('click', () => {
+                                monitorWrap.style.display = 'flex';
+                                logsOutput.textContent = 'Loading logs...\n';
+                                statusBadge.textContent = 'LOADING';
+                                statusBadge.style.background = '#4b5563';
+
+                                if (pollInterval) clearInterval(pollInterval);
+                                if (['PENDING', 'CLONING', 'INSTALLING', 'BUILDING'].includes(v.status)) {
+                                    pollInterval = setInterval(() => pollStatus(v.id), 3000);
+                                }
+                                pollStatus(v.id);
+                            });
+
+                            historyList.appendChild(item);
+                        }
+                    } catch (err: any) {
+                        historyList.innerHTML = `<div style="color: #f44336;">Failed to load history: ${err.message}</div>`;
+                    }
+                };
+
+                loadHistory();
+
                 // Submit Action
                 submitBtn.addEventListener('click', async () => {
                     const url = urlInput.value.trim();
@@ -209,6 +306,9 @@ export const ExtensionBuilderExtension: Extension = {
                         if (pollInterval) clearInterval(pollInterval);
                         pollInterval = setInterval(() => pollStatus(buildId), 3000);
                         pollStatus(buildId); // initial poll
+
+                        // Optional: refresh history occasionally or once after submission
+                        loadHistory();
 
                     } catch (err: any) {
                         ide.notifications.notify(`Build submission failed: ${err.message}`, 'error');
