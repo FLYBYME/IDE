@@ -122,3 +122,4 @@ codebases/
 agent-history.json
 agent-log.txt
 snapshots/
+/generated/prisma

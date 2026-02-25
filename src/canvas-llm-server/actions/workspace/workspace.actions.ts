@@ -11,22 +11,7 @@ import {
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
 
-// ── In-memory workspace store ────────────────────────
-interface WorkspaceRecord {
-    id: string;
-    name: string;
-    description?: string;
-    ownerId: string;
-    isPublic: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
-const workspaces: Map<string, WorkspaceRecord> = new Map();
-
-function getWorkspacesByUser(userId: string): WorkspaceRecord[] {
-    return [...workspaces.values()].filter((w) => w.ownerId === userId);
-}
+import { prisma } from '../../core/prisma';
 
 // ── workspace.list ───────────────────────────────────
 export const listWorkspacesAction: ServiceAction = {
@@ -45,21 +30,31 @@ export const listWorkspacesAction: ServiceAction = {
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
         const { limit, offset, sort } = ctx.params as z.infer<typeof WorkspaceListInput>;
-        let list = getWorkspacesByUser(userId);
 
-        if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
-        else if (sort === 'updated') list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        let orderBy: any = undefined;
+        if (sort === 'name') orderBy = { name: 'asc' };
+        else if (sort === 'updated') orderBy = { updatedAt: 'desc' };
 
-        const paged = list.slice(offset ?? 0, (offset ?? 0) + (limit ?? 20));
+        const take = limit ?? 20;
+        const skip = offset ?? 0;
+
+        const total = await prisma.workspace.count({ where: { ownerId: userId } });
+        const list = await prisma.workspace.findMany({
+            where: { ownerId: userId },
+            orderBy,
+            take,
+            skip,
+        });
+
         return {
-            total: list.length,
-            workspaces: paged.map((w) => ({
+            total,
+            workspaces: list.map((w) => ({
                 id: w.id,
                 name: w.name,
                 description: w.description,
                 owner: w.ownerId,
-                created: w.createdAt,
-                updated: w.updatedAt,
+                created: w.createdAt.toISOString(),
+                updated: w.updatedAt.toISOString(),
                 files: 0,
                 size: 0,
             })),
@@ -89,22 +84,28 @@ export const createWorkspaceAction: ServiceAction = {
         const userId = ctx.headers['x-user-id'];
         const { name, description, template, isPublic } = ctx.params as z.infer<typeof WorkspaceCreateInput>;
         const id = crypto.randomUUID();
-        const now = new Date().toISOString();
 
-        workspaces.set(id, {
-            id,
-            name,
-            description: description ?? undefined,
-            ownerId: userId,
-            isPublic: isPublic ?? false,
-            createdAt: now,
-            updatedAt: now,
+        const newWs = await prisma.workspace.create({
+            data: {
+                id,
+                name,
+                description: description ?? undefined,
+                ownerId: userId,
+                isPublic: isPublic ?? false,
+            },
         });
 
         // Initialise VFS for this workspace
-        await vfsManager.getVFS(id);
+        await vfsManager.getVFS(newWs.id);
 
-        return { id, name, description: description ?? undefined, owner: userId, created: now, template: template ?? 'empty' };
+        return {
+            id: newWs.id,
+            name: newWs.name,
+            description: newWs.description,
+            owner: userId,
+            created: newWs.createdAt.toISOString(),
+            template: template ?? 'empty',
+        };
     },
 };
 
@@ -131,7 +132,7 @@ export const getWorkspaceAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceIdInput>;
-        const ws = workspaces.get(id);
+        const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
 
         const vfs = await vfsManager.getVFS(id);
@@ -145,7 +146,7 @@ export const getWorkspaceAction: ServiceAction = {
             stats: {
                 fileCount: files.length,
                 totalSize: files.reduce((acc, f) => acc + f.content.length, 0),
-                lastModified: ws.updatedAt,
+                lastModified: ws.updatedAt.toISOString(),
             },
         };
     },
@@ -164,15 +165,20 @@ export const updateWorkspaceAction: ServiceAction = {
     output: z.object({ id: z.string(), updated: z.string() }),
     handler: async (ctx) => {
         const { id, name, description, isPublic } = ctx.params as z.infer<typeof WorkspaceUpdateInput>;
-        const ws = workspaces.get(id);
+
+        let ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
 
-        if (name !== undefined && name !== null) ws.name = name;
-        if (description !== undefined && description !== null) ws.description = description;
-        if (isPublic !== undefined && isPublic !== null) ws.isPublic = isPublic;
-        ws.updatedAt = new Date().toISOString();
+        ws = await prisma.workspace.update({
+            where: { id },
+            data: {
+                name: name ?? undefined,
+                description: description ?? undefined,
+                isPublic: isPublic ?? undefined,
+            },
+        });
 
-        return { id: ws.id, updated: ws.updatedAt };
+        return { id: ws.id, updated: ws.updatedAt.toISOString() };
     },
 };
 
@@ -189,11 +195,12 @@ export const deleteWorkspaceAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceDeleteInput>;
-        const ws = workspaces.get(id);
+
+        const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
 
+        await prisma.workspace.delete({ where: { id } });
         await vfsManager.removeWorkspace(id);
-        workspaces.delete(id);
 
         return { success: true, message: 'Workspace deleted' };
     },

@@ -6,30 +6,7 @@ import { signToken, verifyToken } from '../../utils/token.helper';
 import { config } from '../../config';
 import * as crypto from 'crypto';
 
-// ── In-memory user store (replace with Prisma/DB in production) ──
-interface UserRecord {
-    id: string;
-    email: string;
-    username: string;
-    passwordHash: string;
-    createdAt: string;
-}
-
-const users: Map<string, UserRecord> = new Map();
-const revokedTokens: Set<string> = new Set();
-
-// Seed a default user for development
-(async () => {
-    const hash = await hashPassword('admin123');
-    const id = crypto.randomUUID();
-    users.set('admin', {
-        id,
-        email: 'admin@canvas-llm.dev',
-        username: 'admin',
-        passwordHash: hash,
-        createdAt: new Date().toISOString(),
-    });
-})();
+import { prisma } from '../../core/prisma';
 
 // ── auth.login ───────────────────────────────────────
 export const loginAction: ServiceAction = {
@@ -53,7 +30,7 @@ export const loginAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { username, password, rememberMe } = ctx.params as z.infer<typeof LoginInput>;
-        const user = users.get(username);
+        const user = await prisma.user.findUnique({ where: { username } });
         if (!user) throw new Error('Invalid credentials');
 
         const valid = await verifyPassword(password, user.passwordHash);
@@ -69,7 +46,7 @@ export const loginAction: ServiceAction = {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                createdAt: user.createdAt,
+                createdAt: user.createdAt.toISOString(),
             },
             expiresIn,
         };
@@ -114,13 +91,8 @@ export const getSessionAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
-        const email = ctx.headers['x-user-email'];
 
-        // Find user
-        let foundUser: UserRecord | undefined;
-        for (const u of users.values()) {
-            if (u.id === userId) { foundUser = u; break; }
-        }
+        const foundUser = await prisma.user.findUnique({ where: { id: userId } });
         if (!foundUser) throw new Error('User not found');
 
         return {

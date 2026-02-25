@@ -6,24 +6,11 @@ import {
     WorkspaceSettingsUpdateInput,
 } from '../../models/schemas';
 
-// ── In-memory settings stores ────────────────────────
-interface UserSettings {
-    theme: string;
-    fontSize: number;
-    fontFamily: string;
-    lineHeight: number;
-    tabSize: number;
-    useSpaces: boolean;
-    autoFormat: boolean;
-    formatOnSave: boolean;
-    autoSave: boolean;
-    autoSaveDelay: number;
-    wordWrap: boolean;
-    minimap: boolean;
-    lineNumbers: boolean;
-}
+import { prisma } from '../../core/prisma';
 
-const DEFAULT_USER_SETTINGS: UserSettings = {
+// ── In-memory settings stores (REMOVED) ──────────────
+
+const DEFAULT_USER_SETTINGS = {
     theme: 'dark',
     fontSize: 14,
     fontFamily: 'JetBrains Mono, monospace',
@@ -39,16 +26,6 @@ const DEFAULT_USER_SETTINGS: UserSettings = {
     lineNumbers: true,
 };
 
-const userSettings: Map<string, UserSettings> = new Map();
-const workspaceSettings: Map<string, Record<string, any>> = new Map();
-
-function getUserSettings(userId: string): UserSettings {
-    if (!userSettings.has(userId)) {
-        userSettings.set(userId, { ...DEFAULT_USER_SETTINGS });
-    }
-    return userSettings.get(userId)!;
-}
-
 // ── settings.getUserSettings ─────────────────────────
 export const getUserSettingsAction: ServiceAction = {
     name: 'settings.getUserSettings',
@@ -62,7 +39,16 @@ export const getUserSettingsAction: ServiceAction = {
     output: z.object({ user: z.any() }),
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
-        return { user: getUserSettings(userId) };
+
+        let userSettings = await prisma.userSettings.upsert({
+            where: { userId },
+            create: { userId, ...DEFAULT_USER_SETTINGS },
+            update: {}
+        });
+
+        // Prisma returns Decimal/BigInt depending on DB, but SQLite returns regular types.
+        // Convert dates if any, or just return as is.
+        return { user: userSettings };
     },
 };
 
@@ -79,19 +65,22 @@ export const updateUserSettingsAction: ServiceAction = {
     output: z.object({ updated: z.string(), settings: z.any() }),
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
-        const current = getUserSettings(userId);
-        const updates = ctx.params as Partial<UserSettings>;
+        const updates = ctx.params as any;
 
         // Remove nulls from updates to avoid overwriting with null if the type doesn't allow it
         for (const key of Object.keys(updates)) {
-            if (updates[key as keyof UserSettings] === null) {
-                delete updates[key as keyof UserSettings];
+            if (updates[key] === null) {
+                delete updates[key];
             }
         }
 
-        Object.assign(current, updates);
+        const updatedSettings = await prisma.userSettings.upsert({
+            where: { userId },
+            create: { userId, ...DEFAULT_USER_SETTINGS, ...updates },
+            update: updates,
+        });
 
-        return { updated: new Date().toISOString(), settings: current };
+        return { updated: new Date().toISOString(), settings: updatedSettings };
     },
 };
 
@@ -108,8 +97,18 @@ export const getWorkspaceSettingsAction: ServiceAction = {
     output: z.object({ workspace: z.any() }),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof WorkspaceSettingsInput>;
-        const ws = workspaceSettings.get(workspaceId) ?? {};
-        return { workspace: ws };
+        const wsSettings = await prisma.workspaceSettings.findUnique({
+            where: { workspaceId }
+        });
+
+        let current = {};
+        if (wsSettings && wsSettings.settings) {
+            try {
+                current = JSON.parse(wsSettings.settings);
+            } catch (e) { }
+        }
+
+        return { workspace: current };
     },
 };
 
@@ -126,9 +125,25 @@ export const updateWorkspaceSettingsAction: ServiceAction = {
     output: z.object({ updated: z.string() }),
     handler: async (ctx) => {
         const { workspaceId, ...updates } = ctx.params as z.infer<typeof WorkspaceSettingsUpdateInput>;
-        const current = workspaceSettings.get(workspaceId) ?? {};
+
+        const wsSettings = await prisma.workspaceSettings.findUnique({
+            where: { workspaceId }
+        });
+
+        let current: Record<string, any> = {};
+        if (wsSettings && wsSettings.settings) {
+            try {
+                current = JSON.parse(wsSettings.settings);
+            } catch (e) { }
+        }
+
         Object.assign(current, updates);
-        workspaceSettings.set(workspaceId, current);
+
+        await prisma.workspaceSettings.upsert({
+            where: { workspaceId },
+            create: { workspaceId, settings: JSON.stringify(current) },
+            update: { settings: JSON.stringify(current) }
+        });
 
         return { updated: new Date().toISOString() };
     },

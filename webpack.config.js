@@ -5,7 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 module.exports = {
-    entry: './src/index.ts',
+    entry: './src/client/index.ts',
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
@@ -51,7 +51,7 @@ module.exports = {
             filename: 'styles.css',
         }),
         new HtmlWebpackPlugin({
-            template: './src/index.html',
+            template: './src/client/index.html',
         }),
         new MonacoWebpackPlugin({
             languages: ['typescript', 'javascript', 'css', 'html', 'json', 'markdown'],

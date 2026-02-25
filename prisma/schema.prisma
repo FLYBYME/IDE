@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  
+  workspaces   Workspace[]
+  settings     UserSettings?
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  settings    WorkspaceSettings?
+  editorState EditorState?
+}
+
+model UserSettings {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  theme         String  @default("dark")
+  fontSize      Int     @default(14)
+  fontFamily    String  @default("JetBrains Mono, monospace")
+  lineHeight    Float   @default(1.6)
+  tabSize       Int     @default(2)
+  useSpaces     Boolean @default(true)
+  autoFormat    Boolean @default(true)
+  formatOnSave  Boolean @default(true)
+  autoSave      Boolean @default(true)
+  autoSaveDelay Int     @default(1000)
+  wordWrap      Boolean @default(false)
+  minimap       Boolean @default(true)
+  lineNumbers   Boolean @default(true)
+
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceSettings {
+  workspaceId String @id
+  settings    String // Stored as stringified JSON since current implementation uses Record<string, any>
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EditorState {
+  workspaceId String    @id
+  activeTabId String?
+  lastSaved   DateTime?
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tabs        TabState[]
+}
+
+model TabState {
+  id            String  @id @default(uuid())
+  editorStateId String
+  path          String
+  title         String
+  isDirty       Boolean @default(false)
+  isActive      Boolean @default(false)
+  cursorLine    Int     @default(1)
+  cursorColumn  Int     @default(1)
+  scrollTop     Int     @default(0)
+
+  editorState   EditorState @relation(fields: [editorStateId], references: [workspaceId], onDelete: Cascade)
+}

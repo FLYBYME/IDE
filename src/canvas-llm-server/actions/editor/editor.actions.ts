@@ -10,31 +10,20 @@ import {
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
 
-// ── In-memory editor state store (per workspace) ─────
-interface TabState {
-    id: string;
-    path: string;
-    title: string;
-    isDirty: boolean;
-    isActive: boolean;
-    cursorLine: number;
-    cursorColumn: number;
-    scrollTop: number;
-}
+import { prisma } from '../../core/prisma';
 
-interface EditorState {
-    tabs: TabState[];
-    activeTabId?: string;
-    lastSaved?: string;
-}
-
-const editorStates: Map<string, EditorState> = new Map();
-
-function getState(workspaceId: string): EditorState {
-    if (!editorStates.has(workspaceId)) {
-        editorStates.set(workspaceId, { tabs: [] });
+async function getState(workspaceId: string) {
+    let state = await prisma.editorState.findUnique({
+        where: { workspaceId },
+        include: { tabs: true },
+    });
+    if (!state) {
+        state = await prisma.editorState.create({
+            data: { workspaceId },
+            include: { tabs: true },
+        });
     }
-    return editorStates.get(workspaceId)!;
+    return state;
 }
 
 // ── editor.getState ──────────────────────────────────
@@ -50,7 +39,11 @@ export const getEditorStateAction: ServiceAction = {
     output: z.object({ tabs: z.array(z.any()), activeTabId: z.string().optional().nullable(), lastSaved: z.string().optional().nullable() }),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof EditorStateInput>;
-        return getState(workspaceId);
+        const state = await getState(workspaceId);
+        return {
+            ...state,
+            lastSaved: state.lastSaved?.toISOString()
+        };
     },
 };
 
@@ -67,25 +60,50 @@ export const saveEditorStateAction: ServiceAction = {
     output: z.object({ saved: z.string() }),
     handler: async (ctx) => {
         const { workspaceId, tabs, activeTabPath } = ctx.params as z.infer<typeof EditorSaveStateInput>;
-        const state = getState(workspaceId);
 
-        state.tabs = tabs.map((t) => ({
-            id: crypto.randomUUID(),
-            path: t.path,
-            title: t.path.split('/').pop() || t.path,
-            isDirty: false,
-            isActive: t.path === activeTabPath,
-            cursorLine: t.cursorLine,
-            cursorColumn: t.cursorColumn,
-            scrollTop: t.scrollTop,
-        }));
-        if (activeTabPath) {
-            const activeTab = state.tabs.find((t) => t.path === activeTabPath);
-            state.activeTabId = activeTab?.id;
+        // Ensure state exists
+        await getState(workspaceId);
+
+        const now = new Date();
+
+        await prisma.$transaction([
+            prisma.tabState.deleteMany({ where: { editorStateId: workspaceId } }),
+            prisma.editorState.update({
+                where: { workspaceId },
+                data: {
+                    lastSaved: now,
+                    tabs: {
+                        create: tabs.map((t) => ({
+                            id: crypto.randomUUID(),
+                            path: t.path,
+                            title: t.path.split('/').pop() || t.path,
+                            isDirty: false,
+                            isActive: t.path === activeTabPath,
+                            cursorLine: t.cursorLine,
+                            cursorColumn: t.cursorColumn,
+                            scrollTop: t.scrollTop,
+                        })),
+                    },
+                },
+            }),
+        ]);
+
+        const updatedState = await prisma.editorState.findUnique({
+            where: { workspaceId },
+            include: { tabs: true },
+        });
+
+        if (activeTabPath && updatedState) {
+            const activeTab = updatedState.tabs.find((t) => t.path === activeTabPath);
+            if (activeTab) {
+                await prisma.editorState.update({
+                    where: { workspaceId },
+                    data: { activeTabId: activeTab.id },
+                });
+            }
         }
-        state.lastSaved = new Date().toISOString();
 
-        return { saved: state.lastSaved };
+        return { saved: now.toISOString() };
     },
 };
 
@@ -112,27 +130,37 @@ export const openFileAction: ServiceAction = {
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
 
-        const state = getState(workspaceId);
-        // Check if already open
+        const state = await getState(workspaceId);
         let tab = state.tabs.find((t) => t.path === filePath);
+
         if (!tab) {
-            tab = {
-                id: crypto.randomUUID(),
-                path: filePath,
-                title: filePath.split('/').pop() || filePath,
-                isDirty: false,
-                isActive: false,
-                cursorLine: 1,
-                cursorColumn: 1,
-                scrollTop: 0,
-            };
-            state.tabs.push(tab);
+            tab = await prisma.tabState.create({
+                data: {
+                    editorStateId: workspaceId,
+                    path: filePath,
+                    title: filePath.split('/').pop() || filePath,
+                    isDirty: false,
+                    isActive: false,
+                    cursorLine: 1,
+                    cursorColumn: 1,
+                    scrollTop: 0,
+                },
+            });
         }
 
         if (activate !== false) {
-            state.tabs.forEach((t) => (t.isActive = false));
-            tab.isActive = true;
-            state.activeTabId = tab.id;
+            await prisma.tabState.updateMany({
+                where: { editorStateId: workspaceId },
+                data: { isActive: false },
+            });
+            await prisma.tabState.update({
+                where: { id: tab.id },
+                data: { isActive: true },
+            });
+            await prisma.editorState.update({
+                where: { workspaceId },
+                data: { activeTabId: tab.id },
+            });
         }
 
         return {
@@ -158,19 +186,33 @@ export const closeFileAction: ServiceAction = {
     output: z.object({ success: z.boolean(), hadUnsavedChanges: z.boolean() }),
     handler: async (ctx) => {
         const { workspaceId, tabId, force } = ctx.params as z.infer<typeof EditorCloseFileInput>;
-        const state = getState(workspaceId);
-        const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
-        if (tabIndex === -1) throw new Error('Tab not found');
+        const state = await getState(workspaceId);
+        const tab = state.tabs.find((t) => t.id === tabId);
+        if (!tab) throw new Error('Tab not found');
 
-        const tab = state.tabs[tabIndex];
         if (tab.isDirty && !force) {
             return { success: false, hadUnsavedChanges: true };
         }
 
-        state.tabs.splice(tabIndex, 1);
-        if (state.activeTabId === tabId && state.tabs.length > 0) {
-            state.tabs[0].isActive = true;
-            state.activeTabId = state.tabs[0].id;
+        await prisma.tabState.delete({ where: { id: tabId } });
+
+        if (state.activeTabId === tabId) {
+            const remainingTabs = await prisma.tabState.findMany({ where: { editorStateId: workspaceId } });
+            if (remainingTabs.length > 0) {
+                await prisma.tabState.update({
+                    where: { id: remainingTabs[0].id },
+                    data: { isActive: true },
+                });
+                await prisma.editorState.update({
+                    where: { workspaceId },
+                    data: { activeTabId: remainingTabs[0].id },
+                });
+            } else {
+                await prisma.editorState.update({
+                    where: { workspaceId },
+                    data: { activeTabId: null },
+                });
+            }
         }
 
         return { success: true, hadUnsavedChanges: tab.isDirty };
@@ -193,16 +235,22 @@ export const autosaveAction: ServiceAction = {
         const vfs = await vfsManager.getVFS(workspaceId);
 
         if (isDraft) {
-            // Save as draft — write to a shadow path
             vfs.write(`__drafts__/${filePath}`, content);
         } else {
             vfs.write(filePath, content);
         }
 
         // Mark tab as clean
-        const state = getState(workspaceId);
-        const tab = state.tabs.find((t) => t.path === filePath);
-        if (tab) tab.isDirty = false;
+        const tab = await prisma.tabState.findFirst({
+            where: { editorStateId: workspaceId, path: filePath }
+        });
+
+        if (tab) {
+            await prisma.tabState.update({
+                where: { id: tab.id },
+                data: { isDirty: false },
+            });
+        }
 
         return { saved: new Date().toISOString(), isDraft: isDraft ?? false };
     },
