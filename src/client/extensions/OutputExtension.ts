@@ -9,6 +9,8 @@ export const OutputExtension: Extension = {
     activate(context: ExtensionContext) {
         let outputContainer: HTMLElement | null = null;
 
+        console.log(`OutputExtension activated`);
+
         const outputProvider: ViewProvider = {
             id: 'core.output.view',
             name: 'Output',
@@ -34,15 +36,26 @@ export const OutputExtension: Extension = {
 
         context.ide.views.registerProvider('bottom-panel', outputProvider);
 
+        // Add activity bar icon for output in the bottom panel
+        context.ide.activityBar.registerItem({
+            id: outputProvider.id,
+            location: 'bottom-panel',
+            icon: 'fas fa-terminal',
+            title: 'Output',
+            order: 0
+        });
+
         // Listen for output events
         const outputHandler = (data: any) => {
+            console.log(data);
             if (!outputContainer) return;
 
             const span = document.createElement('span');
             if (data.stream === 'stderr') {
                 span.style.color = 'var(--error, #f48771)';
             }
-            span.textContent = data.data;
+            // Include execution ID in output
+            span.textContent = `[${data.executionId.substring(0, 8)}] ${data.data}`;
             outputContainer.appendChild(span);
 
             // Auto-scroll to bottom
@@ -56,7 +69,7 @@ export const OutputExtension: Extension = {
             div.style.borderTop = '1px solid var(--border, #3e3e42)';
             div.style.paddingTop = '4px';
             div.style.color = 'var(--accent, #007acc)';
-            div.textContent = `[Process exited with code ${data.exitCode}]`;
+            div.textContent = `[${data.executionId.substring(0, 8)}] Process exited with code ${data.exitCode}`;
             outputContainer.appendChild(div);
             outputContainer.scrollTop = outputContainer.scrollHeight;
         };

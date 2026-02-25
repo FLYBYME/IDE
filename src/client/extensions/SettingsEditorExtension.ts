@@ -346,20 +346,13 @@ export const SettingsEditorExtension: Extension = {
         });
 
         // ── Activity bar icon ───────────────────────────────
-        const activityBar = document.querySelector('.activity-bar');
-        if (activityBar) {
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-cog';
-            icon.title = 'Settings';
-            icon.style.cursor = 'pointer';
-            icon.style.marginTop = 'auto';
-            icon.style.marginBottom = '10px';
-
-            icon.addEventListener('click', () => {
-                ide.commands.execute('settings.open');
-            });
-
-            activityBar.appendChild(icon);
-        }
+        ide.activityBar.registerItem({
+            id: 'settings.activityBar',
+            location: 'left-panel',
+            icon: 'fas fa-cog',
+            title: 'Settings',
+            order: 999,
+            onClick: () => ide.commands.execute('settings.open')
+        });
     },
 };

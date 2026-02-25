@@ -3,6 +3,8 @@ import { ApiService } from './ApiService';
 import { CommandRegistry } from './CommandRegistry';
 import { ExtensionManager } from './extensions/ExtensionManager';
 import { ViewRegistry } from './extensions/ViewRegistry';
+import { ActivityBarService } from './ActivityBarService';
+import { TerminalService } from './TerminalService';
 import { EditorManager } from './EditorManager';
 import { MonacoService } from './MonacoService';
 import { ShortcutManager } from './ShortcutManager';
@@ -27,6 +29,8 @@ export class IDE {
     public commands: CommandRegistry;
     public extensions: ExtensionManager;
     public views: ViewRegistry;
+    public activityBar: ActivityBarService;
+    public terminal: TerminalService;
     public editor: EditorManager;
     public monaco: MonacoService;
     public shortcuts: ShortcutManager;
@@ -49,6 +53,8 @@ export class IDE {
         this.commands = new CommandRegistry(this);
         this.extensions = new ExtensionManager(this);
         this.views = new ViewRegistry(this);
+        this.activityBar = new ActivityBarService(this); // Instantiated
+        this.terminal = new TerminalService(this);
         this.editor = new EditorManager(this);
         this.monaco = new MonacoService(this);
         this.shortcuts = new ShortcutManager(this);
@@ -98,6 +104,9 @@ export class IDE {
 
             // Register core settings before UI and extensions
             this.registerCoreSettings();
+
+            // Connect to SSE
+            this.api.connectSSE();
 
             this.initializeUI();
             this.setupStateSyncing();
@@ -286,6 +295,7 @@ export class IDE {
             await this.vfsBridge.syncProjectToMonaco(workspaceName);
 
             this.activeWorkspace = { id: workspaceId, name: workspaceName };
+            this.commands.emit('workspace:loaded', { id: workspaceId, name: workspaceName });
 
             this.notifications.notify(
                 `Workspace "${workspaceName}" loaded (${fileContents.size} files).`,

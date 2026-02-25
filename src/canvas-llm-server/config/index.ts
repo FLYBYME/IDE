@@ -7,9 +7,10 @@ dotenv.config();
 export const config = {
     port: parseInt(process.env.PORT || '3001', 10),
     ssePort: parseInt(process.env.SSE_PORT || '3002', 10),
+    terminalPort: parseInt(process.env.TERMINAL_PORT || '3003', 10),
     host: process.env.HOST || '0.0.0.0',
     apiPrefix: process.env.API_PREFIX || '/api',
-    debug: process.env.DEBUG === 'true',
+    debug: true,// process.env.DEBUG === 'true',
 
     docsPath: process.env.DOCS_PATH || '/_meta/routes',
 

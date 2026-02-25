@@ -108,6 +108,20 @@ export class LayoutManager {
         // 5. Bottom Panel
         const bottomPanel = document.createElement('div');
         bottomPanel.id = 'bottom-panel';
+
+        // Activity Bar for Bottom Panel
+        const bottomActivityBar = document.createElement('div');
+        bottomActivityBar.className = 'activity-bar activity-bar-horizontal';
+        bottomPanel.appendChild(bottomActivityBar);
+        this.ide.activityBar.mount('bottom-panel', bottomActivityBar);
+
+        // Content area
+        const bottomContent = document.createElement('div');
+        bottomContent.className = 'bottom-panel-content';
+        bottomContent.style.flex = '1';
+        bottomContent.style.overflow = 'hidden';
+        bottomPanel.appendChild(bottomContent);
+
         this.registerPanel({
             id: 'bottom-panel',
             element: bottomPanel,
@@ -137,9 +151,10 @@ export class LayoutManager {
         leftPanel.id = 'left-panel';
 
         // Activity Bar (icon strip)
-        const activityBar = document.createElement('div');
-        activityBar.className = 'activity-bar';
-        leftPanel.appendChild(activityBar);
+        const leftActivityBar = document.createElement('div');
+        leftActivityBar.className = 'activity-bar';
+        leftPanel.appendChild(leftActivityBar);
+        this.ide.activityBar.mount('left-panel', leftActivityBar);
 
         // Sidebar Content (where views get mounted)
         const sidebarContent = document.createElement('div');
@@ -182,6 +197,18 @@ export class LayoutManager {
         // Right Panel
         const rightPanel = document.createElement('div');
         rightPanel.id = 'right-panel';
+
+        // Activity Bar for Right Panel
+        const rightActivityBar = document.createElement('div');
+        rightActivityBar.className = 'activity-bar';
+        rightPanel.appendChild(rightActivityBar);
+        this.ide.activityBar.mount('right-panel', rightActivityBar);
+
+        // Content Area for Right Panel
+        const rightContent = document.createElement('div');
+        rightContent.className = 'sidebar-content';
+        rightPanel.appendChild(rightContent);
+
         this.panels.set('right-panel', {
             id: 'right-panel',
             element: rightPanel,

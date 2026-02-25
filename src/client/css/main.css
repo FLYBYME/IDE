@@ -85,13 +85,18 @@
      min-height: 0;
  }
 
- /* --- LEFT PANEL (Activity Bar + Sidebar) --- */
- #left-panel {
+ /* --- LEFT & RIGHT PANELS --- */
+ #left-panel,
+ #right-panel {
      display: flex;
-     width: 300px;
      border-right: 1px solid var(--border-color);
      background-color: var(--bg-sidebar);
      flex-shrink: 0;
+ }
+
+ #right-panel {
+     border-right: none;
+     border-left: 1px solid var(--border-color);
  }
 
  /* Activity Bar (Icons) */
@@ -102,6 +107,28 @@
      flex-direction: column;
      align-items: center;
      padding-top: 10px;
+     flex-shrink: 0;
+ }
+
+ .activity-bar-horizontal {
+     width: 100% !important;
+     height: 35px;
+     flex-direction: row !important;
+     padding-top: 0 !important;
+     padding-left: 10px;
+     border-bottom: 1px solid var(--border-color);
+ }
+
+ .activity-bar-horizontal i {
+     margin-bottom: 0 !important;
+     margin-right: 15px;
+     font-size: 18px !important;
+     border-left: none !important;
+     border-bottom: 2px solid transparent;
+ }
+
+ .activity-bar-horizontal i.active {
+     border-bottom-color: #fff;
  }
 
  .activity-bar i {

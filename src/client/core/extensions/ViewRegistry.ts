@@ -156,19 +156,7 @@ export class ViewRegistry {
                 this.ide.layout.setPanelVisible(location, true);
 
                 // Automatically update activity bar active state
-                if (location === 'left-panel' || location === 'right-panel') {
-                    const icons = document.querySelectorAll('.activity-bar i');
-                    icons.forEach(icon => {
-                        const viewId = icon.getAttribute('data-view-id');
-                        if (viewId) {
-                            if (viewId === providerId) {
-                                icon.classList.add('active');
-                            } else {
-                                icon.classList.remove('active');
-                            }
-                        }
-                    });
-                }
+                this.ide.activityBar.setActive(location, providerId);
 
             } catch (error) {
                 console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);

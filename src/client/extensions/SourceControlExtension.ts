@@ -219,26 +219,14 @@ export const SourceControlExtension: Extension = {
         // Register View Provider
         context.ide.views.registerProvider('left-panel', scmProvider);
 
-        // 2. Add Activity Bar Icon Manually
-        const activityBar = document.querySelector('.activity-bar');
-        if (activityBar) {
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-code-branch';
-            icon.title = 'Source Control';
-            icon.style.cursor = 'pointer';
-            icon.setAttribute('data-view-id', scmProvider.id);
-
-            icon.addEventListener('click', () => {
-                context.ide.views.renderView('left-panel', scmProvider.id);
-            });
-
-            // Insert after File Explorer (which is index 0)
-            if (activityBar.children.length > 1) {
-                activityBar.insertBefore(icon, activityBar.children[1]);
-            } else {
-                activityBar.appendChild(icon);
-            }
-        }
+        // 2. Add Activity Bar Icon
+        context.ide.activityBar.registerItem({
+            id: scmProvider.id,
+            location: 'left-panel',
+            icon: 'fas fa-code-branch',
+            title: 'Source Control',
+            order: 10
+        });
 
         // 3. Register Commands
         context.ide.commands.register({

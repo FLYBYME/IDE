@@ -61,23 +61,12 @@ export const HelloWorldExtension: Extension = {
         // Do not auto-render immediately; let FileTree be default
 
         // 4. Add an Activity Bar Icon to trigger the view
-        const activityBar = document.querySelector('.activity-bar');
-        if (activityBar) {
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-plug'; // Not active by default
-            icon.title = 'Hello Extension';
-            icon.style.cursor = 'pointer';
-
-            icon.addEventListener('click', () => {
-                // Ensure the panel is visible, then render our view inside it
-                context.ide.views.renderView('left-panel', myProvider.id);
-
-                // Visual toggle for the activity bar
-                document.querySelectorAll('.activity-bar i').forEach(el => el.classList.remove('active'));
-                icon.classList.add('active');
-            });
-
-            activityBar.appendChild(icon);
-        }
+        context.ide.activityBar.registerItem({
+            id: myProvider.id,
+            location: 'left-panel',
+            icon: 'fas fa-plug',
+            title: 'Hello Extension',
+            order: 100
+        });
     }
 };

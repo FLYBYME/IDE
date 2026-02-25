@@ -15,6 +15,7 @@ import metaActions from './actions/meta/meta.actions';
 import sourceControlActions from './actions/source-control/source-control.actions';
 import extensionActions from './actions/extension/extension.actions';
 import { sseManager } from './core/sse-manager';
+import { terminalManager } from './core/terminal-manager';
 
 
 
@@ -84,6 +85,7 @@ async function bootstrap() {
         await httpServer.stop();
         await serviceManager.stop();
         await sseManager.stop();
+        await terminalManager.stop();
         await vfsManager.stop();
         logger.info('👋 Goodbye!');
         process.exit(0);

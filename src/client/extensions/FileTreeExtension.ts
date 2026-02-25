@@ -328,20 +328,12 @@ export const FileTreeExtension: Extension = {
         context.ide.views.renderView('left-panel', fileTreeProvider.id);
 
         // Add an activity bar icon for the explorer
-        const activityBar = document.querySelector('.activity-bar');
-        if (activityBar) {
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-copy'; // Files icon
-            icon.title = 'Explorer';
-            icon.style.cursor = 'pointer';
-            icon.setAttribute('data-view-id', fileTreeProvider.id);
-
-            icon.addEventListener('click', () => {
-                context.ide.views.renderView('left-panel', fileTreeProvider.id);
-            });
-
-            // Insert at the top of the activity bar (before HelloWorld plug icon)
-            activityBar.insertBefore(icon, activityBar.firstChild);
-        }
+        context.ide.activityBar.registerItem({
+            id: fileTreeProvider.id,
+            location: 'left-panel',
+            icon: 'fas fa-copy',
+            title: 'Explorer',
+            order: 0
+        });
     }
 };

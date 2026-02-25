@@ -66,9 +66,11 @@ export class ApiService {
         this.eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log('📡 SSE: Received message', data);
                 this.dispatchSseEvent('message', data);
             } catch {
                 // Ignore non-JSON messages (heartbeats, etc.)
+                console.log('📡 SSE: Received non-JSON message', event.data);
             }
         };
 
@@ -79,6 +81,7 @@ export class ApiService {
             'file.saved',
             'file.deleted',
             'file.renamed',
+            'workspace.exec.start',
             'workspace.exec.output',
             'workspace.exec.exit',
         ];
@@ -162,6 +165,7 @@ export class ApiService {
 
     private dispatchSseEvent(event: string, data: any): void {
         const handlers = this.sseListeners.get(event);
+        console.log(`📡 SSE: Dispatched event "${event}"`);
         if (handlers) {
             for (const handler of handlers) {
                 try {
@@ -171,6 +175,7 @@ export class ApiService {
                 }
             }
         }
+
 
         // Also dispatch to wildcard listeners
         const wildcard = this.sseListeners.get('*');

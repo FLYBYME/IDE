@@ -107,6 +107,12 @@ export class WorkspaceContainerManager {
 
         const stream = await exec.start({});
 
+        sseManager.broadcast('workspace.exec.start', {
+            workspaceId,
+            executionId,
+            command
+        });
+
         // Use dockerode's internal modem to demux the stream correctly
         ws.container.modem.demuxStream(stream, {
             write: (chunk: Buffer) => {
@@ -128,12 +134,23 @@ export class WorkspaceContainerManager {
             }
         } as any);
 
-        stream.on('end', () => {
-            sseManager.broadcast('workspace.exec.exit', {
-                workspaceId,
-                executionId,
-                exitCode: 0 // Ideally fetch real exit code via exec.inspect()
-            });
+        stream.on('end', async () => {
+            try {
+                const result = await exec.inspect();
+                const exitCode = result.ExitCode ?? 0;
+                sseManager.broadcast('workspace.exec.exit', {
+                    workspaceId,
+                    executionId,
+                    exitCode
+                });
+            } catch (err) {
+                this.logger.error(`Failed to inspect exec ${executionId}:`, err);
+                sseManager.broadcast('workspace.exec.exit', {
+                    workspaceId,
+                    executionId,
+                    exitCode: 1
+                });
+            }
         });
     }
     /**

@@ -10,6 +10,7 @@ import { ScratchpadExtension } from './extensions/ScratchpadExtension';
 import { SettingsEditorExtension } from './extensions/SettingsEditorExtension';
 import { SourceControlExtension } from './extensions/SourceControlExtension';
 import { OutputExtension } from './extensions/OutputExtension';
+import { ContainerBuildExtension } from './extensions/ContainerBuildExtension';
 
 
 // Import styles
@@ -21,6 +22,7 @@ import './css/settings.css';
 import './css/dialog.css';
 import './css/inline-edit.css';
 import './css/sourcecontrol.css';
+import './css/container-build.css';
 
 /**
  * Main application initialization
@@ -36,6 +38,7 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(SettingsEditorExtension);
         ide.extensions.register(SourceControlExtension);
         ide.extensions.register(OutputExtension);
+        ide.extensions.register(ContainerBuildExtension);
 
 
         await ide.initialize();
