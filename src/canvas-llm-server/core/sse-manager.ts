@@ -13,6 +13,7 @@ export class SseManager {
     private clients: Set<ServerResponse> = new Set();
     private server: Server | null = null;
     private logger = new ConsoleLogger();
+    private heartbeatTimer: NodeJS.Timeout | null = null;
 
     private constructor() {
         // Heartbeat timer is started in init()
@@ -84,7 +85,7 @@ export class SseManager {
                 this.logger.info(`📡 SSE Server listening on port ${port}`);
 
                 // Start heartbeats
-                setInterval(() => {
+                this.heartbeatTimer = setInterval(() => {
                     this.broadcastRaw(': heartbeat\n\n');
                 }, 30000);
 
@@ -156,6 +157,21 @@ export class SseManager {
      * Stop the SSE server
      */
     public async stop(): Promise<void> {
+        if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+        }
+
+        // Close all active client connections
+        for (const client of this.clients) {
+            try {
+                client.end();
+            } catch (err) {
+                // Ignore error if already closed
+            }
+        }
+        this.clients.clear();
+
         if (!this.server) return;
 
         return new Promise((resolve, reject) => {

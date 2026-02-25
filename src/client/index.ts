@@ -8,7 +8,9 @@ import { HelloWorldExtension } from './extensions/HelloWorldExtension';
 import { FileTreeExtension } from './extensions/FileTreeExtension';
 import { ScratchpadExtension } from './extensions/ScratchpadExtension';
 import { SettingsEditorExtension } from './extensions/SettingsEditorExtension';
-import { WorkspaceExtension } from './extensions/WorkspaceExtension';
+import { SourceControlExtension } from './extensions/SourceControlExtension';
+import { OutputExtension } from './extensions/OutputExtension';
+
 
 // Import styles
 import './css/main.css';
@@ -18,6 +20,7 @@ import './css/notifications.css';
 import './css/settings.css';
 import './css/dialog.css';
 import './css/inline-edit.css';
+import './css/sourcecontrol.css';
 
 /**
  * Main application initialization
@@ -31,7 +34,9 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(HelloWorldExtension);
         ide.extensions.register(ScratchpadExtension);
         ide.extensions.register(SettingsEditorExtension);
-        ide.extensions.register(WorkspaceExtension);
+        ide.extensions.register(SourceControlExtension);
+        ide.extensions.register(OutputExtension);
+
 
         await ide.initialize();
     } catch (error) {

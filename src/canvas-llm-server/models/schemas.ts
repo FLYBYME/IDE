@@ -41,6 +41,12 @@ export const WorkspaceDeleteInput = z.object({
     confirm: z.boolean().optional().nullable(),
 });
 
+export const WorkspaceExecuteInput = z.object({
+    id: z.string().uuid(),
+    command: z.array(z.string()),
+});
+
+
 // ── Files ────────────────────────────────────────────
 export const FileListTreeInput = z.object({
     workspaceId: z.string().uuid(),
@@ -292,4 +298,29 @@ export const AICodeChangeOutput = z.object({
     line: z.number().optional(),
     content: z.string(),
     explanation: z.string().optional(),
+});
+
+// ── Source Control ───────────────────────────────────
+export const SourceControlWorkspaceInput = z.object({
+    workspaceId: z.string().uuid(),
+});
+
+export const SourceControlCommitInput = z.object({
+    workspaceId: z.string().uuid(),
+    message: z.string().min(1),
+});
+
+export const SourceControlBranchInput = z.object({
+    workspaceId: z.string().uuid(),
+    name: z.string().min(1),
+});
+
+export const SourceControlCheckoutInput = z.object({
+    workspaceId: z.string().uuid(),
+    ref: z.string().min(1),
+});
+
+export const SourceControlMergeInput = z.object({
+    workspaceId: z.string().uuid(),
+    branchName: z.string().min(1),
 });

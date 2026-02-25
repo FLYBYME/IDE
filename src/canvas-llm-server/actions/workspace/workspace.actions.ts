@@ -7,6 +7,7 @@ import {
     WorkspaceIdInput,
     WorkspaceListInput,
     WorkspaceDeleteInput,
+    WorkspaceExecuteInput,
     WorkspaceOutput,
     SuccessOutput,
 } from '../../models/schemas';
@@ -14,6 +15,8 @@ import {
 import { WorkspaceModel } from '../../../../generated/prisma/models/Workspace';
 import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
+import { workspaceContainerManager } from '../../core/WorkspaceContainerManager';
+
 
 // ── workspace.list ───────────────────────────────────
 export const listWorkspacesAction: ServiceAction = {
@@ -209,10 +212,40 @@ export const deleteWorkspaceAction: ServiceAction = {
     },
 };
 
+// ── workspace.execute ────────────────────────────────
+export const executeCommandAction: ServiceAction = {
+    name: 'workspace.execute',
+    version: 1,
+    description: 'Execute a command in the workspace container',
+    domain: 'workspace',
+    tags: ['workspace', 'execute', 'docker'],
+    rest: { method: 'POST', path: '/workspaces/:id/execute', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: WorkspaceExecuteInput,
+    output: z.object({ executionId: z.string() }),
+    handler: async (ctx) => {
+        const { id, command } = ctx.params as z.infer<typeof WorkspaceExecuteInput>;
+        const executionId = crypto.randomUUID();
+
+        // Ensure VFS (and thus container) is loaded
+        await vfsManager.getVFS(id);
+
+        // Start execution in background (SSE will stream output)
+        workspaceContainerManager.executeCommand(id, command, executionId).catch((err: any) => {
+            console.error(`Command execution failed for ${id}:`, err);
+        });
+
+
+        return { executionId };
+    },
+};
+
 export default [
     listWorkspacesAction,
     createWorkspaceAction,
     getWorkspaceAction,
     updateWorkspaceAction,
     deleteWorkspaceAction,
+    executeCommandAction,
 ];
+

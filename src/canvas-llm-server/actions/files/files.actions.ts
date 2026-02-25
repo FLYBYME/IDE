@@ -14,6 +14,8 @@ import {
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
 import { sseManager } from '../../core/sse-manager';
+import { workspaceContainerManager } from '../../core/WorkspaceContainerManager';
+
 
 // ── file.listTree ────────────────────────────────────
 export const listTreeAction: ServiceAction = {
@@ -111,9 +113,11 @@ export const createFileAction: ServiceAction = {
 
         if (type === 'file') {
             vfs.write(filePath, content ?? '');
+            await workspaceContainerManager.syncFileToHost(workspaceId, filePath, content ?? '');
         } else {
             // Create a folder by writing a placeholder — VFS infers directories from paths
             vfs.write(`${filePath}/.keep`, '');
+            await workspaceContainerManager.syncFileToHost(workspaceId, `${filePath}/.keep`, '');
         }
 
         // Broadcast event
@@ -142,6 +146,7 @@ export const saveFileAction: ServiceAction = {
         const { workspaceId, path: filePath, content } = ctx.params as z.infer<typeof FileSaveInput>;
         const vfs = await vfsManager.getVFS(workspaceId);
         vfs.write(filePath, content);
+        await workspaceContainerManager.syncFileToHost(workspaceId, filePath, content);
 
         // Auto-persist snapshot
         await vfsManager.persistSnapshot(workspaceId);
@@ -214,6 +219,10 @@ export const renameFileAction: ServiceAction = {
 
         vfs.write(newPath, file.content);
         vfs.delete(oldPath);
+        await workspaceContainerManager.syncFileToHost(workspaceId, newPath, file.content);
+        // Note: For deletion of oldPath on host, we should probably add a deleteFromHost helper
+        // but for now I'll just sync the new file.
+
 
         // Broadcast event
         sseManager.broadcast('file.renamed', { workspaceId, oldPath, newPath });

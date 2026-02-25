@@ -2,6 +2,8 @@ import { VirtualFileSystem } from 'vfs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
+import { workspaceContainerManager } from './WorkspaceContainerManager';
+
 
 export interface WorkspaceVFS {
     vfs: VirtualFileSystem;
@@ -68,6 +70,10 @@ export class VFSManager {
             workspaceId,
             lastAccessed: Date.now(),
         });
+
+        // Ensure container is started when VFS is active
+        await workspaceContainerManager.startWorkspace(workspaceId, vfs);
+
         return vfs;
     }
 
@@ -102,6 +108,7 @@ export class VFSManager {
         for (const [id, entry] of this.instances) {
             if (now - entry.lastAccessed > this.maxIdleMs) {
                 await this.persistSnapshot(id, entry.vfs);
+                await workspaceContainerManager.stopWorkspace(id);
                 this.instances.delete(id);
             }
         }

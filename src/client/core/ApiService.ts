@@ -79,6 +79,8 @@ export class ApiService {
             'file.saved',
             'file.deleted',
             'file.renamed',
+            'workspace.exec.output',
+            'workspace.exec.exit',
         ];
 
         for (const eventType of eventTypes) {
@@ -270,6 +272,14 @@ export class ApiService {
         return this.request<any>(`/workspaces/${id}`);
     }
 
+    public async executeWorkspaceCommand(workspaceId: string, command: string[]): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/execute`, {
+            method: 'POST',
+            body: JSON.stringify({ command }),
+        });
+    }
+
+
     // ── Editor State Endpoints ─────────────────────────────────────
 
     public async getEditorState(workspaceId: string): Promise<any> {
@@ -340,4 +350,46 @@ export class ApiService {
             }
         );
     }
+    // ── Source Control Endpoints ───────────────────────────────────
+
+    public async getSourceControlStatus(workspaceId: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/source-control/status`);
+    }
+
+    public async getSourceControlHistory(workspaceId: string): Promise<any[]> {
+        return this.request<any[]>(`/workspaces/${workspaceId}/source-control/log`);
+    }
+
+    public async commitSourceControl(workspaceId: string, message: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/source-control/commit`, {
+            method: 'POST',
+            body: JSON.stringify({ message }),
+        });
+    }
+
+    public async getSourceControlBranches(workspaceId: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/source-control/branches`);
+    }
+
+    public async createSourceControlBranch(workspaceId: string, name: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/source-control/branches`, {
+            method: 'POST',
+            body: JSON.stringify({ name }),
+        });
+    }
+
+    public async checkoutSourceControlRef(workspaceId: string, ref: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/source-control/checkout`, {
+            method: 'POST',
+            body: JSON.stringify({ ref }),
+        });
+    }
+
+    public async mergeSourceControlBranch(workspaceId: string, branchName: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/source-control/merge`, {
+            method: 'POST',
+            body: JSON.stringify({ branchName }),
+        });
+    }
+
 }

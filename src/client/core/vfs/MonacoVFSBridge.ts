@@ -8,12 +8,15 @@
 
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.main';
 import { FileSystemProvider } from './FileSystemProvider';
+import { IDE } from '../IDE';
 
 export class MonacoVFSBridge {
     private vfs: FileSystemProvider;
+    private ide: IDE;
 
-    constructor(vfs: FileSystemProvider) {
+    constructor(vfs: FileSystemProvider, ide: IDE) {
         this.vfs = vfs;
+        this.ide = ide;
 
         // Keep models up-to-date when files change externally
         this.vfs.onDidChangeFile((event) => {
@@ -60,16 +63,27 @@ export class MonacoVFSBridge {
                     // Only update if the content actually differs
                     if (event.content !== undefined && model.getValue() !== event.content) {
                         if (event.remoteSync) {
-                            // For remote syncs, use pushEditOperations so Monaco treats it as an
-                            // "external" change that doesn't mark the tab as dirty.
-                            model.pushEditOperations(
-                                [],
-                                [{
-                                    range: model.getFullModelRange(),
-                                    text: event.content,
-                                }],
-                                () => null
+                            // Check if the user has unsaved changes in this specific file
+                            const isDirty = this.ide.editor.getState().groups.some(
+                                g => g.tabs[event.path]?.isDirty
                             );
+
+                            if (isDirty) {
+                                // 🚨 CONFLICT DETECTED!
+                                // Do NOT overwrite. Prompt the user instead.
+                                this.handleConflict(event.path, model.getValue(), event.content);
+                            } else {
+                                // For remote syncs, use pushEditOperations so Monaco treats it as an
+                                // "external" change that doesn't mark the tab as dirty.
+                                model.pushEditOperations(
+                                    [],
+                                    [{
+                                        range: model.getFullModelRange(),
+                                        text: event.content,
+                                    }],
+                                    () => null
+                                );
+                            }
                         } else {
                             model.setValue(event.content);
                         }
@@ -82,6 +96,65 @@ export class MonacoVFSBridge {
                     }
                 }
             }
+        });
+    }
+
+    private async handleConflict(filePath: string, localContent: string, remoteContent: string) {
+        // 1. Notify the user
+        this.ide.notifications.notify(
+            `Remote changes detected in ${filePath}.`,
+            'warning'
+        );
+
+        const action = await this.ide.dialogs.showQuickPick([
+            { id: 'diff', label: 'Compare (Diff View)', icon: 'fas fa-columns' },
+            { id: 'overwrite_local', label: 'Accept Remote (Discard my changes)', icon: 'fas fa-download', category: 'Danger Zone' },
+            { id: 'ignore', label: 'Keep Local (Ignore remote)', icon: 'fas fa-times' }
+        ], { title: 'File Conflict Detected', placeholder: 'Choose how to resolve...' });
+
+        if (!action || action.id === 'ignore') return;
+
+        if (action.id === 'overwrite_local') {
+            const model = monaco.editor.getModel(monaco.Uri.file(filePath));
+            if (model) {
+                model.pushEditOperations([], [{ range: model.getFullModelRange(), text: remoteContent }], () => null);
+                this.ide.editor.setTabDirty(filePath, false);
+            }
+        } else if (action.id === 'diff') {
+            this.openDiffEditor(filePath, remoteContent, localContent);
+        }
+    }
+
+    private openDiffEditor(filePath: string, remoteContent: string, localContent: string) {
+        const diffTabId = `diff://${filePath}`;
+
+        // 1. Open a new tab in the editor grid
+        this.ide.editor.openTab({
+            id: diffTabId,
+            title: `Diff: ${filePath.split('/').pop()}`,
+            icon: 'fas fa-exchange-alt'
+        });
+
+        const container = this.ide.editor.getContentPanel(diffTabId);
+        if (!container) return;
+
+        container.style.overflow = 'hidden';
+        container.style.position = 'relative';
+
+        // 2. Create the Monaco Diff Editor
+        const diffEditor = monaco.editor.createDiffEditor(container, {
+            theme: this.ide.settings.get('editor.theme') || 'ide-dark',
+            automaticLayout: true,
+            renderSideBySide: true, // Side-by-side diff
+        });
+
+        // 3. Set the Original (Remote) and Modified (Local) models
+        const originalModel = monaco.editor.createModel(remoteContent, this.detectLanguage(filePath) || 'text');
+        const modifiedModel = monaco.editor.getModel(monaco.Uri.file(filePath))!; // Use the active local model
+
+        diffEditor.setModel({
+            original: originalModel,
+            modified: modifiedModel
         });
     }
 

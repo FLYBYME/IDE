@@ -303,7 +303,11 @@ class IDESession {
             this.sseEnabled = true;
             this.term.log('🔔 Real-time event logging enabled. Connecting...');
             // Standalone SSE server runs on port 3002
-            this.sseConnection = new EventSource(`${API_URL.replace(':3001', ':3002')}/events`);
+            let sseUrl = `${API_URL.replace(':3001', ':3002')}/events`;
+            if (this.token) {
+                sseUrl += `?token=${encodeURIComponent(this.token)}`;
+            }
+            this.sseConnection = new EventSource(sseUrl);
 
             this.sseConnection.onopen = () => {
                 this.term.log('📡 SSE Connected.');

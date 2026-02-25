@@ -15,6 +15,7 @@ import { DEMO_FILES } from './vfs/demoFiles';
 import { NotificationService } from './NotificationService';
 import { DialogService } from './DialogService';
 import { ThemeService } from './ThemeService';
+import { WorkspaceManager } from './WorkspaceManager';
 
 export const IDEEvents = {
     APP_READY: 'ide:app_ready',
@@ -38,6 +39,7 @@ export class IDE {
     public theme: ThemeService;
     public api: ApiService;
     public activeWorkspace: { id: string; name: string } | null = null;
+    public workspace: WorkspaceManager;
     private initialized: boolean = false;
     private stateSaveTimer: NodeJS.Timeout | null = null;
 
@@ -52,10 +54,11 @@ export class IDE {
         this.shortcuts = new ShortcutManager(this);
         this.settings = new ConfigurationService(this, this.configurationRegistry);
         this.vfs = new WorkerFileSystemProvider();
-        this.vfsBridge = new MonacoVFSBridge(this.vfs);
+        this.vfsBridge = new MonacoVFSBridge(this.vfs, this);
         this.dialogs = new DialogService();
         this.theme = new ThemeService(this);
         this.api = new ApiService();
+        this.workspace = new WorkspaceManager(this);
     }
 
     private setupStateSyncing(): void {
@@ -98,6 +101,8 @@ export class IDE {
 
             this.initializeUI();
             this.setupStateSyncing();
+
+            this.workspace.initialize();
 
             // Mount the editor into the center panel
             const centerPanel = document.getElementById('center-panel');
