@@ -20,6 +20,7 @@
         "dotenv": "^17.3.1",
         "eventsource": "^4.1.0",
         "html-webpack-plugin": "^5.6.3",
+        "jsonwebtoken": "^9.0.3",
         "mini-css-extract-plugin": "^2.9.2",
         "monaco-editor": "^0.55.1",
         "monaco-editor-webpack-plugin": "^7.1.1",
@@ -32,6 +33,7 @@
         "zod": "3.25.76"
     },
     "devDependencies": {
+        "@types/jsonwebtoken": "^9.0.10",
         "css-loader": "^6.5.1",
         "style-loader": "^3.3.1",
         "ts-loader": "^9.2.6",

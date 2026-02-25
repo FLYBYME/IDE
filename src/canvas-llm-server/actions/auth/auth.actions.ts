@@ -152,9 +152,7 @@ export const refreshTokenAction: ServiceAction = {
         const { token: oldToken } = ctx.params as z.infer<typeof RefreshInput>;
         try {
             // Allow expired tokens for refresh — just verify signature
-            const parts = oldToken.split('.');
-            if (parts.length !== 2) throw new Error('Invalid token');
-            const payload = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf-8'));
+            const payload = verifyToken(oldToken, true);
 
             const newToken = signToken({ userId: payload.userId, email: payload.email });
             return {

@@ -64,8 +64,8 @@ async function bootstrap() {
     logger.info('⚙️  ServiceManager started');
 
     // ── 6. Start Standalone SSE Server ────────────────
-    await sseManager.init(3002);
-    logger.info('📡 SSE Server started on port 3002');
+    await sseManager.init(config.ssePort);
+    logger.info(`📡 SSE Server started on port ${config.ssePort}`);
 
     // ── 6. Start HTTP Server ─────────────────────────
     await httpServer.start();
