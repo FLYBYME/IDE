@@ -43,5 +43,8 @@
         "webpack": "^5.64.4",
         "webpack-cli": "^4.9.1",
         "webpack-dev-server": "^4.6.0"
+    },
+    "prisma": {
+        "seed": "ts-node --project tsconfig.server.json prisma/seed.ts"
     }
 }

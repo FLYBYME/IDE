@@ -270,37 +270,73 @@ export const searchFilesAction: ServiceAction = {
     handler: async (ctx) => {
         const { workspaceId, query, type, caseSensitive, limit } = ctx.params as z.infer<typeof FileSearchInput>;
         const vfs = await vfsManager.getVFS(workspaceId);
-        const allFiles = vfs.getAllFiles();
+        const allFiles = vfs.getAllFiles(); // Object refs are cheap
         const searchType = type ?? 'both';
+        const maxResults = limit ?? 100;
 
         const results: Array<{ path: string; matches: Array<{ line?: number; column?: number; snippet?: string }> }> = [];
+        const q = caseSensitive ? query : query.toLowerCase();
 
-        const normalise = (s: string) => (caseSensitive ? s : s.toLowerCase());
-        const q = normalise(query);
+        const IGNORED_PATHS = ['node_modules/', '.git/', 'dist/', 'build/'];
+        const MAX_SEARCH_FILE_SIZE = 500 * 1024; // 500KB
+
+        let filesProcessed = 0;
 
         for (const file of allFiles) {
+            // Yield to event loop every 20 files to prevent server freeze
+            if (++filesProcessed % 20 === 0) {
+                await new Promise(resolve => setImmediate(resolve));
+            }
+
+            // Skip heavy directories
+            if (IGNORED_PATHS.some(ignored => file.path.includes(ignored))) continue;
+
             const matches: Array<{ line?: number; column?: number; snippet?: string }> = [];
+            const normalizedPath = caseSensitive ? file.path : file.path.toLowerCase();
 
-            // Name search
-            if (searchType === 'name' || searchType === 'both') {
-                if (normalise(file.path).includes(q)) {
-                    matches.push({ snippet: file.path });
-                }
+            // 1. Name Search
+            if ((searchType === 'name' || searchType === 'both') && normalizedPath.includes(q)) {
+                matches.push({ snippet: file.path });
             }
 
-            // Content search
-            if (searchType === 'content' || searchType === 'both') {
-                const lines = file.content.split('\n');
-                for (let i = 0; i < lines.length; i++) {
-                    const col = normalise(lines[i]).indexOf(q);
-                    if (col !== -1) {
-                        matches.push({ line: i + 1, column: col + 1, snippet: lines[i].trim().slice(0, 120) });
+            // 2. Content Search (Memory efficient, no .split())
+            if ((searchType === 'content' || searchType === 'both') && file.content.length <= MAX_SEARCH_FILE_SIZE) {
+                const searchContent = caseSensitive ? file.content : file.content.toLowerCase();
+                let startIndex = 0;
+                let matchIndex;
+                let currentLine = 1;
+                let lastNewLineIndex = -1;
+
+                while ((matchIndex = searchContent.indexOf(q, startIndex)) !== -1) {
+                    // Count lines between last search and current match
+                    for (let i = startIndex; i < matchIndex; i++) {
+                        if (searchContent[i] === '\n') {
+                            currentLine++;
+                            lastNewLineIndex = i;
+                        }
                     }
+
+                    const column = matchIndex - lastNewLineIndex;
+
+                    // Extract snippet safely
+                    const lineEndIndex = file.content.indexOf('\n', matchIndex);
+                    const actualEnd = lineEndIndex === -1 ? file.content.length : lineEndIndex;
+                    const snippet = file.content.slice(lastNewLineIndex + 1, actualEnd).trim().substring(0, 120);
+
+                    matches.push({ line: currentLine, column, snippet });
+
+                    startIndex = matchIndex + q.length;
+
+                    // Cap matches per file to avoid huge payloads
+                    if (matches.length > 50) break;
                 }
             }
 
-            if (matches.length > 0) results.push({ path: file.path, matches });
-            if (limit && results.length >= limit) break;
+            if (matches.length > 0) {
+                results.push({ path: file.path, matches });
+            }
+
+            if (results.length >= maxResults) break;
         }
 
         return { total: results.length, results };
