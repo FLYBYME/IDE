@@ -2,13 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
+
 
 model User {
   id           String    @id @default(uuid())
@@ -19,7 +20,37 @@ model User {
   
   workspaces   Workspace[]
   settings     UserSettings?
+  extensions   Extension[]
 }
+
+
+model Extension {
+  id           String    @id @default(uuid())
+  name         String    @unique
+  description  String?
+  authorId     String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  author       User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions     ExtensionVersion[]
+}
+
+model ExtensionVersion {
+  id             String                 @id @default(uuid())
+  extensionId    String
+  version        String
+  gitUrl         String
+  gitBranch      String                 @default("main")
+  status         String                 @default("PENDING") // PENDING, CLONING, INSTALLING, BUILDING, READY, FAILED
+  buildLogs      String                 @default("")
+  entryPointUrl  String?
+  createdAt      DateTime               @default(now())
+
+  extension      Extension              @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+}
+
+
 
 model Workspace {
   id          String   @id @default(uuid())

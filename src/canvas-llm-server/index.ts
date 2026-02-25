@@ -13,7 +13,9 @@ import aiActions from './actions/ai/ai.actions';
 import realtimeActions from './actions/realtime/realtime.actions';
 import metaActions from './actions/meta/meta.actions';
 import sourceControlActions from './actions/source-control/source-control.actions';
+import extensionActions from './actions/extension/extension.actions';
 import { sseManager } from './core/sse-manager';
+
 
 
 
@@ -35,6 +37,7 @@ async function bootstrap() {
         ...realtimeActions,
         ...metaActions,
         ...sourceControlActions,
+        ...extensionActions,
     ];
 
     serviceManager.registerMany(allActions);

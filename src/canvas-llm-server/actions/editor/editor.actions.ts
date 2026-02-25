@@ -10,7 +10,8 @@ import {
     EditorStateOutput,
 } from '../../models/schemas';
 
-import { TabStateModel } from '../../../../generated/prisma/models/TabState';
+import { TabState as TabStateModel } from '@prisma/client';
+
 import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
 

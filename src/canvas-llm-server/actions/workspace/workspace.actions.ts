@@ -12,7 +12,8 @@ import {
     SuccessOutput,
 } from '../../models/schemas';
 
-import { WorkspaceModel } from '../../../../generated/prisma/models/Workspace';
+import { Workspace as WorkspaceModel } from '@prisma/client';
+
 import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
 import { workspaceContainerManager } from '../../core/WorkspaceContainerManager';

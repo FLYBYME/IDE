@@ -324,3 +324,18 @@ export const SourceControlMergeInput = z.object({
     workspaceId: z.string().uuid(),
     branchName: z.string().min(1),
 });
+// ── Extension ────────────────────────────────────────
+export const ExtensionSubmitInput = z.object({
+    gitUrl: z.string().url(),
+    gitBranch: z.string().optional().default('main'),
+    manifestPath: z.string().optional().default('package.json'),
+});
+
+export const ExtensionBuildStatusOutput = z.object({
+    id: z.string().uuid(),
+    extensionId: z.string().uuid(),
+    status: z.enum(['PENDING', 'CLONING', 'INSTALLING', 'BUILDING', 'READY', 'FAILED']),
+    buildLogs: z.string(),
+    entryPointUrl: z.string().optional().nullable(),
+});
+

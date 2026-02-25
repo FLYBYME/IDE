@@ -136,6 +136,63 @@ export class WorkspaceContainerManager {
             });
         });
     }
+    /**
+     * Executes a command inside the workspace container and waits for completion.
+     * Returns the exit code.
+     */
+    public async executeCommandAndWait(workspaceId: string, command: string[], executionId: string): Promise<number> {
+        const ws = this.activeContainers.get(workspaceId);
+        if (!ws) {
+            throw new Error(`No active container for workspace ${workspaceId}`);
+        }
+
+        const exec = await ws.container.exec({
+            Cmd: command,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: false
+        });
+
+        const stream = await exec.start({});
+
+        ws.container.modem.demuxStream(stream, {
+            write: (chunk: Buffer) => {
+                sseManager.broadcast('workspace.exec.output', {
+                    workspaceId,
+                    executionId,
+                    stream: 'stdout',
+                    data: chunk.toString()
+                });
+            }
+        } as any, {
+            write: (chunk: Buffer) => {
+                sseManager.broadcast('workspace.exec.output', {
+                    workspaceId,
+                    executionId,
+                    stream: 'stderr',
+                    data: chunk.toString()
+                });
+            }
+        } as any);
+
+        return new Promise((resolve, reject) => {
+            stream.on('end', async () => {
+                try {
+                    const result = await exec.inspect();
+                    const exitCode = result.ExitCode ?? 0;
+                    sseManager.broadcast('workspace.exec.exit', {
+                        workspaceId,
+                        executionId,
+                        exitCode
+                    });
+                    resolve(exitCode);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+            stream.on('error', (err) => reject(err));
+        });
+    }
 
     /**
      * Stops the container and cleans up resources.
