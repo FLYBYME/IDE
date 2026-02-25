@@ -185,15 +185,18 @@ export class MonacoService {
 
         // Track cursor position
         editor.onDidChangeCursorPosition((e) => {
-            // Only update if this is the active tab
+            // Emit an event that IDE.ts can observe for state syncing
+            this.ide.commands.emit('monaco.cursor.moved', {
+                fileId,
+                lineNumber: e.position.lineNumber,
+                column: e.position.column
+            });
+
+            // Only update status bar if this is the active tab
             if (this.ide.editor.getActiveTabId() === fileId) {
                 this.updateStatusBarPosition(e.position.lineNumber, e.position.column);
             }
         });
-
-
-
-
         return editor;
     }
 

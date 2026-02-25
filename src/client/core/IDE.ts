@@ -39,6 +39,7 @@ export class IDE {
     public api: ApiService;
     public activeWorkspace: { id: string; name: string } | null = null;
     private initialized: boolean = false;
+    private stateSaveTimer: NodeJS.Timeout | null = null;
 
     constructor() {
         this.configurationRegistry = new ConfigurationRegistry();
@@ -57,6 +58,30 @@ export class IDE {
         this.api = new ApiService();
     }
 
+    private setupStateSyncing(): void {
+        const triggerSave = () => {
+            if (!this.activeWorkspace) return;
+            if (this.stateSaveTimer) clearTimeout(this.stateSaveTimer);
+
+            // Debounce saves by 2 seconds
+            this.stateSaveTimer = setTimeout(() => {
+                this.saveWorkspaceState().catch(err =>
+                    console.warn('Failed to auto-save workspace state', err)
+                );
+            }, 2000);
+        };
+
+        // Listen to tab events
+        import('./EditorManager').then(({ EditorEvents }) => {
+            this.commands.on(EditorEvents.EDITOR_TAB_OPENED, triggerSave);
+            this.commands.on(EditorEvents.EDITOR_TAB_CLOSED, triggerSave);
+            this.commands.on(EditorEvents.EDITOR_ACTIVE_CHANGED, triggerSave);
+        });
+
+        // Listen to cursor movement events from Monaco
+        this.commands.on('monaco.cursor.moved', triggerSave);
+    }
+
     public async initialize(): Promise<void> {
         if (this.initialized) return;
 
@@ -72,6 +97,7 @@ export class IDE {
             this.registerCoreSettings();
 
             this.initializeUI();
+            this.setupStateSyncing();
 
             // Mount the editor into the center panel
             const centerPanel = document.getElementById('center-panel');
