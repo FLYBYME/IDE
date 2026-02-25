@@ -59,7 +59,20 @@ export class MonacoVFSBridge {
                 if (model) {
                     // Only update if the content actually differs
                     if (event.content !== undefined && model.getValue() !== event.content) {
-                        model.setValue(event.content);
+                        if (event.remoteSync) {
+                            // For remote syncs, use pushEditOperations so Monaco treats it as an
+                            // "external" change that doesn't mark the tab as dirty.
+                            model.pushEditOperations(
+                                [],
+                                [{
+                                    range: model.getFullModelRange(),
+                                    text: event.content,
+                                }],
+                                () => null
+                            );
+                        } else {
+                            model.setValue(event.content);
+                        }
                     }
                 } else if (event.content !== undefined) {
                     // New file — create a background model

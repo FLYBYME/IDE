@@ -147,7 +147,7 @@ export const saveFileAction: ServiceAction = {
         await vfsManager.persistSnapshot(workspaceId);
 
         // Broadcast event
-        sseManager.broadcast('file.saved', { workspaceId, path: filePath, size: content.length });
+        sseManager.broadcast('file.saved', { workspaceId, path: filePath, size: content.length, content });
 
         return {
             path: filePath,

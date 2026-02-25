@@ -9,6 +9,7 @@ export interface FileChangeEvent {
     path: string;
     content?: string;     // For 'change'
     oldPath?: string;     // For 'rename'
+    remoteSync?: boolean; // True when the change originated from a server SSE event
 }
 
 export interface FileStat {
