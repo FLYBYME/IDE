@@ -1,6 +1,7 @@
 import { ServiceAction } from 'tool-ms';
 import { z } from 'zod';
 import { sseManager } from '../../core/sse-manager';
+import { TimestampOutput } from '../../models/schemas';
 
 // ── realtime.broadcast ───────────────────────────────
 export const broadcastAction: ServiceAction = {
@@ -13,7 +14,7 @@ export const broadcastAction: ServiceAction = {
     auth: { required: true, roles: ['admin'] },
     input: z.object({
         event: z.string().min(1),
-        data: z.any().optional(),
+        data: z.unknown().optional(),
     }),
     output: z.object({ success: z.boolean(), sentAt: z.string() }),
     handler: async (ctx) => {

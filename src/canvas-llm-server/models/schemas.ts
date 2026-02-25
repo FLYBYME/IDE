@@ -220,3 +220,76 @@ export const SuccessOutput = z.object({
 }).passthrough();
 
 export const TimestampOutput = z.object({}).passthrough();
+
+// ── Specific Output Schemas ───────────────────────────
+export const WorkspaceOutput = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    ownerId: z.string(),
+    isPublic: z.boolean(),
+    createdAt: z.union([z.string(), z.date()]),
+    updatedAt: z.union([z.string(), z.date()]),
+});
+
+export const FileInfoOutput = z.object({
+    name: z.string(),
+    type: z.enum(['file', 'folder']),
+    path: z.string(),
+    size: z.number().optional(),
+    modified: z.string(),
+});
+
+export const TabStateOutput = z.object({
+    id: z.string(),
+    path: z.string(),
+    title: z.string(),
+    isDirty: z.boolean(),
+    isActive: z.boolean(),
+    cursorLine: z.number(),
+    cursorColumn: z.number(),
+    scrollTop: z.number(),
+});
+
+export const EditorStateOutput = z.object({
+    workspaceId: z.string().uuid(),
+    tabs: z.array(TabStateOutput),
+    activeTabId: z.string().optional().nullable(),
+    lastSaved: z.string().optional().nullable(),
+});
+
+export const UserSettingsOutput = z.object({
+    theme: z.string(),
+    fontSize: z.number(),
+    fontFamily: z.string(),
+    tabSize: z.number(),
+    useSpaces: z.boolean(),
+    autoFormat: z.boolean(),
+    formatOnSave: z.boolean(),
+    autoSave: z.boolean(),
+    autoSaveDelay: z.number(),
+    wordWrap: z.boolean(),
+    minimap: z.boolean(),
+    lineNumbers: z.boolean(),
+});
+
+export const WorkspaceSettingsOutput = z.object({
+    language: z.string(),
+    formatter: z.string(),
+    linter: z.string(),
+    theme: z.string().nullable(),
+});
+
+export const AICodeIssueOutput = z.object({
+    line: z.number().optional(),
+    description: z.string(),
+    severity: z.enum(['info', 'warning', 'error']),
+    suggestion: z.string().optional(),
+});
+
+export const AICodeChangeOutput = z.object({
+    type: z.enum(['add', 'modify', 'delete']),
+    line: z.number().optional(),
+    content: z.string(),
+    explanation: z.string().optional(),
+});

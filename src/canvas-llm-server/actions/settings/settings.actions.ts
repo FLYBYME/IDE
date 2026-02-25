@@ -4,6 +4,8 @@ import {
     SettingsUpdateInput,
     WorkspaceSettingsInput,
     WorkspaceSettingsUpdateInput,
+    UserSettingsOutput,
+    WorkspaceSettingsOutput,
 } from '../../models/schemas';
 
 import { prisma } from '../../core/prisma';
@@ -36,7 +38,7 @@ export const getUserSettingsAction: ServiceAction = {
     rest: { method: 'GET', path: '/settings', middleware: ['requireAuth'] },
     auth: { required: true },
     input: z.object({}),
-    output: z.object({ user: z.any() }),
+    output: z.object({ user: UserSettingsOutput }),
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
 
@@ -62,7 +64,7 @@ export const updateUserSettingsAction: ServiceAction = {
     rest: { method: 'POST', path: '/settings', middleware: ['requireAuth'] },
     auth: { required: true },
     input: SettingsUpdateInput,
-    output: z.object({ updated: z.string(), settings: z.any() }),
+    output: z.object({ updated: z.string(), settings: UserSettingsOutput }),
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
         const updates = ctx.params as any;
@@ -94,7 +96,7 @@ export const getWorkspaceSettingsAction: ServiceAction = {
     rest: { method: 'GET', path: '/workspaces/:workspaceId/settings', middleware: ['requireAuth'] },
     auth: { required: true },
     input: WorkspaceSettingsInput,
-    output: z.object({ workspace: z.any() }),
+    output: z.object({ workspace: WorkspaceSettingsOutput }),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof WorkspaceSettingsInput>;
         const wsSettings = await prisma.workspaceSettings.findUnique({

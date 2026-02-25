@@ -6,6 +6,8 @@ import {
     AIExplainInput,
     AIReviewInput,
     AIRefactorInput,
+    AICodeIssueOutput,
+    AICodeChangeOutput,
 } from '../../models/schemas';
 import * as crypto from 'crypto';
 import { AdapterPromptState } from 'tool-ms/dist/lib/Adapter';
@@ -24,7 +26,7 @@ export const aiChatAction: ServiceAction = {
     output: z.object({
         id: z.string(),
         message: z.string(),
-        suggestions: z.array(z.any()).optional().nullable(),
+        suggestions: z.array(z.record(z.unknown())).optional().nullable(),
         tokens: z.object({ prompt: z.number(), completion: z.number() }),
     }),
     handler: async (ctx) => {
@@ -116,7 +118,7 @@ export const aiReviewCodeAction: ServiceAction = {
     auth: { required: true },
     input: AIReviewInput,
     output: z.object({
-        issues: z.array(z.any()),
+        issues: z.array(AICodeIssueOutput),
         summary: z.string(),
         score: z.number().optional().nullable(),
     }),
@@ -141,7 +143,7 @@ export const aiRefactorAction: ServiceAction = {
     input: AIRefactorInput,
     output: z.object({
         refactored: z.string(),
-        changes: z.array(z.any()),
+        changes: z.array(AICodeChangeOutput),
         explanation: z.string().optional().nullable(),
     }),
     handler: async (ctx) => {

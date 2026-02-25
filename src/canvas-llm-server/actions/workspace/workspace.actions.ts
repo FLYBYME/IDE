@@ -7,10 +7,12 @@ import {
     WorkspaceIdInput,
     WorkspaceListInput,
     WorkspaceDeleteInput,
+    WorkspaceOutput,
     SuccessOutput,
 } from '../../models/schemas';
-import { vfsManager } from '../../core/vfs-manager';
 
+import { WorkspaceModel } from '../../../../generated/prisma/models/Workspace';
+import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
 
 // ── workspace.list ───────────────────────────────────
@@ -25,7 +27,7 @@ export const listWorkspacesAction: ServiceAction = {
     input: WorkspaceListInput,
     output: z.object({
         total: z.number(),
-        workspaces: z.array(z.any()),
+        workspaces: z.array(WorkspaceOutput),
     }),
     handler: async (ctx) => {
         const userId = ctx.headers['x-user-id'];
@@ -39,25 +41,27 @@ export const listWorkspacesAction: ServiceAction = {
         const skip = offset ?? 0;
 
         const total = await prisma.workspace.count({ where: { ownerId: userId } });
-        const list = await prisma.workspace.findMany({
+        const list = (await prisma.workspace.findMany({
             where: { ownerId: userId },
             orderBy,
             take,
             skip,
-        });
+        })) as WorkspaceModel[];
+
+        const mapped = list.map((w: WorkspaceModel) => ({
+            id: w.id,
+            name: w.name,
+            description: w.description,
+            owner: w.ownerId,
+            created: w.createdAt.toISOString(),
+            updated: w.updatedAt.toISOString(),
+            files: 0,
+            size: 0,
+        }));
 
         return {
             total,
-            workspaces: list.map((w) => ({
-                id: w.id,
-                name: w.name,
-                description: w.description,
-                owner: w.ownerId,
-                created: w.createdAt.toISOString(),
-                updated: w.updatedAt.toISOString(),
-                files: 0,
-                size: 0,
-            })),
+            workspaces: mapped,
         };
     },
 };

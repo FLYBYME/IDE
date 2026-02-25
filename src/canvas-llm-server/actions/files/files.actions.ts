@@ -10,6 +10,7 @@ import {
     FileCopyInput,
     FileSearchInput,
     SuccessOutput,
+    FileInfoOutput,
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
 import { sseManager } from '../../core/sse-manager';
@@ -24,7 +25,7 @@ export const listTreeAction: ServiceAction = {
     rest: { method: 'GET', path: '/workspaces/:workspaceId/files', middleware: ['requireAuth'] },
     auth: { required: true },
     input: FileListTreeInput,
-    output: z.object({ path: z.string(), entries: z.array(z.any()) }),
+    output: z.object({ path: z.string(), entries: z.array(FileInfoOutput) }),
     handler: async (ctx) => {
         const { workspaceId, path: dirPath, recursive } = ctx.params as z.infer<typeof FileListTreeInput>;
         const vfs = await vfsManager.getVFS(workspaceId);
