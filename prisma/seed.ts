@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/canvas-llm-server/utils/password.helper';
 import * as crypto from 'crypto';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({});
 
 async function main() {
     const hash = await hashPassword('admin123');
