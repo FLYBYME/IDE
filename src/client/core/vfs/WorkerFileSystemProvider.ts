@@ -139,6 +139,13 @@ export class WorkerFileSystemProvider implements FileSystemProvider {
         await this.sendRequest('RENAME', { path: oldPath, newPath });
     }
 
+    /**
+     * Propagate a remote UCB 'vfs' event to the worker to handle.
+     */
+    public handleRemoteEvent(event: string, payload: any): void {
+        this.worker.postMessage({ id: -1, type: 'REMOTE_EVENT', data: { event, payload } });
+    }
+
     public async readDirectory(path: string): Promise<string[]> {
         return this.sendRequest<string[]>('READ_DIRECTORY', { path });
     }

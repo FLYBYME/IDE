@@ -32,9 +32,13 @@ export const TerminalExtension: Extension = {
                 };
 
                 // Listen for layout resize events
-                const resizeSubId = ide.commands.on('layout:resize', onResize);
-                const visibilitySubId = ide.commands.on('panel:visibility_change', (data: any) => {
-                    if (data.id === 'bottom-panel' && data.visible) {
+                const resizeSubId = ide.commands.on('panel.resize', (data: any) => {
+                    if (data.panelId === 'bottom-panel') {
+                        onResize();
+                    }
+                });
+                const visibilitySubId = ide.commands.on('panel.toggle', (data: any) => {
+                    if (data.panelId === 'bottom-panel' && data.visible) {
                         setTimeout(onResize, 50); // Small delay to allow DOM to update
                     }
                 });

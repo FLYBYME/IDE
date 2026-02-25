@@ -13,7 +13,7 @@ import {
     FileInfoOutput,
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
-import { sseManager } from '../../core/sse-manager';
+import { gatewayManager } from '../../core/gateway-manager';
 import { workspaceContainerManager } from '../../core/WorkspaceContainerManager';
 
 
@@ -82,7 +82,7 @@ export const getFileAction: ServiceAction = {
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
 
-        sseManager.broadcast('file.opened', { workspaceId, path: filePath });
+        gatewayManager.broadcast('system', 'file.opened', { workspaceId, path: filePath });
 
         return {
             path: file.path,
@@ -121,7 +121,7 @@ export const createFileAction: ServiceAction = {
         }
 
         // Broadcast event
-        sseManager.broadcast('file.created', { workspaceId, path: filePath, type });
+        gatewayManager.broadcast('vfs', 'file.created', { workspaceId, path: filePath, type });
 
         return { path: filePath, type, created: new Date().toISOString() };
     },
@@ -152,7 +152,7 @@ export const saveFileAction: ServiceAction = {
         await vfsManager.persistSnapshot(workspaceId);
 
         // Broadcast event
-        sseManager.broadcast('file.saved', { workspaceId, path: filePath, size: content.length, content });
+        gatewayManager.broadcast('vfs', 'file.saved', { workspaceId, path: filePath, size: content.length, content });
 
         return {
             path: filePath,
@@ -188,13 +188,13 @@ export const deleteFileAction: ServiceAction = {
                 }
             }
             // Broadcast event for folder deletion (with recursive flag)
-            sseManager.broadcast('file.deleted', { workspaceId, path: filePath, recursive: true });
+            gatewayManager.broadcast('vfs', 'file.deleted', { workspaceId, path: filePath, recursive: true });
             return { success: true, deleted: count };
         }
 
         vfs.delete(filePath);
         // Broadcast event
-        sseManager.broadcast('file.deleted', { workspaceId, path: filePath, recursive: false });
+        gatewayManager.broadcast('vfs', 'file.deleted', { workspaceId, path: filePath, recursive: false });
         return { success: true, deleted: 1 };
     },
 };
@@ -225,7 +225,7 @@ export const renameFileAction: ServiceAction = {
 
 
         // Broadcast event
-        sseManager.broadcast('file.renamed', { workspaceId, oldPath, newPath });
+        gatewayManager.broadcast('vfs', 'file.renamed', { workspaceId, oldPath, newPath });
 
         return { oldPath, newPath, moved: new Date().toISOString() };
     },

@@ -1,6 +1,6 @@
 import { ServiceAction } from 'tool-ms';
 import { z } from 'zod';
-import { sseManager } from '../../core/sse-manager';
+import { gatewayManager } from '../../core/gateway-manager';
 import { TimestampOutput } from '../../models/schemas';
 
 // ── realtime.broadcast ───────────────────────────────
@@ -19,7 +19,7 @@ export const broadcastAction: ServiceAction = {
     output: z.object({ success: z.boolean(), sentAt: z.string() }),
     handler: async (ctx) => {
         const { event, data } = ctx.params;
-        sseManager.broadcast(event, data);
+        gatewayManager.broadcast('system', event, data);
         return { success: true, sentAt: new Date().toISOString() };
     },
 };

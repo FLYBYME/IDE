@@ -120,48 +120,63 @@ export class ViewRegistry {
         // For simplicity in this base spec, we'll replace the inner content, 
         // preserving default handles.
         if (location !== 'center-panel') {
-            // Remove previous active containers in this location
-            const oldContainer = targetPanel.querySelector('.extension-view-container');
-            if (oldContainer) {
-                oldContainer.remove();
+            // Hide all active containers in this location
+            const allContainers = targetPanel.querySelectorAll('.extension-view-container');
+            allContainers.forEach((el) => {
+                (el as HTMLElement).style.display = 'none';
+            });
+
+            // Check if we already have a container for this provider
+            let container = this.activeContainers.get(providerId);
+
+            if (!container) {
+                // Create a fresh isolated container
+                container = document.createElement('div');
+                container.className = 'extension-view-container';
+                container.setAttribute('data-provider-id', providerId);
+                container.style.width = '100%';
+                container.style.height = '100%';
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.overflow = 'hidden';
+                container.style.boxSizing = 'border-box';
+
+                // Append it to the panel
+                targetPanel.appendChild(container);
+
+                // Prepare disposables
+                const oldDisposables = this.activeDisposables.get(providerId);
+                if (oldDisposables) {
+                    oldDisposables.forEach(d => d.dispose());
+                }
+                const disposables: { dispose: () => void }[] = [];
+                this.activeDisposables.set(providerId, disposables);
+
+                // Allow the provider to render
+                try {
+                    await provider.resolveView(container, disposables);
+                    this.activeContainers.set(providerId, container);
+                } catch (error) {
+                    console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
+                    container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
+                }
+            } else {
+                // Container exists, just unhide it
+                if (!container.parentElement) {
+                    targetPanel.appendChild(container);
+                }
+                container.style.display = 'flex';
+
+                if (provider.update) {
+                    provider.update({});
+                }
             }
 
-            // Create a fresh isolated container
-            const container = document.createElement('div');
-            container.className = 'extension-view-container';
-            container.style.width = '100%';
-            container.style.height = '100%';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.overflow = 'hidden';
-            container.style.boxSizing = 'border-box';
+            // Show the panel via the layout manager
+            this.ide.layout.setPanelVisible(location, true);
 
-            // Append it to the panel
-            targetPanel.appendChild(container);
-
-            // Prepare disposables
-            const oldDisposables = this.activeDisposables.get(providerId);
-            if (oldDisposables) {
-                oldDisposables.forEach(d => d.dispose());
-            }
-            const disposables: { dispose: () => void }[] = [];
-            this.activeDisposables.set(providerId, disposables);
-
-            // Allow the provider to render
-            try {
-                await provider.resolveView(container, disposables);
-                this.activeContainers.set(providerId, container);
-
-                // Show the panel via the layout manager
-                this.ide.layout.setPanelVisible(location, true);
-
-                // Automatically update activity bar active state
-                this.ide.activityBar.setActive(location, providerId);
-
-            } catch (error) {
-                console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
-                container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
-            }
+            // Automatically update activity bar active state
+            this.ide.activityBar.setActive(location, providerId);
         } else {
             // Center panel: open as a custom editor tab via EditorManager
             this.ide.editor.openTab({

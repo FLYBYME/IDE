@@ -8,7 +8,7 @@ import {
     SourceControlMergeInput,
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
-import { sseManager } from '../../core/sse-manager';
+import { gatewayManager } from '../../core/gateway-manager';
 
 // ── source-control.status ────────────────────────────
 export const statusAction: ServiceAction = {
@@ -90,7 +90,7 @@ export const commitAction: ServiceAction = {
         // Persist snapshot to disk after committing
         await vfsManager.persistSnapshot(workspaceId);
 
-        sseManager.broadcast('source-control.committed', { workspaceId, hash, message });
+        gatewayManager.broadcast('system', 'source-control.committed', { workspaceId, hash, message });
 
         return { hash };
     },
@@ -207,7 +207,7 @@ export const checkoutAction: ServiceAction = {
         await vfsManager.persistSnapshot(workspaceId);
 
         // Broadcast so connected clients reload their VFS
-        sseManager.broadcast('workspace.checked_out', { workspaceId, ref });
+        gatewayManager.broadcast('vfs', 'workspace.checked_out', { workspaceId, ref });
 
         return { ref, success: true };
     },
@@ -244,7 +244,7 @@ export const mergeAction: ServiceAction = {
         await vfsManager.persistSnapshot(workspaceId);
 
         // Broadcast so connected clients reload their VFS
-        sseManager.broadcast('workspace.checked_out', { workspaceId, branchName, result });
+        gatewayManager.broadcast('vfs', 'workspace.checked_out', { workspaceId, branchName, result });
 
         return { result, success: true };
     },

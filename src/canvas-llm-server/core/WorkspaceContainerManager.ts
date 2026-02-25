@@ -3,7 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { FSWatcher, watch } from 'chokidar';
 import { VirtualFileSystem } from 'vfs';
-import { sseManager } from './sse-manager';
+import { gatewayManager } from './gateway-manager';
 import { config } from '../config';
 import { ConsoleLogger } from 'tool-ms';
 
@@ -107,30 +107,30 @@ export class WorkspaceContainerManager {
 
         const stream = await exec.start({});
 
-        sseManager.broadcast('workspace.exec.start', {
+        gatewayManager.broadcast('terminal', 'workspace.exec.start', {
             workspaceId,
             executionId,
             command
-        });
+        }, workspaceId);
 
         // Use dockerode's internal modem to demux the stream correctly
         ws.container.modem.demuxStream(stream, {
             write: (chunk: Buffer) => {
-                sseManager.broadcast('workspace.exec.output', {
+                gatewayManager.broadcast('terminal', 'workspace.exec.output', {
                     workspaceId,
                     executionId,
                     stream: 'stdout',
                     data: chunk.toString()
-                });
+                }, workspaceId);
             }
         } as any, {
             write: (chunk: Buffer) => {
-                sseManager.broadcast('workspace.exec.output', {
+                gatewayManager.broadcast('terminal', 'workspace.exec.output', {
                     workspaceId,
                     executionId,
                     stream: 'stderr',
                     data: chunk.toString()
-                });
+                }, workspaceId);
             }
         } as any);
 
@@ -138,18 +138,18 @@ export class WorkspaceContainerManager {
             try {
                 const result = await exec.inspect();
                 const exitCode = result.ExitCode ?? 0;
-                sseManager.broadcast('workspace.exec.exit', {
+                gatewayManager.broadcast('terminal', 'workspace.exec.exit', {
                     workspaceId,
                     executionId,
                     exitCode
-                });
+                }, workspaceId);
             } catch (err) {
                 this.logger.error(`Failed to inspect exec ${executionId}:`, err);
-                sseManager.broadcast('workspace.exec.exit', {
+                gatewayManager.broadcast('terminal', 'workspace.exec.exit', {
                     workspaceId,
                     executionId,
                     exitCode: 1
-                });
+                }, workspaceId);
             }
         });
     }
@@ -174,21 +174,21 @@ export class WorkspaceContainerManager {
 
         ws.container.modem.demuxStream(stream, {
             write: (chunk: Buffer) => {
-                sseManager.broadcast('workspace.exec.output', {
+                gatewayManager.broadcast('terminal', 'workspace.exec.output', {
                     workspaceId,
                     executionId,
                     stream: 'stdout',
                     data: chunk.toString()
-                });
+                }, workspaceId);
             }
         } as any, {
             write: (chunk: Buffer) => {
-                sseManager.broadcast('workspace.exec.output', {
+                gatewayManager.broadcast('terminal', 'workspace.exec.output', {
                     workspaceId,
                     executionId,
                     stream: 'stderr',
                     data: chunk.toString()
-                });
+                }, workspaceId);
             }
         } as any);
 
@@ -197,11 +197,11 @@ export class WorkspaceContainerManager {
                 try {
                     const result = await exec.inspect();
                     const exitCode = result.ExitCode ?? 0;
-                    sseManager.broadcast('workspace.exec.exit', {
+                    gatewayManager.broadcast('terminal', 'workspace.exec.exit', {
                         workspaceId,
                         executionId,
                         exitCode
-                    });
+                    }, workspaceId);
                     resolve(exitCode);
                 } catch (err) {
                     reject(err);
@@ -229,6 +229,13 @@ export class WorkspaceContainerManager {
         } catch (err) {
             this.logger.error(`Error stopping workspace container for ${workspaceId}`, err);
         }
+    }
+
+    /**
+     * Retrieves the active workspace container if it exists.
+     */
+    public getWorkspace(workspaceId: string): WorkspaceContainer | undefined {
+        return this.activeContainers.get(workspaceId);
     }
 
     /**

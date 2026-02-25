@@ -113,211 +113,227 @@ export const FileTreeExtension: Extension = {
 
     activate(context: ExtensionContext) {
         let selectedNode: HTMLElement | null = null;
+        let activeContainer: HTMLElement | null = null;
+
+        const renderTree = () => {
+            if (!activeContainer) return;
+            const container = activeContainer;
+
+            container.innerHTML = '';
+            const tree = document.createElement('div');
+            tree.className = 'file-tree';
+
+            const header = document.createElement('div');
+            header.className = 'file-tree-header';
+            header.textContent = 'Explorer';
+            tree.appendChild(header);
+
+            // Load tree from VFS asynchronously
+            const vfs = context.ide.vfs;
+            const rootName = context.ide.activeWorkspace?.name || 'my-project';
+
+            vfs.readDirectory(rootName).then(async (filePaths) => {
+                const treeRoot = buildTree(filePaths, rootName);
+
+                function attachContextMenu(node: TreeNode, el: HTMLElement): void {
+                    el.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const items: ContextMenuItem[] = [
+                            {
+                                label: 'Rename',
+                                icon: 'fas fa-edit',
+                                action: async () => {
+                                    const validator = (value: string) => {
+                                        value = value.trim();
+                                        if (!value) return 'Name cannot be empty.';
+                                        if (/[/\\?]/.test(value)) return 'Name cannot contain /, \\, or ?';
+
+                                        const parts = node.fullPath.split('/');
+                                        parts.pop();
+                                        const parentPath = parts.length > 0 ? parts.join('/') + '/' : '';
+                                        const newPath = parentPath + value;
+
+                                        if (filePaths.includes(newPath) && newPath !== node.fullPath) {
+                                            return 'A file or folder with this name already exists.';
+                                        }
+                                        return null;
+                                    };
+
+                                    const newName = await context.ide.dialogs.prompt(`Rename ${node.name} to:`, {
+                                        title: 'Rename',
+                                        defaultValue: node.name,
+                                        validateInput: validator
+                                    });
+                                    if (newName && newName !== node.name) {
+                                        const parts = node.fullPath.split('/');
+                                        parts.pop();
+                                        const newPath = parts.length > 0 ? parts.join('/') + '/' + newName : newName;
+                                        try {
+                                            await vfs.rename(node.fullPath, newPath);
+                                            context.ide.views.renderView('left-panel', fileTreeProvider.id);
+                                        } catch (err) {
+                                            context.ide.notifications.notify(`Failed to rename: ${err}`, 'error');
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                label: 'Delete',
+                                icon: 'fas fa-trash',
+                                action: async () => {
+                                    const confirmed = await context.ide.dialogs.confirm(`Are you sure you want to delete ${node.name}?`, {
+                                        title: 'Delete',
+                                        isDestructive: true
+                                    });
+                                    if (confirmed) {
+                                        try {
+                                            await vfs.delete(node.fullPath);
+                                            context.ide.views.renderView('left-panel', fileTreeProvider.id);
+                                        } catch (err) {
+                                            context.ide.notifications.notify(`Failed to delete: ${err}`, 'error');
+                                        }
+                                    }
+                                }
+                            }
+                        ];
+
+                        new ContextMenu(items, e.clientX, e.clientY);
+                    });
+                }
+
+                // Render the tree recursively
+                function renderNode(node: TreeNode, parentEl: HTMLElement, depth: number): void {
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'tree-node';
+                    nodeEl.style.paddingLeft = `${8 + depth * 16}px`;
+
+                    if (node.type === 'directory') {
+                        const expanded = depth < 2; // Auto-expand first two levels
+
+                        // Chevron
+                        const chevron = document.createElement('i');
+                        chevron.className = `fas fa-chevron-right chevron${expanded ? ' expanded' : ''}`;
+                        nodeEl.appendChild(chevron);
+
+                        // Folder icon
+                        const icon = document.createElement('i');
+                        icon.className = `fas fa-folder${expanded ? '-open' : ''} tree-icon folder-icon`;
+                        nodeEl.appendChild(icon);
+
+                        // Label
+                        const label = document.createElement('span');
+                        label.className = 'tree-label';
+                        label.textContent = node.name;
+                        nodeEl.appendChild(label);
+
+                        attachContextMenu(node, nodeEl);
+
+                        parentEl.appendChild(nodeEl);
+
+                        // Children container
+                        const childContainer = document.createElement('div');
+                        childContainer.className = 'tree-children';
+                        childContainer.style.display = expanded ? 'block' : 'none';
+
+                        // Sort: folders first, then files, alphabetically within each
+                        const sorted = [...node.children].sort((a, b) => {
+                            if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
+                            return a.name.localeCompare(b.name);
+                        });
+                        sorted.forEach(child => renderNode(child, childContainer, depth + 1));
+
+                        parentEl.appendChild(childContainer);
+
+                        // Toggle expand/collapse
+                        nodeEl.addEventListener('click', () => {
+                            const isExpanded = childContainer.style.display !== 'none';
+                            childContainer.style.display = isExpanded ? 'none' : 'block';
+                            chevron.classList.toggle('expanded', !isExpanded);
+                            icon.className = `fas fa-folder${!isExpanded ? '-open' : ''} tree-icon folder-icon`;
+                        });
+                    } else {
+                        const { iconClass, colorClass } = getFileIcon(node.name);
+
+                        // Spacer (align with folder chevrons)
+                        const spacer = document.createElement('span');
+                        spacer.className = 'chevron';
+                        spacer.style.visibility = 'hidden';
+                        nodeEl.appendChild(spacer);
+
+                        // File icon
+                        const icon = document.createElement('i');
+                        icon.className = `${iconClass} tree-icon file-icon ${colorClass}`;
+                        nodeEl.appendChild(icon);
+
+                        // Label
+                        const label = document.createElement('span');
+                        label.className = 'tree-label';
+                        label.textContent = node.name;
+                        nodeEl.appendChild(label);
+
+                        attachContextMenu(node, nodeEl);
+
+                        parentEl.appendChild(nodeEl);
+
+                        // Open file on click — read content from VFS
+                        nodeEl.addEventListener('click', async () => {
+                            // Highlight selection
+                            if (selectedNode) selectedNode.classList.remove('selected');
+                            nodeEl.classList.add('selected');
+                            selectedNode = nodeEl;
+
+                            try {
+                                const content = await vfs.readFile(node.fullPath);
+                                const language = detectLanguage(node.name);
+
+                                // Open in editor via EditorManager
+                                context.ide.editor.openFile(
+                                    node.fullPath,
+                                    node.name,
+                                    content,
+                                    language,
+                                    iconClass,
+                                );
+                            } catch (err) {
+                                console.error(`Failed to read file: ${node.fullPath}`, err);
+                            }
+                        });
+                    }
+                }
+
+                // Render root children (skip the root folder itself)
+                const sorted = [...treeRoot.children].sort((a, b) => {
+                    if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
+                    return a.name.localeCompare(b.name);
+                });
+                sorted.forEach(child => renderNode(child, tree, 0));
+            }).catch(err => {
+                console.error('Failed to load file tree from VFS:', err);
+                const errorEl = document.createElement('div');
+                errorEl.style.padding = '16px';
+                errorEl.style.color = '#f44336';
+                errorEl.textContent = 'Failed to load file tree';
+                tree.appendChild(errorEl);
+            });
+
+            container.appendChild(tree);
+        };
 
         const fileTreeProvider: ViewProvider = {
             id: 'core.fileTree.sidebar',
             name: 'Explorer',
             resolveView: (container, disposables) => {
-                container.innerHTML = '';
-                const tree = document.createElement('div');
-                tree.className = 'file-tree';
+                activeContainer = container;
 
-                const header = document.createElement('div');
-                header.className = 'file-tree-header';
-                header.textContent = 'Explorer';
-                tree.appendChild(header);
+                const wsSub = context.ide.commands.on('workspace:loaded', renderTree);
+                disposables.push({ dispose: () => context.ide.commands.off(wsSub) });
 
-                // Load tree from VFS asynchronously
-                const vfs = context.ide.vfs;
-                const rootName = context.ide.activeWorkspace?.name || 'my-project';
-
-                vfs.readDirectory(rootName).then(async (filePaths) => {
-                    const treeRoot = buildTree(filePaths, rootName);
-
-                    function attachContextMenu(node: TreeNode, el: HTMLElement): void {
-                        el.addEventListener('contextmenu', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-
-                            const items: ContextMenuItem[] = [
-                                {
-                                    label: 'Rename',
-                                    icon: 'fas fa-edit',
-                                    action: async () => {
-                                        const validator = (value: string) => {
-                                            value = value.trim();
-                                            if (!value) return 'Name cannot be empty.';
-                                            if (/[/\\?]/.test(value)) return 'Name cannot contain /, \\, or ?';
-
-                                            const parts = node.fullPath.split('/');
-                                            parts.pop();
-                                            const parentPath = parts.length > 0 ? parts.join('/') + '/' : '';
-                                            const newPath = parentPath + value;
-
-                                            if (filePaths.includes(newPath) && newPath !== node.fullPath) {
-                                                return 'A file or folder with this name already exists.';
-                                            }
-                                            return null;
-                                        };
-
-                                        const newName = await context.ide.dialogs.prompt(`Rename ${node.name} to:`, {
-                                            title: 'Rename',
-                                            defaultValue: node.name,
-                                            validateInput: validator
-                                        });
-                                        if (newName && newName !== node.name) {
-                                            const parts = node.fullPath.split('/');
-                                            parts.pop();
-                                            const newPath = parts.length > 0 ? parts.join('/') + '/' + newName : newName;
-                                            try {
-                                                await vfs.rename(node.fullPath, newPath);
-                                                context.ide.views.renderView('left-panel', fileTreeProvider.id);
-                                            } catch (err) {
-                                                context.ide.notifications.notify(`Failed to rename: ${err}`, 'error');
-                                            }
-                                        }
-                                    }
-                                },
-                                {
-                                    label: 'Delete',
-                                    icon: 'fas fa-trash',
-                                    action: async () => {
-                                        const confirmed = await context.ide.dialogs.confirm(`Are you sure you want to delete ${node.name}?`, {
-                                            title: 'Delete',
-                                            isDestructive: true
-                                        });
-                                        if (confirmed) {
-                                            try {
-                                                await vfs.delete(node.fullPath);
-                                                context.ide.views.renderView('left-panel', fileTreeProvider.id);
-                                            } catch (err) {
-                                                context.ide.notifications.notify(`Failed to delete: ${err}`, 'error');
-                                            }
-                                        }
-                                    }
-                                }
-                            ];
-
-                            new ContextMenu(items, e.clientX, e.clientY);
-                        });
-                    }
-
-                    // Render the tree recursively
-                    function renderNode(node: TreeNode, parentEl: HTMLElement, depth: number): void {
-                        const nodeEl = document.createElement('div');
-                        nodeEl.className = 'tree-node';
-                        nodeEl.style.paddingLeft = `${8 + depth * 16}px`;
-
-                        if (node.type === 'directory') {
-                            const expanded = depth < 2; // Auto-expand first two levels
-
-                            // Chevron
-                            const chevron = document.createElement('i');
-                            chevron.className = `fas fa-chevron-right chevron${expanded ? ' expanded' : ''}`;
-                            nodeEl.appendChild(chevron);
-
-                            // Folder icon
-                            const icon = document.createElement('i');
-                            icon.className = `fas fa-folder${expanded ? '-open' : ''} tree-icon folder-icon`;
-                            nodeEl.appendChild(icon);
-
-                            // Label
-                            const label = document.createElement('span');
-                            label.className = 'tree-label';
-                            label.textContent = node.name;
-                            nodeEl.appendChild(label);
-
-                            attachContextMenu(node, nodeEl);
-
-                            parentEl.appendChild(nodeEl);
-
-                            // Children container
-                            const childContainer = document.createElement('div');
-                            childContainer.className = 'tree-children';
-                            childContainer.style.display = expanded ? 'block' : 'none';
-
-                            // Sort: folders first, then files, alphabetically within each
-                            const sorted = [...node.children].sort((a, b) => {
-                                if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
-                                return a.name.localeCompare(b.name);
-                            });
-                            sorted.forEach(child => renderNode(child, childContainer, depth + 1));
-
-                            parentEl.appendChild(childContainer);
-
-                            // Toggle expand/collapse
-                            nodeEl.addEventListener('click', () => {
-                                const isExpanded = childContainer.style.display !== 'none';
-                                childContainer.style.display = isExpanded ? 'none' : 'block';
-                                chevron.classList.toggle('expanded', !isExpanded);
-                                icon.className = `fas fa-folder${!isExpanded ? '-open' : ''} tree-icon folder-icon`;
-                            });
-                        } else {
-                            const { iconClass, colorClass } = getFileIcon(node.name);
-
-                            // Spacer (align with folder chevrons)
-                            const spacer = document.createElement('span');
-                            spacer.className = 'chevron';
-                            spacer.style.visibility = 'hidden';
-                            nodeEl.appendChild(spacer);
-
-                            // File icon
-                            const icon = document.createElement('i');
-                            icon.className = `${iconClass} tree-icon file-icon ${colorClass}`;
-                            nodeEl.appendChild(icon);
-
-                            // Label
-                            const label = document.createElement('span');
-                            label.className = 'tree-label';
-                            label.textContent = node.name;
-                            nodeEl.appendChild(label);
-
-                            attachContextMenu(node, nodeEl);
-
-                            parentEl.appendChild(nodeEl);
-
-                            // Open file on click — read content from VFS
-                            nodeEl.addEventListener('click', async () => {
-                                // Highlight selection
-                                if (selectedNode) selectedNode.classList.remove('selected');
-                                nodeEl.classList.add('selected');
-                                selectedNode = nodeEl;
-
-                                try {
-                                    const content = await vfs.readFile(node.fullPath);
-                                    const language = detectLanguage(node.name);
-
-                                    // Open in editor via EditorManager
-                                    context.ide.editor.openFile(
-                                        node.fullPath,
-                                        node.name,
-                                        content,
-                                        language,
-                                        iconClass,
-                                    );
-                                } catch (err) {
-                                    console.error(`Failed to read file: ${node.fullPath}`, err);
-                                }
-                            });
-                        }
-                    }
-
-                    // Render root children (skip the root folder itself)
-                    const sorted = [...treeRoot.children].sort((a, b) => {
-                        if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
-                        return a.name.localeCompare(b.name);
-                    });
-                    sorted.forEach(child => renderNode(child, tree, 0));
-                }).catch(err => {
-                    console.error('Failed to load file tree from VFS:', err);
-                    const errorEl = document.createElement('div');
-                    errorEl.style.padding = '16px';
-                    errorEl.style.color = '#f44336';
-                    errorEl.textContent = 'Failed to load file tree';
-                    tree.appendChild(errorEl);
-                });
-
-                container.appendChild(tree);
+                renderTree();
+            },
+            update: () => {
+                renderTree();
             }
         };
 

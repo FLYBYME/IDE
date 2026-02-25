@@ -1,5 +1,6 @@
 import { LayoutManager } from './LayoutManager';
 import { ApiService } from './ApiService';
+import { UcbManager } from './UcbManager';
 import { CommandRegistry } from './CommandRegistry';
 import { ExtensionManager } from './extensions/ExtensionManager';
 import { ViewRegistry } from './extensions/ViewRegistry';
@@ -42,6 +43,7 @@ export class IDE {
     public dialogs: DialogService;
     public theme: ThemeService;
     public api: ApiService;
+    public ucb: UcbManager;
     public activeWorkspace: { id: string; name: string } | null = null;
     public workspace: WorkspaceManager;
     private initialized: boolean = false;
@@ -64,6 +66,7 @@ export class IDE {
         this.dialogs = new DialogService();
         this.theme = new ThemeService(this);
         this.api = new ApiService();
+        this.ucb = new UcbManager(this.api);
         this.workspace = new WorkspaceManager(this);
     }
 
@@ -105,8 +108,15 @@ export class IDE {
             // Register core settings before UI and extensions
             this.registerCoreSettings();
 
-            // Connect to SSE
-            this.api.connectSSE();
+            // Connect to Unified Communication Bridge
+            this.ucb.connect();
+
+            // Forward VFS events to the web worker
+            this.ucb.subscribe('vfs', (frame) => {
+                if (this.vfs && 'handleRemoteEvent' in this.vfs) {
+                    (this.vfs as any).handleRemoteEvent(frame.type, frame.payload);
+                }
+            });
 
             this.initializeUI();
             this.setupStateSyncing();

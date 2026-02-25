@@ -11,6 +11,7 @@ import { SettingsEditorExtension } from './extensions/SettingsEditorExtension';
 import { SourceControlExtension } from './extensions/SourceControlExtension';
 import { OutputExtension } from './extensions/OutputExtension';
 import { ContainerBuildExtension } from './extensions/ContainerBuildExtension';
+import { TerminalExtension } from './extensions/TerminalExtension';
 
 
 // Import styles
@@ -38,6 +39,7 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(SettingsEditorExtension);
         ide.extensions.register(SourceControlExtension);
         ide.extensions.register(OutputExtension);
+        ide.extensions.register(TerminalExtension);
         ide.extensions.register(ContainerBuildExtension);
 
 

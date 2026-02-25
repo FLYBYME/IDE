@@ -14,11 +14,7 @@ import realtimeActions from './actions/realtime/realtime.actions';
 import metaActions from './actions/meta/meta.actions';
 import sourceControlActions from './actions/source-control/source-control.actions';
 import extensionActions from './actions/extension/extension.actions';
-import { sseManager } from './core/sse-manager';
-import { terminalManager } from './core/terminal-manager';
-
-
-
+import { gatewayManager } from './core/gateway-manager';
 
 async function bootstrap() {
     const logger = new ConsoleLogger();
@@ -69,11 +65,11 @@ async function bootstrap() {
     await serviceManager.start();
     logger.info('⚙️  ServiceManager started');
 
-    // ── 6. Start Standalone SSE Server ────────────────
-    await sseManager.init(config.ssePort);
-    logger.info(`📡 SSE Server started on port ${config.ssePort}`);
+    // ── 6. Start Unified Communications Bridge Gateway  ────────────────
+    await gatewayManager.init(config.ssePort);
+    logger.info(`🌐 UCB Gateway Server started on port ${config.ssePort}`);
 
-    // ── 6. Start HTTP Server ─────────────────────────
+    // ── 7. Start HTTP Server ─────────────────────────
     await httpServer.start();
     logger.info(`🌍 HTTP Server listening on ${config.host}:${config.port}`);
     logger.info(`📋 Meta routes: http://${config.host}:${config.port}${config.apiPrefix}/_meta/routes`);
@@ -84,8 +80,7 @@ async function bootstrap() {
         logger.info(`\n🛑 Received ${signal}. Shutting down gracefully...`);
         await httpServer.stop();
         await serviceManager.stop();
-        await sseManager.stop();
-        await terminalManager.stop();
+        await gatewayManager.stop();
         await vfsManager.stop();
         logger.info('👋 Goodbye!');
         process.exit(0);

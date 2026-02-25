@@ -4,7 +4,7 @@ import { IDE } from './IDE';
 
 export class TerminalService {
     private ide: IDE;
-    private terminals: Map<string, { terminal: Terminal, fitAddon: FitAddon, ws: WebSocket | null }> = new Map();
+    private terminals: Map<string, { terminal: Terminal, fitAddon: FitAddon, handler: (frame: any) => void }> = new Map();
 
     constructor(ide: IDE) {
         this.ide = ide;
@@ -29,22 +29,22 @@ export class TerminalService {
         // Initial fit
         setTimeout(() => fitAddon.fit(), 0);
 
-        // Setup WebSocket
-        const ws = this.connect(terminal, workspaceId);
+        // Setup UCB connection
+        const handler = this.connect(terminal, workspaceId);
 
-        this.terminals.set(workspaceId, { terminal, fitAddon, ws });
+        this.terminals.set(workspaceId, { terminal, fitAddon, handler });
 
         // Handle terminal input
         terminal.onData(data => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(data);
+            if (this.ide.ucb.isConnected()) {
+                this.ide.ucb.send('terminal', 'data', data, workspaceId);
             }
         });
 
         // Handle resize from xterm side
         terminal.onResize(({ cols, rows }) => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ resize: { cols, rows } }));
+            if (this.ide.ucb.isConnected()) {
+                this.ide.ucb.send('terminal', 'resize', { cols, rows }, workspaceId);
             }
         });
 
@@ -68,41 +68,25 @@ export class TerminalService {
         this.terminals.forEach(entry => entry.fitAddon.fit());
     }
 
-    /**
-     * Connect to the backend terminal WebSocket.
-     */
-    private connect(terminal: Terminal, workspaceId: string): WebSocket | null {
-        // Use the terminal port from config (usually 3003)
-        // Since we are in the browser, we use the same host as the current page.
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.hostname;
-        const port = 3003; // Matches our backend terminalPort default
+    private connect(terminal: Terminal, workspaceId: string): (frame: any) => void {
+        this.ide.ucb.send('terminal', 'start', {}, workspaceId);
 
-        // Get token from ApiService (using any casting for access)
-        const token = (this.ide.api as any).token;
+        const handler = (frame: any) => {
+            if (frame.streamId !== workspaceId) return;
 
-        const ws = new WebSocket(`${protocol}//${host}:${port}?workspaceId=${workspaceId}&token=${token}`);
-        ws.binaryType = 'arraybuffer';
-
-        ws.onopen = () => {
-            console.log(`[TerminalService] Connected to ${workspaceId}`);
+            if (frame.type === 'data') {
+                terminal.write(frame.payload);
+            } else if (frame.type === 'end') {
+                console.log(`[TerminalService] Disconnected from ${workspaceId}`);
+                terminal.write('\r\n\x1b[31m[Terminal Disconnected]\x1b[0m\r\n');
+            } else if (frame.type === 'error') {
+                console.error(`[TerminalService] Terminal Error:`, frame.payload);
+                terminal.write(`\r\n\x1b[31m[Error: ${frame.payload}]\x1b[0m\r\n`);
+            }
         };
 
-        ws.onmessage = (event) => {
-            terminal.write(new Uint8Array(event.data));
-        };
-
-        ws.onclose = (event) => {
-            console.log(`[TerminalService] Disconnected from ${workspaceId}`, event.reason);
-            terminal.write('\r\n\x1b[31m[Terminal Disconnected]\x1b[0m\r\n');
-        };
-
-        ws.onerror = (err) => {
-            console.error(`[TerminalService] WebSocket Error:`, err);
-            terminal.write('\r\n\x1b[31m[WebSocket Connection Error]\x1b[0m\r\n');
-        };
-
-        return ws;
+        this.ide.ucb.subscribe('terminal', handler);
+        return handler;
     }
 
     private getTheme() {
@@ -135,7 +119,8 @@ export class TerminalService {
     public destroy(workspaceId: string): void {
         const entry = this.terminals.get(workspaceId);
         if (entry) {
-            entry.ws?.close();
+            this.ide.ucb.send('terminal', 'stop', {}, workspaceId);
+            this.ide.ucb.unsubscribe('terminal', entry.handler);
             entry.terminal.dispose();
             this.terminals.delete(workspaceId);
         }

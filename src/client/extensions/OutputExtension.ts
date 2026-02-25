@@ -46,7 +46,9 @@ export const OutputExtension: Extension = {
         });
 
         // Listen for output events
-        const outputHandler = (data: any) => {
+        const outputHandler = (frame: any) => {
+            if (frame.type !== 'workspace.exec.output') return;
+            const data = frame.payload;
             console.log(data);
             if (!outputContainer) return;
 
@@ -62,7 +64,9 @@ export const OutputExtension: Extension = {
             outputContainer.scrollTop = outputContainer.scrollHeight;
         };
 
-        const exitHandler = (data: any) => {
+        const exitHandler = (frame: any) => {
+            if (frame.type !== 'workspace.exec.exit') return;
+            const data = frame.payload;
             if (!outputContainer) return;
             const div = document.createElement('div');
             div.style.marginTop = '8px';
@@ -74,13 +78,13 @@ export const OutputExtension: Extension = {
             outputContainer.scrollTop = outputContainer.scrollHeight;
         };
 
-        context.ide.api.on('workspace.exec.output', outputHandler);
-        context.ide.api.on('workspace.exec.exit', exitHandler);
+        context.ide.ucb.subscribe('terminal', outputHandler);
+        context.ide.ucb.subscribe('terminal', exitHandler);
 
         context.subscriptions.push({
             dispose: () => {
-                context.ide.api.off('workspace.exec.output', outputHandler);
-                context.ide.api.off('workspace.exec.exit', exitHandler);
+                context.ide.ucb.unsubscribe('terminal', outputHandler);
+                context.ide.ucb.unsubscribe('terminal', exitHandler);
             }
         });
 

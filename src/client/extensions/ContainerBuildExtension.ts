@@ -138,23 +138,25 @@ export const ContainerBuildExtension: Extension = {
                 const refreshSubId = ide.commands.on('workspace:loaded', update);
 
                 // Listen for execution events
-                const startHandler = (data: any) => {
-                    currentTask = data.command.join(' ');
+                const startHandler = (frame: any) => {
+                    if (frame.type !== 'workspace.exec.start') return;
+                    currentTask = frame.payload.command.join(' ');
                     update();
                 };
-                const exitHandler = () => {
+                const exitHandler = (frame: any) => {
+                    if (frame.type !== 'workspace.exec.exit') return;
                     currentTask = null;
                     update();
                 };
 
-                ide.api.on('workspace.exec.start', startHandler);
-                ide.api.on('workspace.exec.exit', exitHandler);
+                ide.ucb.subscribe('terminal', startHandler);
+                ide.ucb.subscribe('terminal', exitHandler);
 
                 disposables.push({
                     dispose: () => {
                         ide.commands.off(refreshSubId);
-                        ide.api.off('workspace.exec.start', startHandler);
-                        ide.api.off('workspace.exec.exit', exitHandler);
+                        ide.ucb.unsubscribe('terminal', startHandler);
+                        ide.ucb.unsubscribe('terminal', exitHandler);
                     }
                 });
             }

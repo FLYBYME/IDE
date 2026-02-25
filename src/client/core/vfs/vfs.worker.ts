@@ -15,8 +15,7 @@ let api: ApiService | null = null;
 let currentWorkspaceId: string | null = null;
 let configBaseUrl: string = 'http://localhost:3001/api';
 let workspaceRootName: string | null = null;
-let sseSource: EventSource | null = null;
-let sseSseUrl: string | null = null;
+
 interface VirtualFile {
     name: string;
     type: 'file';
@@ -42,6 +41,7 @@ interface WorkerRequest {
     tree?: VirtualFolder;
     config?: { token: string | null; baseUrl: string; workspaceId: string | null; rootName?: string };
     isRemoteSync?: boolean;
+    data?: any;
 }
 
 interface WorkerResponse {
@@ -100,110 +100,6 @@ function ensureParentDirectories(filePath: string): void {
 }
 
 // ---------------------------------------------------------------
-// SSE connection (owned by the worker)
-// ---------------------------------------------------------------
-function connectSSE(sseUrl: string, workspaceId: string): void {
-    const source = new EventSource(sseUrl);
-    sseSource = source;
-
-    source.onopen = () => {
-        console.log('[VFS Worker] SSE connected');
-    };
-
-    source.onerror = () => {
-        console.warn('[VFS Worker] SSE error — will retry in 3s');
-        source.close();
-        sseSource = null;
-        setTimeout(() => {
-            if (sseSseUrl && currentWorkspaceId) {
-                connectSSE(sseSseUrl, currentWorkspaceId);
-            }
-        }, 3000);
-    };
-
-    // file.saved ─ update in-memory content & notify main thread
-    source.addEventListener('file.saved', (event: MessageEvent) => {
-        try {
-            const data: { workspaceId: string; path: string; content: string } = JSON.parse(event.data);
-            // Filter to the workspace we care about
-            if (data.workspaceId !== workspaceId) return;
-
-            // Build the worker-internal path: workspaceRootName + apiPath
-            const localPath = workspaceRootName
-                ? `${workspaceRootName}${data.path.startsWith('/') ? data.path : '/' + data.path}`
-                : data.path;
-
-            const existing = files.get(localPath);
-            // Prevent echo: if content is identical, skip
-            if (existing === data.content) return;
-
-            files.set(localPath, data.content);
-            ensureParentDirectories(localPath);
-
-            (self as any).postMessage({
-                id: -1,
-                type: 'FILE_CHANGED',
-                data: { type: 'change', path: localPath, content: data.content, remoteSync: true }
-            });
-        } catch (err) {
-            console.error('[VFS Worker] Error handling file.saved SSE:', err);
-        }
-    });
-
-    // file.deleted ─ remove from memory & notify
-    source.addEventListener('file.deleted', (event: MessageEvent) => {
-        try {
-            const data: { workspaceId: string; path: string } = JSON.parse(event.data);
-            if (data.workspaceId !== workspaceId) return;
-
-            const localPath = workspaceRootName
-                ? `${workspaceRootName}${data.path.startsWith('/') ? data.path : '/' + data.path}`
-                : data.path;
-
-            files.delete(localPath);
-            directories.delete(localPath);
-
-            (self as any).postMessage({
-                id: -1,
-                type: 'FILE_CHANGED',
-                data: { type: 'delete', path: localPath, remoteSync: true }
-            });
-        } catch (err) {
-            console.error('[VFS Worker] Error handling file.deleted SSE:', err);
-        }
-    });
-
-    // file.renamed ─ move key in memory & notify
-    source.addEventListener('file.renamed', (event: MessageEvent) => {
-        try {
-            const data: { workspaceId: string; oldPath: string; newPath: string } = JSON.parse(event.data);
-            if (data.workspaceId !== workspaceId) return;
-
-            const prefix = workspaceRootName ? workspaceRootName : '';
-            const makeLocal = (p: string) => prefix ? `${prefix}${p.startsWith('/') ? p : '/' + p}` : p;
-
-            const oldLocal = makeLocal(data.oldPath);
-            const newLocal = makeLocal(data.newPath);
-
-            if (files.has(oldLocal)) {
-                const content = files.get(oldLocal)!;
-                files.delete(oldLocal);
-                files.set(newLocal, content);
-                ensureParentDirectories(newLocal);
-            }
-
-            (self as any).postMessage({
-                id: -1,
-                type: 'FILE_CHANGED',
-                data: { type: 'rename', path: newLocal, oldPath: oldLocal, remoteSync: true }
-            });
-        } catch (err) {
-            console.error('[VFS Worker] Error handling file.renamed SSE:', err);
-        }
-    });
-}
-
-// ---------------------------------------------------------------
 // Message handler
 // ---------------------------------------------------------------
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
@@ -235,17 +131,6 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                     workspaceRootName = config.rootName || null;
                     api = new ApiService(configBaseUrl);
                     api.setToken(config.token);
-
-                    // Connect to the SSE server directly from the worker
-                    if (sseSource) {
-                        sseSource.close();
-                        sseSource = null;
-                    }
-                    if (config.token && config.workspaceId) {
-                        const sseBase = configBaseUrl.replace(/:3001\/api$/, ':3002');
-                        sseSseUrl = `${sseBase}/events?token=${encodeURIComponent(config.token)}`;
-                        connectSSE(sseSseUrl, config.workspaceId);
-                    }
                 }
                 (self as any).postMessage({ id, type: 'SET_CONFIG_DONE' } as WorkerResponse);
                 break;
@@ -404,6 +289,63 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                     (self as any).postMessage({ id, type: 'STAT_DONE', data: { type: 'directory' } } as WorkerResponse);
                 } else {
                     (self as any).postMessage({ id, type: 'STAT_DONE', error: `Path not found: ${path}` } as WorkerResponse);
+                }
+                break;
+            }
+
+            case 'REMOTE_EVENT' as any: {
+                const { event, payload } = e.data.data;
+                const data = payload;
+                if (!currentWorkspaceId || data.workspaceId !== currentWorkspaceId) break;
+
+                if (event === 'file.saved') {
+                    const localPath = workspaceRootName
+                        ? `${workspaceRootName}${data.path.startsWith('/') ? data.path : '/' + data.path}`
+                        : data.path;
+
+                    const existing = files.get(localPath);
+                    if (existing === data.content) break;
+
+                    files.set(localPath, data.content);
+                    ensureParentDirectories(localPath);
+
+                    (self as any).postMessage({
+                        id: -1,
+                        type: 'FILE_CHANGED',
+                        data: { type: 'change', path: localPath, content: data.content, remoteSync: true }
+                    });
+                } else if (event === 'file.deleted') {
+                    const localPath = workspaceRootName
+                        ? `${workspaceRootName}${data.path.startsWith('/') ? data.path : '/' + data.path}`
+                        : data.path;
+
+                    files.delete(localPath);
+                    directories.delete(localPath);
+
+                    (self as any).postMessage({
+                        id: -1,
+                        type: 'FILE_CHANGED',
+                        data: { type: 'delete', path: localPath, remoteSync: true }
+                    });
+                } else if (event === 'file.renamed') {
+                    const prefix = workspaceRootName ? workspaceRootName : '';
+                    const makeLocal = (p: string) => prefix ? `${prefix}${p.startsWith('/') ? p : '/' + p}` : p;
+
+                    const oldLocal = makeLocal(data.oldPath);
+                    const newLocal = makeLocal(data.newPath);
+
+                    if (files.has(oldLocal)) {
+                        const content = files.get(oldLocal)!;
+                        files.delete(oldLocal);
+                        files.set(newLocal, content);
+                        ensureParentDirectories(newLocal);
+                    }
+
+                    (self as any).postMessage({
+                        id: -1,
+                        type: 'FILE_CHANGED',
+                        data: { type: 'rename', path: newLocal, oldPath: oldLocal, remoteSync: true }
+                    });
                 }
                 break;
             }
