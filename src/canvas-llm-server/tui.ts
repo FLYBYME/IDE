@@ -1,5 +1,5 @@
 import { HttpClient, Terminal, TerminalCommand } from 'tool-ms';
-import { EventSource } from 'eventsource';
+import { WebSocket } from 'ws';
 
 const API_URL = 'http://localhost:3001';
 
@@ -9,8 +9,8 @@ class IDESession {
     private token: string | null = null;
     private workspaceId: string | null = null;
     private workspaceName: string | null = null;
-    private sseEnabled: boolean = false;
-    private sseConnection: EventSource | null = null;
+    private ucbEnabled: boolean = false;
+    private ucbConnection: WebSocket | null = null;
 
     constructor() {
         this.client = new HttpClient(API_URL);
@@ -291,47 +291,60 @@ class IDESession {
 
     // ── Live Events (SSE) ────────────────────────────────
 
-    private toggleSse() {
-        if (this.sseEnabled) {
-            this.sseEnabled = false;
-            if (this.sseConnection) {
-                this.sseConnection.close();
-                this.sseConnection = null;
+    private toggleUcb() {
+        if (this.ucbEnabled) {
+            this.ucbEnabled = false;
+            if (this.ucbConnection) {
+                this.ucbConnection.close();
+                this.ucbConnection = null;
             }
-            this.term.log('🔕 Real-time event logging disabled.');
+            this.term.log('🔕 Real-time UCB event logging disabled.');
         } else {
-            this.sseEnabled = true;
-            this.term.log('🔔 Real-time event logging enabled. Connecting...');
-            // Standalone SSE server runs on port 3002
-            let sseUrl = `${API_URL.replace(':3001', ':3002')}/events`;
+            this.ucbEnabled = true;
+            this.term.log('🔔 Real-time UCB event logging enabled. Connecting...');
+
+            let ucbUrl = `${API_URL.replace('http://', 'ws://').replace(':3001', ':3002')}/gateway`;
             if (this.token) {
-                sseUrl += `?token=${encodeURIComponent(this.token)}`;
+                ucbUrl += `?token=${encodeURIComponent(this.token)}`;
             }
-            this.sseConnection = new EventSource(sseUrl);
 
-            this.sseConnection.onopen = () => {
-                this.term.log('📡 SSE Connected.');
-            };
+            this.ucbConnection = new WebSocket(ucbUrl);
 
-            this.sseConnection.onerror = (err: any) => {
-                this.term.log('⚠️  SSE Error/Disconnected.');
-                this.term.log(err);
-            };
+            this.ucbConnection.on('open', () => {
+                this.term.log('📡 UCB Connected.');
+            });
 
-            const logEvent = (evt: string, data: any) => {
-                if (this.sseEnabled) {
-                    this.term.log(`[SSE] ${evt} → ${data}`);
+            this.ucbConnection.on('error', (err: any) => {
+                this.term.log('⚠️  UCB Error/Disconnected.');
+                this.term.log(err.message || String(err));
+            });
+
+            this.ucbConnection.on('close', () => {
+                if (this.ucbEnabled) {
+                    this.term.log('⚠️  UCB Connection closed.');
+                    this.ucbEnabled = false;
+                    this.ucbConnection = null;
                 }
-            };
+            });
 
-            // Generic message (fallback)
-            this.sseConnection.onmessage = (e: any) => logEvent('message', e.data);
+            this.ucbConnection.on('message', (data: any) => {
+                if (!this.ucbEnabled) return;
+                try {
+                    const frame = JSON.parse(data.toString());
+                    // Ignore noisy heartbeats
+                    if (frame.type === 'heartbeat') return;
 
-            // Specific named events broadcasted by backend
-            const eventNames = ['connected', 'file.created', 'file.saved', 'file.deleted', 'file.renamed'];
-            for (const name of eventNames) {
-                this.sseConnection.addEventListener(name, (e: any) => logEvent(name, e.data));
-            }
+                    this.term.log(`[UCB|${frame.channel}] ${frame.type}`);
+                    // Only log payload if there's actual data
+                    if (frame.payload && typeof frame.payload === 'object' && Object.keys(frame.payload).length > 0) {
+                        this.term.log(`  └─ ${JSON.stringify(frame.payload)}`);
+                    } else if (frame.payload && typeof frame.payload !== 'object') {
+                        this.term.log(`  └─ ${frame.payload}`);
+                    }
+                } catch (err) {
+                    this.term.log(`[UCB Raw] ${data.toString()}`);
+                }
+            });
         }
     }
 
@@ -482,10 +495,10 @@ class IDESession {
 
             // ── Live Events ────────────────
             {
-                name: 'sse',
-                description: 'Toggle real-time SSE event logging',
+                name: 'ucb',
+                description: 'Toggle real-time UCB event logging',
                 type: 'command' as const,
-                execute: async () => { this.toggleSse(); },
+                execute: async () => { this.toggleUcb(); },
             },
 
             // ── Settings ───────────────────

@@ -187,30 +187,41 @@ export class ViewRegistry {
 
             const contentPanel = this.ide.editor.getContentPanel(providerId);
             if (contentPanel) {
-                // Create a container inside the editor content panel
-                const container = document.createElement('div');
-                container.className = 'extension-view-container';
-                container.style.width = '100%';
-                container.style.height = '100%';
-                container.style.display = 'flex';
-                container.style.flexDirection = 'column';
-                container.style.overflow = 'hidden';
-                container.style.boxSizing = 'border-box';
-                contentPanel.appendChild(container);
+                let container = this.activeContainers.get(providerId);
 
-                const oldDisposables = this.activeDisposables.get(providerId);
-                if (oldDisposables) {
-                    oldDisposables.forEach(d => d.dispose());
-                }
-                const disposables: { dispose: () => void }[] = [];
-                this.activeDisposables.set(providerId, disposables);
+                if (!container || !contentPanel.contains(container)) {
+                    contentPanel.innerHTML = ''; // ensure clean slate
 
-                try {
-                    await provider.resolveView(container, disposables);
-                    this.activeContainers.set(providerId, container);
-                } catch (error) {
-                    console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
-                    container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
+                    // Create a container inside the editor content panel
+                    container = document.createElement('div');
+                    container.className = 'extension-view-container';
+                    container.style.width = '100%';
+                    container.style.height = '100%';
+                    container.style.display = 'flex';
+                    container.style.flexDirection = 'column';
+                    container.style.overflow = 'hidden';
+                    container.style.boxSizing = 'border-box';
+                    contentPanel.appendChild(container);
+
+                    const oldDisposables = this.activeDisposables.get(providerId);
+                    if (oldDisposables) {
+                        oldDisposables.forEach(d => d.dispose());
+                    }
+                    const disposables: { dispose: () => void }[] = [];
+                    this.activeDisposables.set(providerId, disposables);
+
+                    try {
+                        await provider.resolveView(container, disposables);
+                        this.activeContainers.set(providerId, container);
+                    } catch (error) {
+                        console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
+                        container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
+                    }
+                } else {
+                    // Container exists and is already mounted
+                    if (provider.update) {
+                        provider.update({});
+                    }
                 }
             }
         }

@@ -12,7 +12,8 @@ import { SourceControlExtension } from './extensions/SourceControlExtension';
 import { OutputExtension } from './extensions/OutputExtension';
 import { ContainerBuildExtension } from './extensions/ContainerBuildExtension';
 import { TerminalExtension } from './extensions/TerminalExtension';
-
+import { ExtensionsManagerExtension } from './extensions/ExtensionsManagerExtension';
+import { ExtensionBuilderExtension } from './extensions/ExtensionBuilderExtension';
 
 // Import styles
 import './css/main.css';
@@ -41,7 +42,8 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(OutputExtension);
         ide.extensions.register(TerminalExtension);
         ide.extensions.register(ContainerBuildExtension);
-
+        ide.extensions.register(ExtensionsManagerExtension);
+        ide.extensions.register(ExtensionBuilderExtension);
 
         await ide.initialize();
     } catch (error) {

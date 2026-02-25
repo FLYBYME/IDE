@@ -228,4 +228,37 @@ export class ApiService {
         });
     }
 
+    // ── Extension Endpoints ────────────────────────────────────────
+
+    public async listExtensions(): Promise<any> {
+        return this.request<any>('/extensions');
+    }
+
+    public async toggleExtension(id: string, enabled: boolean): Promise<any> {
+        return this.request<any>(`/extensions/${encodeURIComponent(id)}/toggle`, {
+            method: 'POST',
+            body: JSON.stringify({ enabled }),
+        });
+    }
+
+    public async installExtension(id: string): Promise<any> {
+        return this.request<any>('/extensions/install', {
+            method: 'POST',
+            body: JSON.stringify({ id }),
+        });
+    }
+
+    // ── Extension Builder Endpoints ─────────────────────────────────
+
+    public async submitExtension(gitUrl: string, gitBranch: string = 'main', manifestPath: string = '/package.json'): Promise<{ buildId: string }> {
+        return this.request<{ buildId: string }>('/extensions/submit', {
+            method: 'POST',
+            body: JSON.stringify({ gitUrl, gitBranch, manifestPath }),
+        });
+    }
+
+    public async getExtensionBuildStatus(buildId: string): Promise<any> {
+        return this.request<any>(`/extensions/builds/${encodeURIComponent(buildId)}`);
+    }
+
 }

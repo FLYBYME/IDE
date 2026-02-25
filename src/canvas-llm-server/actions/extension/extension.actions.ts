@@ -4,6 +4,9 @@ import { ExtensionSubmitInput, ExtensionBuildStatusOutput, SuccessOutput } from 
 import { prisma } from '../../core/prisma';
 import { extensionBuilderService } from '../../services/ExtensionBuilderService';
 
+// In-memory store for active extensions for prototype
+const activeExtensions = new Set<string>();
+
 // ── extensions.submit ────────────────────────────────
 export const submitExtensionAction: ServiceAction = {
     name: 'extensions.submit',
@@ -84,8 +87,90 @@ export const getBuildStatusAction: ServiceAction = {
     },
 };
 
+// ── extensions.list ──────────────────────────────────
+export const listExtensionsAction: ServiceAction = {
+    name: 'extensions.list',
+    version: 1,
+    description: 'Returns a list of all available extensions and their current status',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'list'],
+    rest: { method: 'GET', path: '/extensions', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: z.object({}),
+    output: z.object({ extensions: z.array(z.any()) }),
+    handler: async (ctx) => {
+        const dbExtensions = await prisma.extension.findMany({
+            include: { author: true, versions: true }
+        });
+
+        const extensions = dbExtensions.map(ext => ({
+            id: ext.id,
+            name: ext.name,
+            description: ext.description,
+            author: ext.author.username,
+            active: activeExtensions.has(ext.id)
+        }));
+
+        if (extensions.length === 0) {
+            extensions.push(
+                { id: 'ext-dummy-1', name: 'Python Support', description: 'IntelliSense, linting, and debugging for Python.', author: 'tool-ms', active: activeExtensions.has('ext-dummy-1') },
+                { id: 'ext-dummy-2', name: 'Docker Explorer', description: 'Manage Docker containers, images, and registries.', author: 'tool-ms', active: activeExtensions.has('ext-dummy-2') },
+                { id: 'ext-dummy-3', name: 'GitLens Preview', description: 'Supercharge Git within the IDE.', author: 'tool-ms', active: activeExtensions.has('ext-dummy-3') }
+            );
+        }
+
+        return { extensions };
+    },
+};
+
+// ── extensions.toggle ─────────────────────────────────
+export const toggleExtensionAction: ServiceAction = {
+    name: 'extensions.toggle',
+    version: 1,
+    description: 'Enable or disable a specific extension by ID',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'toggle'],
+    rest: { method: 'POST', path: '/extensions/:id/toggle', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: z.object({ id: z.string(), enabled: z.boolean() }),
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id } = ctx.params as any;
+        const { enabled } = ctx.params as { enabled: boolean };
+
+        if (enabled) {
+            activeExtensions.add(id);
+        } else {
+            activeExtensions.delete(id);
+        }
+
+        return { success: true };
+    },
+};
+
+// ── extensions.install ────────────────────────────────
+export const installExtensionAction: ServiceAction = {
+    name: 'extensions.install',
+    version: 1,
+    description: 'Handles the logic for adding new extension bundles to the server',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'install'],
+    rest: { method: 'POST', path: '/extensions/install', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: z.object({ id: z.string() }),
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id } = ctx.params as { id: string };
+        activeExtensions.add(id);
+        return { success: true };
+    },
+};
+
 export default [
     submitExtensionAction,
     getBuildStatusAction,
+    listExtensionsAction,
+    toggleExtensionAction,
+    installExtensionAction,
 ];
 
