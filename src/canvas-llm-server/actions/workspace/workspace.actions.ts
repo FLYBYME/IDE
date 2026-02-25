@@ -52,11 +52,10 @@ export const listWorkspacesAction: ServiceAction = {
             id: w.id,
             name: w.name,
             description: w.description,
-            owner: w.ownerId,
-            created: w.createdAt.toISOString(),
-            updated: w.updatedAt.toISOString(),
-            files: 0,
-            size: 0,
+            ownerId: w.ownerId,
+            isPublic: w.isPublic,
+            createdAt: w.createdAt.toISOString(),
+            updatedAt: w.updatedAt.toISOString(),
         }));
 
         return {

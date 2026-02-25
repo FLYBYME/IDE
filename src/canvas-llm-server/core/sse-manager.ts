@@ -1,6 +1,8 @@
 import { ServerResponse, createServer, Server } from 'http';
 import { ConsoleLogger } from 'tool-ms';
 import { config } from '../config';
+import { verifyToken } from '../utils/token.helper';
+import { URL } from 'url';
 
 /**
  * SseManager – handles real-time Server-Sent Events (SSE).
@@ -41,12 +43,39 @@ export class SseManager {
                 return;
             }
 
-            // 2. Route Check
-            if (req.url === '/api/events' || req.url === '/events') {
-                this.addClient(res);
-            } else {
-                res.writeHead(404);
-                res.end('Not Found');
+            // 2. Route Check & Authentication
+            try {
+                // Use a dummy base since req.url is just the path
+                const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+
+                if (parsedUrl.pathname === '/api/events' || parsedUrl.pathname === '/events') {
+                    // Extract token from query parameters
+                    const token = parsedUrl.searchParams.get('token');
+
+                    if (!token) {
+                        res.writeHead(401, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Missing authentication token' }));
+                        return;
+                    }
+
+                    // Verify the JWT token
+                    try {
+                        verifyToken(token);
+                    } catch (err) {
+                        res.writeHead(401, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Invalid or expired token' }));
+                        return;
+                    }
+
+                    this.addClient(res);
+                } else {
+                    res.writeHead(404);
+                    res.end('Not Found');
+                }
+            } catch (err) {
+                this.logger.error('Error handling SSE request:', err);
+                res.writeHead(500);
+                res.end('Internal Server Error');
             }
         });
 
