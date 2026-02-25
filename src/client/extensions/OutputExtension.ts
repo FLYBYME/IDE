@@ -12,7 +12,7 @@ export const OutputExtension: Extension = {
         const outputProvider: ViewProvider = {
             id: 'core.output.view',
             name: 'Output',
-            resolveView: (container, disposables) => {
+            resolveView: (container: HTMLElement, disposables: any[]) => {
                 container.style.display = 'flex';
                 container.style.flexDirection = 'column';
                 container.style.height = '100%';

@@ -3,8 +3,7 @@
  * Creates, retrieves, layouts, and disposes Monaco editor instances.
  */
 
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.main';
-import { typescript } from 'monaco-editor/esm/vs/editor/editor.main';
+import * as monaco from 'monaco-editor';
 import { IDE } from './IDE';
 import { EditorEvents } from './EditorManager';
 import { ConfigurationEvents } from './configuration/ConfigurationService';
@@ -30,11 +29,11 @@ export class MonacoService {
         this.ide = ide;
 
         // Configure TypeScript defaults for proper module resolution
-        typescript.typescriptDefaults.setCompilerOptions({
-            target: typescript.ScriptTarget.ES2020,
+        (monaco.languages.typescript as any).typescriptDefaults.setCompilerOptions({
+            target: (monaco.languages.typescript as any).ScriptTarget.ES2020,
             allowNonTsExtensions: true,
-            moduleResolution: typescript.ModuleResolutionKind.NodeJs,
-            module: typescript.ModuleKind.CommonJS,
+            moduleResolution: (monaco.languages.typescript as any).ModuleResolutionKind.NodeJs,
+            module: (monaco.languages.typescript as any).ModuleKind.CommonJS,
             noEmit: true,
             esModuleInterop: true,
         });
@@ -89,19 +88,19 @@ export class MonacoService {
     private onConfigurationChanged(key: string, value: any): void {
         switch (key) {
             case 'editor.fontSize':
-                this.editors.forEach(editor => editor.updateOptions({ fontSize: value }));
+                this.editors.forEach((editor: monaco.editor.IStandaloneCodeEditor) => editor.updateOptions({ fontSize: value }));
                 break;
             case 'editor.theme':
                 monaco.editor.setTheme(value);
                 break;
             case 'editor.wordWrap':
-                this.editors.forEach(editor => editor.updateOptions({ wordWrap: value ? 'on' : 'off' }));
+                this.editors.forEach((editor: monaco.editor.IStandaloneCodeEditor) => editor.updateOptions({ wordWrap: value ? 'on' : 'off' }));
                 break;
             case 'editor.minimap':
-                this.editors.forEach(editor => editor.updateOptions({ minimap: { enabled: value } }));
+                this.editors.forEach((editor: monaco.editor.IStandaloneCodeEditor) => editor.updateOptions({ minimap: { enabled: value } }));
                 break;
             case 'editor.lineNumbers':
-                this.editors.forEach(editor => editor.updateOptions({ lineNumbers: value ? 'on' : 'off' }));
+                this.editors.forEach((editor: monaco.editor.IStandaloneCodeEditor) => editor.updateOptions({ lineNumbers: value ? 'on' : 'off' }));
                 break;
         }
     }
@@ -184,7 +183,7 @@ export class MonacoService {
         }
 
         // Track cursor position
-        editor.onDidChangeCursorPosition((e) => {
+        editor.onDidChangeCursorPosition((e: monaco.editor.ICursorPositionChangedEvent) => {
             // Emit an event that IDE.ts can observe for state syncing
             this.ide.commands.emit('monaco.cursor.moved', {
                 fileId,
@@ -249,7 +248,7 @@ export class MonacoService {
 
         let zoneId: string | null = null;
 
-        editor.changeViewZones((accessor) => {
+        editor.changeViewZones((accessor: any) => {
             zoneId = accessor.addZone({
                 afterLineNumber: lineNumber,
                 heightInLines: heightInLines,
@@ -273,7 +272,7 @@ export class MonacoService {
 
         const editor = this.editors.get(widget.editorId);
         if (editor) {
-            editor.changeViewZones((accessor) => {
+            editor.changeViewZones((accessor: any) => {
                 accessor.removeZone(zoneId);
             });
         }

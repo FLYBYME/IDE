@@ -46,7 +46,7 @@ export const SourceControlExtension: Extension = {
         const scmProvider: ViewProvider = {
             id: 'core.sourceControl.sidebar',
             name: 'Source Control',
-            resolveView: (container, disposables) => {
+            resolveView: (container: HTMLElement, disposables: any[]) => {
                 providerContainer = container;
                 renderFullView(container);
 
@@ -153,7 +153,7 @@ export const SourceControlExtension: Extension = {
                         const row = document.createElement('div');
                         row.className = 'scm-file-row';
                         const filename = p.split('/').pop() || p;
-                        
+
                         row.innerHTML = `
                             <div class="scm-file-row-left" title="${p}">
                                 <i class="fas ${icon} scm-file-icon" style="color: ${color}"></i>
@@ -161,7 +161,7 @@ export const SourceControlExtension: Extension = {
                             </div>
                             <div class="scm-status-badge" style="color: ${color}">${type}</div>
                         `;
-                        
+
                         if (type !== 'D') {
                             row.onclick = () => context.ide.commands.execute('file:open', p);
                         } else {

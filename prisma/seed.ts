@@ -1,8 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import { hashPassword } from '../src/canvas-llm-server/utils/password.helper';
+import { PrismaClient } from './generated/prisma/client.js';
+import { hashPassword } from '../src/canvas-llm-server/utils/password.helper.js';
 import * as crypto from 'crypto';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
-const prisma = new PrismaClient({});
+const adapter = new PrismaBetterSqlite3({
+    url: 'file:prisma/dev.db',
+});
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
     const hash = await hashPassword('admin123');

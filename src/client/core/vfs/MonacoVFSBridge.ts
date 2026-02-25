@@ -6,7 +6,7 @@
  * even those not currently open in an editor tab.
  */
 
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.main';
+import * as monaco from 'monaco-editor';
 import { FileSystemProvider } from './FileSystemProvider';
 import { IDE } from '../IDE';
 
@@ -211,7 +211,7 @@ export class MonacoVFSBridge {
     public dispose(): void {
         // Monaco's getModels returns all models; we dispose them all
         // In a real app you'd track which ones the bridge created
-        monaco.editor.getModels().forEach((model) => {
+        monaco.editor.getModels().forEach((model: monaco.editor.ITextModel) => {
             model.dispose();
         });
     }

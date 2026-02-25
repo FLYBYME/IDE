@@ -34,7 +34,7 @@ export const HelloWorldExtension: Extension = {
         const myProvider: ViewProvider = {
             id: 'my.helloworld.sidebarView',
             name: 'Hello Sidebar',
-            resolveView: (container, disposables) => {
+            resolveView: (container: HTMLElement, disposables: any[]) => {
                 container.innerHTML = `
                     <div style="padding: 15px; display: flex; flex-direction: column; gap: 10px; color: var(--text-main); font-family: var(--font-ui);">
                         <h2 style="font-size: 14px; margin: 0; text-transform: uppercase;">Hello World Extension</h2>
