@@ -33,6 +33,7 @@ interface WorkerRequest {
     content?: string;
     tree?: VirtualFolder;
     config?: { token: string | null; baseUrl: string; workspaceId: string | null; rootName?: string };
+    isRemoteSync?: boolean;
 }
 
 interface WorkerResponse {
@@ -119,6 +120,19 @@ export class WorkerFileSystemProvider implements FileSystemProvider {
 
     public async delete(path: string): Promise<void> {
         await this.sendRequest('DELETE', { path });
+    }
+
+    /**
+     * Updates the local VFS state from a server event WITHOUT triggering a recursive backend save.
+     */
+    public async syncFromServer(action: 'WRITE' | 'DELETE' | 'RENAME', path: string, payload?: any): Promise<void> {
+        if (action === 'WRITE') {
+            await this.sendRequest('WRITE_FILE', { path, content: payload, isRemoteSync: true });
+        } else if (action === 'DELETE') {
+            await this.sendRequest('DELETE', { path, isRemoteSync: true });
+        } else if (action === 'RENAME') {
+            await this.sendRequest('RENAME', { path, newPath: payload, isRemoteSync: true });
+        }
     }
 
     public async rename(oldPath: string, newPath: string): Promise<void> {

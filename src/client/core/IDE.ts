@@ -288,6 +288,43 @@ export class IDE {
                 4000
             );
 
+            // Connect to real-time events and forward to VFS
+            this.api.connectSSE();
+
+            // Listen to server file changes
+            this.api.on('file.saved', async (data: { path: string, content: string }) => {
+                // Prevent echo if this client made the change locally
+                const currentModel = this.monaco.getModel(data.path);
+                if (currentModel && currentModel.getValue() === data.content) return;
+
+                try {
+                    // 1. Tell VFS to update memory and editor models silently (no echo to server)
+                    await this.vfs.syncFromServer('WRITE', data.path, data.content);
+
+                    // 2. MonacoVFSBridge just updated the editor, which incorrectly marks it as "dirty".
+                    // Force the dirty state back to false since we just synced it with truth.
+                    this.editor.setTabDirty(data.path, false);
+                } catch (e) {
+                    console.warn(`Failed to sync SSE file.saved for ${data.path}`, e);
+                }
+            });
+
+            this.api.on('file.deleted', async (data: { path: string }) => {
+                try {
+                    await this.vfs.syncFromServer('DELETE', data.path);
+                } catch (e) {
+                    console.warn(`Failed to sync SSE file.deleted for ${data.path}`, e);
+                }
+            });
+
+            this.api.on('file.renamed', async (data: { oldPath: string, newPath: string }) => {
+                try {
+                    await this.vfs.syncFromServer('RENAME', data.oldPath, data.newPath);
+                } catch (e) {
+                    console.warn(`Failed to sync SSE file.renamed for ${data.oldPath}`, e);
+                }
+            });
+
             // Re-render the file tree if the extension is active
             this.views.renderView('left-panel', 'core.fileTree.sidebar');
 

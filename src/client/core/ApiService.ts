@@ -48,7 +48,10 @@ export class ApiService {
         if (this.eventSource) return; // already connected
 
         // Standalone SSE server runs on port 3002
-        const sseUrl = this.baseUrl.replace(/:3001\/api$/, ':3002') + '/events';
+        let sseUrl = this.baseUrl.replace(/:3001\/api$/, ':3002') + '/events';
+        if (this.token) {
+            sseUrl += `?token=${encodeURIComponent(this.token)}`;
+        }
         console.log('📡 SSE: Connecting to', sseUrl);
 
         this.eventSource = new EventSource(sseUrl);

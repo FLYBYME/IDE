@@ -39,6 +39,7 @@ interface WorkerRequest {
     content?: string;
     tree?: VirtualFolder;
     config?: { token: string | null; baseUrl: string; workspaceId: string | null; rootName?: string };
+    isRemoteSync?: boolean;
 }
 
 interface WorkerResponse {
@@ -148,8 +149,8 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                 files.set(path!, content!);
                 ensureParentDirectories(path!);
 
-                // Persist to backend if workspace is active
-                if (api && currentWorkspaceId) {
+                // Persist to backend if workspace is active and not a silent remote sync
+                if (!e.data.isRemoteSync && api && currentWorkspaceId) {
                     const relPath = toRelPath(path!);
                     api.saveFile(currentWorkspaceId, relPath, content!).catch(err => {
                         console.error(`VFS Worker: Failed to save ${relPath} to API:`, err);
@@ -190,8 +191,8 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                     }
                 }
 
-                // Persist to backend if workspace is active
-                if (api && currentWorkspaceId) {
+                // Persist to backend if workspace is active and not a silent remote sync
+                if (!e.data.isRemoteSync && api && currentWorkspaceId) {
                     const relPath = toRelPath(path!);
                     api.deleteFile(currentWorkspaceId, relPath).catch(err => {
                         console.error(`VFS Worker: Failed to delete ${relPath} from API:`, err);
@@ -251,8 +252,8 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
                     }
                 }
 
-                // Persist to backend if workspace is active
-                if (api && currentWorkspaceId) {
+                // Persist to backend if workspace is active and not a silent remote sync
+                if (!e.data.isRemoteSync && api && currentWorkspaceId) {
                     const relOld = toRelPath(oldPath);
                     const relNew = toRelPath(newPath!);
                     api.renameFile(currentWorkspaceId, relOld, relNew).catch(err => {
