@@ -24,6 +24,10 @@ export class ApiService {
         this.token = token;
     }
 
+    public getBaseUrl(): string {
+        return this.baseUrl;
+    }
+
     public setBaseUrl(baseUrl: string): void {
         this.baseUrl = baseUrl;
     }
@@ -241,10 +245,45 @@ export class ApiService {
         });
     }
 
-    public async installExtension(id: string): Promise<any> {
+    public async installExtension(versionId: string): Promise<any> {
         return this.request<any>('/extensions/install', {
             method: 'POST',
-            body: JSON.stringify({ id }),
+            body: JSON.stringify({ versionId }),
+        });
+    }
+
+    public async updateExtension(id: string, data: { description: string }): Promise<any> {
+        return this.request<any>(`/extensions/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    /**
+     * Retrieves all Extension versions from the database.
+     */
+    public async listExtensionVersions(): Promise<any> {
+        return this.request<any>('/extensions/versions');
+    }
+
+    /**
+     * Lists active processes running in the workspace builder container.
+     */
+    public async getWorkspaceProcesses(workspaceId: string): Promise<{
+        processes: Array<{
+            executionId: string;
+            command: string[];
+            startTime: number;
+        }>;
+    }> {
+        return this.request<{
+            processes: Array<{
+                executionId: string;
+                command: string[];
+                startTime: number;
+            }>;
+        }>(`/workspaces/${workspaceId}/processes`, {
+            method: 'GET'
         });
     }
 
@@ -260,9 +299,4 @@ export class ApiService {
     public async getExtensionBuildStatus(buildId: string): Promise<any> {
         return this.request<any>(`/extensions/builds/${encodeURIComponent(buildId)}`);
     }
-
-    public async listExtensionVersions(): Promise<any> {
-        return this.request<any>('/extensions/versions');
-    }
-
 }

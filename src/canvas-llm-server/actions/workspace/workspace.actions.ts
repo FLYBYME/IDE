@@ -241,6 +241,34 @@ export const executeCommandAction: ServiceAction = {
     },
 };
 
+// ── workspace.processes ──────────────────────────────
+export const listWorkspaceProcessesAction: ServiceAction = {
+    name: 'workspace.processes',
+    version: 1,
+    description: 'List active processes in the workspace container',
+    domain: 'workspace',
+    tags: ['workspace', 'process', 'execute'],
+    rest: { method: 'GET', path: '/workspaces/:id/processes', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: WorkspaceIdInput,
+    output: z.object({
+        processes: z.array(z.object({
+            executionId: z.string(),
+            command: z.array(z.string()),
+            startTime: z.number()
+        }))
+    }),
+    handler: async (ctx) => {
+        const { id } = ctx.params as z.infer<typeof WorkspaceIdInput>;
+
+        // Ensure VFS is loaded, though it should be if container is running
+        await vfsManager.getVFS(id);
+
+        const processes = workspaceContainerManager.getActiveProcesses(id);
+        return { processes };
+    }
+};
+
 export default [
     listWorkspacesAction,
     createWorkspaceAction,
@@ -248,5 +276,6 @@ export default [
     updateWorkspaceAction,
     deleteWorkspaceAction,
     executeCommandAction,
+    listWorkspaceProcessesAction,
 ];
 

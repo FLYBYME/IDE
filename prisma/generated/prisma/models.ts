@@ -8,12 +8,12 @@
  *
  * 🟢 You can import this file directly.
  */
-export type * from './models/User.js'
-export type * from './models/Extension.js'
-export type * from './models/ExtensionVersion.js'
-export type * from './models/Workspace.js'
-export type * from './models/UserSettings.js'
-export type * from './models/WorkspaceSettings.js'
-export type * from './models/EditorState.js'
-export type * from './models/TabState.js'
-export type * from './commonInputTypes.js'
+export type * from './models/User'
+export type * from './models/Extension'
+export type * from './models/ExtensionVersion'
+export type * from './models/Workspace'
+export type * from './models/UserSettings'
+export type * from './models/WorkspaceSettings'
+export type * from './models/EditorState'
+export type * from './models/TabState'
+export type * from './commonInputTypes'

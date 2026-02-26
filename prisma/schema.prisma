@@ -32,8 +32,10 @@ model Extension {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  author       User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  versions     ExtensionVersion[]
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions           ExtensionVersion[]
+  active             Boolean   @default(false)
+  installedVersionId String?
 }
 
 model ExtensionVersion {

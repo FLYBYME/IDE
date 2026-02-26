@@ -138,6 +138,24 @@ export class IDE {
 
             // VFS initialized (files will be populated when a workspace is loaded)
 
+            // Dynamically load all installed and active user extensions
+            try {
+                const extData = await this.api.listExtensions();
+                const activeExtensions = extData.extensions.filter((e: any) => e.active && e.installedVersionId);
+                const loadPromises = activeExtensions.map((ext: any) => {
+                    const version = ext.versions?.find((v: any) => v.id === ext.installedVersionId);
+                    if (version && version.entryPointUrl) {
+                        return this.extensions.loadFromUrl(version.entryPointUrl).catch(err => {
+                            console.error(`Failed to load extension ${ext.name}:`, err);
+                        });
+                    }
+                    return Promise.resolve();
+                });
+                await Promise.all(loadPromises);
+            } catch (err) {
+                console.error('Failed to load dynamic extensions on boot:', err);
+            }
+
             // Initialize extensions after the core UI is ready
             await this.extensions.activateAll();
 

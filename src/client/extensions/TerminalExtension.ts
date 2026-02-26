@@ -31,22 +31,15 @@ export const TerminalExtension: Extension = {
                     ide.terminal.fit(workspaceId);
                 };
 
-                // Listen for layout resize events
-                const resizeSubId = ide.commands.on('panel.resize', (data: any) => {
-                    if (data.panelId === 'bottom-panel') {
-                        onResize();
-                    }
+                // Use ResizeObserver for robust fitting on load and resize
+                const observer = new ResizeObserver(() => {
+                    onResize();
                 });
-                const visibilitySubId = ide.commands.on('panel.toggle', (data: any) => {
-                    if (data.panelId === 'bottom-panel' && data.visible) {
-                        setTimeout(onResize, 50); // Small delay to allow DOM to update
-                    }
-                });
+                observer.observe(container);
 
                 disposables.push({
                     dispose: () => {
-                        ide.commands.off(resizeSubId);
-                        ide.commands.off(visibilitySubId);
+                        observer.disconnect();
                         // We don't destroy the terminal here to keep it alive when switching views
                         // But if the extension is deactivated, we should.
                     }

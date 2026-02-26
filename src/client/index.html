@@ -8,6 +8,18 @@
     <meta name="description" content="A VS Code-like IDE built with TypeScript and modern web technologies">
     <!-- Using FontAwesome for IDE Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Import map for dynamically loaded extensions -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "/lib/react.js",
+        "react-dom": "/lib/react-dom.js",
+        "canvas-ide-core": "/lib/canvas-ide-core.js",
+        "monaco-editor": "/lib/monaco-editor.js"
+      }
+    }
+    </script>
 </head>
 
 <body>

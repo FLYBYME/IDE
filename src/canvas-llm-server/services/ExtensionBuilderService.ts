@@ -74,9 +74,20 @@ export class ExtensionBuilderService {
 
             const buildScript = `
 import * as esbuild from 'esbuild';
+import fs from 'fs';
+
+const entryPoints = [];
+if (fs.existsSync('src/index.ts')) entryPoints.push('src/index.ts');
+if (fs.existsSync('src/index.js')) entryPoints.push('src/index.js');
+
+if (entryPoints.length === 0) {
+    console.error('No entry points found (src/index.ts or src/index.js)');
+    process.exit(1);
+}
+
 try {
     await esbuild.build({
-        entryPoints: ['src/index.ts', 'src/index.js'],
+        entryPoints,
         bundle: true,
         outfile: 'dist/bundle.js',
         platform: 'browser',

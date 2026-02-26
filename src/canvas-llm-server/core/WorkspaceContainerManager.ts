@@ -11,6 +11,7 @@ export interface WorkspaceContainer {
     container: Docker.Container;
     watcher: FSWatcher;
     bridgeDir: string;
+    activeExecs: Map<string, { executionId: string, command: string[], startTime: number }>;
 }
 
 
@@ -44,7 +45,7 @@ export class WorkspaceContainerManager {
 
             // 3. Start persistent Docker container
             const container = await this.docker.createContainer({
-                Image: 'node:25-alpine',
+                Image: config.workspaceImage,
                 Cmd: ['tail', '-f', '/dev/null'],
                 HostConfig: {
                     Binds: [`${bridgeDir}:/workspace:rw`],
@@ -54,12 +55,13 @@ export class WorkspaceContainerManager {
             });
 
             await container.start();
-            this.logger.info(`🚀 Started container ${container.id} for workspace ${workspaceId}`);
+            this.logger.info(`🚀 Started container ${container.id} for workspace ${workspaceId} using image ${config.workspaceImage}`);
 
             // 4. Initialize Host Watcher (Container -> VFS)
             const watcher = watch(bridgeDir, {
                 ignoreInitial: true,
                 persistent: true,
+                ignored: [/(^|[\/\\])\../, '**/node_modules/**'], // Ignore dotfiles/directories (like .git) and node_modules
             });
 
             watcher.on('all', async (event: string, filePath: string) => {
@@ -70,18 +72,45 @@ export class WorkspaceContainerManager {
                 try {
                     if (event === 'add' || event === 'change') {
                         const content = await fs.readFile(filePath, 'utf-8');
+                        // Ensure it's prefixed with a slash for frontend
+                        const vfsPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+
                         vfs.write(relativePath, content);
-                        this.logger.debug(`Synced to VFS: ${relativePath} (${event})`);
+
+                        // Emit to frontend via UCB
+                        gatewayManager.broadcast('vfs', 'file.saved', {
+                            workspaceId,
+                            path: vfsPath,
+                            content
+                        });
+
+                        this.logger.debug(`Synced to VFS & Frontend: ${relativePath} (${event})`);
                     } else if (event === 'unlink' || event === 'unlinkDir') {
+                        // Ensure it's prefixed with a slash for frontend
+                        const vfsPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+
                         vfs.delete(relativePath);
-                        this.logger.debug(`Deleted from VFS: ${relativePath}`);
+
+                        // Emit to frontend via UCB
+                        gatewayManager.broadcast('vfs', 'file.deleted', {
+                            workspaceId,
+                            path: vfsPath
+                        });
+
+                        this.logger.debug(`Deleted from VFS & Frontend: ${relativePath}`);
                     }
                 } catch (err) {
-                    this.logger.error(`Failed to sync host change to VFS: ${relativePath}`, err);
+                    this.logger.error(`Failed to sync host change to VFS/Frontend: ${relativePath}`, err);
                 }
             });
 
-            this.activeContainers.set(workspaceId, { container, watcher, bridgeDir });
+
+            this.activeContainers.set(workspaceId, {
+                container,
+                watcher,
+                bridgeDir,
+                activeExecs: new Map()
+            });
 
         } catch (err) {
             this.logger.error(`Failed to start workspace container for ${workspaceId}`, err);
@@ -112,6 +141,13 @@ export class WorkspaceContainerManager {
             executionId,
             command
         }, workspaceId);
+
+        // Track process
+        ws.activeExecs.set(executionId, {
+            executionId,
+            command,
+            startTime: Date.now()
+        });
 
         // Use dockerode's internal modem to demux the stream correctly
         ws.container.modem.demuxStream(stream, {
@@ -150,9 +186,12 @@ export class WorkspaceContainerManager {
                     executionId,
                     exitCode: 1
                 }, workspaceId);
+            } finally {
+                ws.activeExecs.delete(executionId);
             }
         });
     }
+
     /**
      * Executes a command inside the workspace container and waits for completion.
      * Returns the exit code.
@@ -171,6 +210,13 @@ export class WorkspaceContainerManager {
         });
 
         const stream = await exec.start({});
+
+        // Track process
+        ws.activeExecs.set(executionId, {
+            executionId,
+            command,
+            startTime: Date.now()
+        });
 
         ws.container.modem.demuxStream(stream, {
             write: (chunk: Buffer) => {
@@ -205,9 +251,14 @@ export class WorkspaceContainerManager {
                     resolve(exitCode);
                 } catch (err) {
                     reject(err);
+                } finally {
+                    ws.activeExecs.delete(executionId);
                 }
             });
-            stream.on('error', (err) => reject(err));
+            stream.on('error', (err) => {
+                ws.activeExecs.delete(executionId);
+                reject(err);
+            });
         });
     }
 
@@ -220,9 +271,19 @@ export class WorkspaceContainerManager {
 
         try {
             await ws.watcher.close();
+
+            // Clear directory contents as root in container before stopping to prevent host EACCES
+            try {
+                const exec = await ws.container.exec({ Cmd: ['sh', '-c', 'rm -rf /workspace/* /workspace/.* 2>/dev/null || true'] });
+                const stream = await exec.start({});
+                await new Promise((resolve) => stream.on('end', resolve));
+            } catch (cleanupErr) {
+                // Ignore cleanup errors
+            }
+
             await ws.container.stop();
             await ws.container.remove();
-            await fs.rm(ws.bridgeDir, { recursive: true, force: true });
+            await fs.rm(ws.bridgeDir, { recursive: true, force: true }).catch(() => { });
 
             this.activeContainers.delete(workspaceId);
             this.logger.info(`🛑 Stopped workspace container for ${workspaceId}`);
@@ -236,6 +297,16 @@ export class WorkspaceContainerManager {
      */
     public getWorkspace(workspaceId: string): WorkspaceContainer | undefined {
         return this.activeContainers.get(workspaceId);
+    }
+
+    /**
+     * Retrieves the currently active processes for a given workspace.
+     */
+    public getActiveProcesses(workspaceId: string): any[] {
+        const ws = this.activeContainers.get(workspaceId);
+        if (!ws) return [];
+
+        return Array.from(ws.activeExecs.values());
     }
 
     /**

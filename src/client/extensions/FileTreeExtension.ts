@@ -330,6 +330,16 @@ export const FileTreeExtension: Extension = {
                 const wsSub = context.ide.commands.on('workspace:loaded', renderTree);
                 disposables.push({ dispose: () => context.ide.commands.off(wsSub) });
 
+                // Re-render when files change
+                const vfs = context.ide.vfs;
+                const onFileChanged = () => renderTree();
+
+                vfs.onDidChangeFile(onFileChanged);
+
+                // Note: WorkerFileSystemProvider currently doesn't implement a removeListener/off 
+                // method for onDidChangeFile, so we can't cleanly dispose this. It's okay because 
+                // this view typically lives for the lifetime of the IDE.
+
                 renderTree();
             },
             update: () => {

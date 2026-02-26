@@ -26,4 +26,6 @@ export const config = {
     },
 
     snapshotDir: process.env.SNAPSHOT_DIR || './snapshots',
+
+    workspaceImage: process.env.WORKSPACE_IMAGE || 'canvas-workspace:latest',
 };

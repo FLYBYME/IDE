@@ -15,6 +15,10 @@ import { TerminalExtension } from './extensions/TerminalExtension';
 import { ExtensionsManagerExtension } from './extensions/ExtensionsManagerExtension';
 import { ExtensionBuilderExtension } from './extensions/ExtensionBuilderExtension';
 
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+import * as monaco from 'monaco-editor';
+
 // Import styles
 import './css/main.css';
 import './css/layout.css';
@@ -25,6 +29,24 @@ import './css/dialog.css';
 import './css/inline-edit.css';
 import './css/sourcecontrol.css';
 import './css/container-build.css';
+
+import * as Core from './core';
+
+// Expose dependencies to the global window object for dynamically loaded extensions
+declare global {
+    interface Window {
+        __IDE_REACT__: typeof React;
+        __IDE_REACT_DOM__: typeof ReactDOM;
+        __IDE_MONACO__: typeof monaco;
+        __IDE_CORE__: typeof Core;
+    }
+}
+
+window.__IDE_REACT__ = React;
+window.__IDE_REACT_DOM__ = ReactDOM;
+window.__IDE_MONACO__ = monaco;
+window.__IDE_CORE__ = Core;
+
 
 /**
  * Main application initialization

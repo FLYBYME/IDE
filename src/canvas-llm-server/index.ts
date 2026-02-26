@@ -2,6 +2,7 @@ import { ServiceManager, HttpServerManager, ConsoleLogger, Adapter } from 'tool-
 import { config } from './config';
 import { authGuard } from './middleware/auth-guard';
 import { vfsManager } from './core/vfs-manager';
+import path from 'path';
 
 // ── Import all service actions ───────────────────────
 import authActions from './actions/auth/auth.actions';
@@ -55,7 +56,14 @@ async function bootstrap() {
             requireAuth: authGuard,
         },
         routers: [],
+        staticFiles: [
+            {
+                path: '/public',
+                directory: path.join(process.cwd(), 'public'),
+            },
+        ],
     });
+    console.log('[StaticFiles]', path.join(process.cwd(), 'public'));
 
     // ── 4. Start VFS Manager ────────────────────────
     vfsManager.start();

@@ -140,14 +140,16 @@ export const listExtensionsAction: ServiceAction = {
             name: ext.name,
             description: ext.description,
             author: ext.author.username,
-            active: activeExtensions.has(ext.id)
+            active: ext.active,
+            installedVersionId: ext.installedVersionId,
+            versions: ext.versions
         }));
 
         if (extensions.length === 0) {
             extensions.push(
-                { id: 'ext-dummy-1', name: 'Python Support', description: 'IntelliSense, linting, and debugging for Python.', author: 'tool-ms', active: activeExtensions.has('ext-dummy-1') },
-                { id: 'ext-dummy-2', name: 'Docker Explorer', description: 'Manage Docker containers, images, and registries.', author: 'tool-ms', active: activeExtensions.has('ext-dummy-2') },
-                { id: 'ext-dummy-3', name: 'GitLens Preview', description: 'Supercharge Git within the IDE.', author: 'tool-ms', active: activeExtensions.has('ext-dummy-3') }
+                { id: 'ext-dummy-1', name: 'Python Support', description: 'IntelliSense, linting, and debugging for Python.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] },
+                { id: 'ext-dummy-2', name: 'Docker Explorer', description: 'Manage Docker containers, images, and registries.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] },
+                { id: 'ext-dummy-3', name: 'GitLens Preview', description: 'Supercharge Git within the IDE.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] }
             );
         }
 
@@ -170,11 +172,10 @@ export const toggleExtensionAction: ServiceAction = {
         const { id } = ctx.params as any;
         const { enabled } = ctx.params as { enabled: boolean };
 
-        if (enabled) {
-            activeExtensions.add(id);
-        } else {
-            activeExtensions.delete(id);
-        }
+        await prisma.extension.update({
+            where: { id },
+            data: { active: enabled }
+        });
 
         return { success: true };
     },
@@ -184,16 +185,55 @@ export const toggleExtensionAction: ServiceAction = {
 export const installExtensionAction: ServiceAction = {
     name: 'extensions.install',
     version: 1,
-    description: 'Handles the logic for adding new extension bundles to the server',
+    description: 'Handles the logic for installing a specific extension version',
     domain: 'extension',
     tags: ['extension', 'marketplace', 'install'],
     rest: { method: 'POST', path: '/extensions/install', middleware: ['requireAuth'] },
     auth: { required: true },
-    input: z.object({ id: z.string() }),
+    input: z.object({ versionId: z.string() }),
     output: SuccessOutput,
     handler: async (ctx) => {
-        const { id } = ctx.params as { id: string };
-        activeExtensions.add(id);
+        const { versionId } = ctx.params as { versionId: string };
+        const version = await prisma.extensionVersion.findUnique({
+            where: { id: versionId }
+        });
+
+        if (!version) {
+            throw new Error(`ExtensionVersion ${versionId} not found`);
+        }
+
+        // Install it by activating the extension it belongs to
+        await prisma.extension.update({
+            where: { id: version.extensionId },
+            data: { active: true, installedVersionId: version.id }
+        });
+
+        return { success: true };
+    },
+};
+
+// ── extensions.update ─────────────────────────────────
+export const updateExtensionAction: ServiceAction = {
+    name: 'extensions.update',
+    version: 1,
+    description: 'Update an extension (e.g. description)',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'update'],
+    rest: { method: 'PATCH', path: '/extensions/:id', middleware: ['requireAuth'] },
+    auth: { required: true },
+    input: z.object({ id: z.string(), description: z.string().optional() }), // and other fields later
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id } = ctx.params as any;
+        const { description } = ctx.params as { description?: string };
+
+        await prisma.extension.update({
+            where: { id },
+            data: {
+                ...(description !== undefined && { description })
+            }
+        });
+
         return { success: true };
     },
 };
@@ -205,5 +245,6 @@ export default [
     listExtensionsAction,
     toggleExtensionAction,
     installExtensionAction,
+    updateExtensionAction,
 ];
 

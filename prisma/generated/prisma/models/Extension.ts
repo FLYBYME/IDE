@@ -9,8 +9,8 @@
  * 🟢 You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
-import type * as $Enums from "../enums.js"
-import type * as Prisma from "../internal/prismaNamespace.js"
+import type * as $Enums from "../enums"
+import type * as Prisma from "../internal/prismaNamespace"
 
 /**
  * Model Extension
@@ -31,6 +31,8 @@ export type ExtensionMinAggregateOutputType = {
   authorId: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  active: boolean | null
+  installedVersionId: string | null
 }
 
 export type ExtensionMaxAggregateOutputType = {
@@ -40,6 +42,8 @@ export type ExtensionMaxAggregateOutputType = {
   authorId: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  active: boolean | null
+  installedVersionId: string | null
 }
 
 export type ExtensionCountAggregateOutputType = {
@@ -49,6 +53,8 @@ export type ExtensionCountAggregateOutputType = {
   authorId: number
   createdAt: number
   updatedAt: number
+  active: number
+  installedVersionId: number
   _all: number
 }
 
@@ -60,6 +66,8 @@ export type ExtensionMinAggregateInputType = {
   authorId?: true
   createdAt?: true
   updatedAt?: true
+  active?: true
+  installedVersionId?: true
 }
 
 export type ExtensionMaxAggregateInputType = {
@@ -69,6 +77,8 @@ export type ExtensionMaxAggregateInputType = {
   authorId?: true
   createdAt?: true
   updatedAt?: true
+  active?: true
+  installedVersionId?: true
 }
 
 export type ExtensionCountAggregateInputType = {
@@ -78,6 +88,8 @@ export type ExtensionCountAggregateInputType = {
   authorId?: true
   createdAt?: true
   updatedAt?: true
+  active?: true
+  installedVersionId?: true
   _all?: true
 }
 
@@ -160,6 +172,8 @@ export type ExtensionGroupByOutputType = {
   authorId: string
   createdAt: Date
   updatedAt: Date
+  active: boolean
+  installedVersionId: string | null
   _count: ExtensionCountAggregateOutputType | null
   _min: ExtensionMinAggregateOutputType | null
   _max: ExtensionMaxAggregateOutputType | null
@@ -190,6 +204,8 @@ export type ExtensionWhereInput = {
   authorId?: Prisma.StringFilter<"Extension"> | string
   createdAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
+  active?: Prisma.BoolFilter<"Extension"> | boolean
+  installedVersionId?: Prisma.StringNullableFilter<"Extension"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   versions?: Prisma.ExtensionVersionListRelationFilter
 }
@@ -201,6 +217,8 @@ export type ExtensionOrderByWithRelationInput = {
   authorId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  active?: Prisma.SortOrder
+  installedVersionId?: Prisma.SortOrderInput | Prisma.SortOrder
   author?: Prisma.UserOrderByWithRelationInput
   versions?: Prisma.ExtensionVersionOrderByRelationAggregateInput
 }
@@ -215,6 +233,8 @@ export type ExtensionWhereUniqueInput = Prisma.AtLeast<{
   authorId?: Prisma.StringFilter<"Extension"> | string
   createdAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
+  active?: Prisma.BoolFilter<"Extension"> | boolean
+  installedVersionId?: Prisma.StringNullableFilter<"Extension"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   versions?: Prisma.ExtensionVersionListRelationFilter
 }, "id" | "name">
@@ -226,6 +246,8 @@ export type ExtensionOrderByWithAggregationInput = {
   authorId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  active?: Prisma.SortOrder
+  installedVersionId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ExtensionCountOrderByAggregateInput
   _max?: Prisma.ExtensionMaxOrderByAggregateInput
   _min?: Prisma.ExtensionMinOrderByAggregateInput
@@ -241,6 +263,8 @@ export type ExtensionScalarWhereWithAggregatesInput = {
   authorId?: Prisma.StringWithAggregatesFilter<"Extension"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Extension"> | Date | string
+  active?: Prisma.BoolWithAggregatesFilter<"Extension"> | boolean
+  installedVersionId?: Prisma.StringNullableWithAggregatesFilter<"Extension"> | string | null
 }
 
 export type ExtensionCreateInput = {
@@ -249,6 +273,8 @@ export type ExtensionCreateInput = {
   description?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
   author: Prisma.UserCreateNestedOneWithoutExtensionsInput
   versions?: Prisma.ExtensionVersionCreateNestedManyWithoutExtensionInput
 }
@@ -260,6 +286,8 @@ export type ExtensionUncheckedCreateInput = {
   authorId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
   versions?: Prisma.ExtensionVersionUncheckedCreateNestedManyWithoutExtensionInput
 }
 
@@ -269,6 +297,8 @@ export type ExtensionUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutExtensionsNestedInput
   versions?: Prisma.ExtensionVersionUpdateManyWithoutExtensionNestedInput
 }
@@ -280,6 +310,8 @@ export type ExtensionUncheckedUpdateInput = {
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   versions?: Prisma.ExtensionVersionUncheckedUpdateManyWithoutExtensionNestedInput
 }
 
@@ -290,6 +322,8 @@ export type ExtensionCreateManyInput = {
   authorId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
 }
 
 export type ExtensionUpdateManyMutationInput = {
@@ -298,6 +332,8 @@ export type ExtensionUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ExtensionUncheckedUpdateManyInput = {
@@ -307,6 +343,8 @@ export type ExtensionUncheckedUpdateManyInput = {
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ExtensionListRelationFilter = {
@@ -326,6 +364,8 @@ export type ExtensionCountOrderByAggregateInput = {
   authorId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  active?: Prisma.SortOrder
+  installedVersionId?: Prisma.SortOrder
 }
 
 export type ExtensionMaxOrderByAggregateInput = {
@@ -335,6 +375,8 @@ export type ExtensionMaxOrderByAggregateInput = {
   authorId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  active?: Prisma.SortOrder
+  installedVersionId?: Prisma.SortOrder
 }
 
 export type ExtensionMinOrderByAggregateInput = {
@@ -344,6 +386,8 @@ export type ExtensionMinOrderByAggregateInput = {
   authorId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  active?: Prisma.SortOrder
+  installedVersionId?: Prisma.SortOrder
 }
 
 export type ExtensionScalarRelationFilter = {
@@ -397,6 +441,10 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
 export type ExtensionCreateNestedOneWithoutVersionsInput = {
   create?: Prisma.XOR<Prisma.ExtensionCreateWithoutVersionsInput, Prisma.ExtensionUncheckedCreateWithoutVersionsInput>
   connectOrCreate?: Prisma.ExtensionCreateOrConnectWithoutVersionsInput
@@ -417,6 +465,8 @@ export type ExtensionCreateWithoutAuthorInput = {
   description?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
   versions?: Prisma.ExtensionVersionCreateNestedManyWithoutExtensionInput
 }
 
@@ -426,6 +476,8 @@ export type ExtensionUncheckedCreateWithoutAuthorInput = {
   description?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
   versions?: Prisma.ExtensionVersionUncheckedCreateNestedManyWithoutExtensionInput
 }
 
@@ -464,6 +516,8 @@ export type ExtensionScalarWhereInput = {
   authorId?: Prisma.StringFilter<"Extension"> | string
   createdAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
+  active?: Prisma.BoolFilter<"Extension"> | boolean
+  installedVersionId?: Prisma.StringNullableFilter<"Extension"> | string | null
 }
 
 export type ExtensionCreateWithoutVersionsInput = {
@@ -472,6 +526,8 @@ export type ExtensionCreateWithoutVersionsInput = {
   description?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
   author: Prisma.UserCreateNestedOneWithoutExtensionsInput
 }
 
@@ -482,6 +538,8 @@ export type ExtensionUncheckedCreateWithoutVersionsInput = {
   authorId: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
 }
 
 export type ExtensionCreateOrConnectWithoutVersionsInput = {
@@ -506,6 +564,8 @@ export type ExtensionUpdateWithoutVersionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutExtensionsNestedInput
 }
 
@@ -516,6 +576,8 @@ export type ExtensionUncheckedUpdateWithoutVersionsInput = {
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ExtensionCreateManyAuthorInput = {
@@ -524,6 +586,8 @@ export type ExtensionCreateManyAuthorInput = {
   description?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
 }
 
 export type ExtensionUpdateWithoutAuthorInput = {
@@ -532,6 +596,8 @@ export type ExtensionUpdateWithoutAuthorInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   versions?: Prisma.ExtensionVersionUpdateManyWithoutExtensionNestedInput
 }
 
@@ -541,6 +607,8 @@ export type ExtensionUncheckedUpdateWithoutAuthorInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   versions?: Prisma.ExtensionVersionUncheckedUpdateManyWithoutExtensionNestedInput
 }
 
@@ -550,6 +618,8 @@ export type ExtensionUncheckedUpdateManyWithoutAuthorInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -590,6 +660,8 @@ export type ExtensionSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   authorId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  active?: boolean
+  installedVersionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   versions?: boolean | Prisma.Extension$versionsArgs<ExtArgs>
   _count?: boolean | Prisma.ExtensionCountOutputTypeDefaultArgs<ExtArgs>
@@ -602,6 +674,8 @@ export type ExtensionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   authorId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  active?: boolean
+  installedVersionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["extension"]>
 
@@ -612,6 +686,8 @@ export type ExtensionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   authorId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  active?: boolean
+  installedVersionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["extension"]>
 
@@ -622,9 +698,11 @@ export type ExtensionSelectScalar = {
   authorId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  active?: boolean
+  installedVersionId?: boolean
 }
 
-export type ExtensionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "authorId" | "createdAt" | "updatedAt", ExtArgs["result"]["extension"]>
+export type ExtensionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "authorId" | "createdAt" | "updatedAt" | "active" | "installedVersionId", ExtArgs["result"]["extension"]>
 export type ExtensionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   versions?: boolean | Prisma.Extension$versionsArgs<ExtArgs>
@@ -650,6 +728,8 @@ export type $ExtensionPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     authorId: string
     createdAt: Date
     updatedAt: Date
+    active: boolean
+    installedVersionId: string | null
   }, ExtArgs["result"]["extension"]>
   composites: {}
 }
@@ -1081,6 +1161,8 @@ export interface ExtensionFieldRefs {
   readonly authorId: Prisma.FieldRef<"Extension", 'String'>
   readonly createdAt: Prisma.FieldRef<"Extension", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Extension", 'DateTime'>
+  readonly active: Prisma.FieldRef<"Extension", 'Boolean'>
+  readonly installedVersionId: Prisma.FieldRef<"Extension", 'String'>
 }
     
 
