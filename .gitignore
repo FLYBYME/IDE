@@ -124,3 +124,4 @@ agent-log.txt
 snapshots/
 /generated/prisma
 *.db
+/public/extensions
