@@ -134,7 +134,9 @@ export class MonacoService {
         container: HTMLElement,
         fileId: string,
         content: string,
-        language: string
+        language: string,
+        lineNumber?: number,
+        column?: number
     ): monaco.editor.IStandaloneCodeEditor {
         // If an editor already exists for this fileId, dispose it first
         if (this.editors.has(fileId)) {
@@ -171,6 +173,12 @@ export class MonacoService {
             wordWrap: wordWrap ? 'on' : 'off',
             lineNumbers: lineNumbers === false ? 'off' : 'on',
         });
+
+        if (lineNumber !== undefined) {
+            const pos = { lineNumber, column: column || 1 };
+            editor.setPosition(pos);
+            editor.revealPositionInCenter(pos, monaco.editor.ScrollType.Smooth);
+        }
 
         this.editors.set(fileId, editor);
 

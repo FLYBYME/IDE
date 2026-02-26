@@ -359,4 +359,13 @@ export class ApiService {
             method: 'POST',
         });
     }
+
+    public async searchFiles(workspaceId: string, params: { query: string; type?: 'name' | 'content' | 'both'; caseSensitive?: boolean; limit?: number }): Promise<any> {
+        const query = new URLSearchParams();
+        query.set('query', params.query);
+        if (params.type) query.set('type', params.type);
+        if (params.caseSensitive !== undefined) query.set('caseSensitive', String(params.caseSensitive));
+        if (params.limit) query.set('limit', String(params.limit));
+        return this.request<any>(`/workspaces/${workspaceId}/files/search?${query.toString()}`);
+    }
 }

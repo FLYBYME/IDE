@@ -65,6 +65,19 @@ export class EditorManager {
             label: 'Split Editor Right',
             handler: () => this.grid.splitRight(),
         });
+        this.ide.commands.register({
+            id: 'editor.openFile',
+            label: 'Open File',
+            handler: (args: { path: string; line?: number; column?: number }) => {
+                // We need to get content/language. In a real system, we'd fetch from VFS.
+                // For now, we assume the file is already known or we fetch it.
+                this.ide.vfs.readFile(args.path).then(content => {
+                    const name = args.path.split('/').pop() || args.path;
+                    const language = (this.ide as any).vfsBridge.detectLanguage(name) || 'text';
+                    this.openFile(args.path, name, content, language, undefined, args.line, args.column);
+                });
+            }
+        });
     }
 
     public openTab(config: EditorTabConfig): void {
@@ -72,11 +85,18 @@ export class EditorManager {
         group.openTab(config);
     }
 
-    public openFile(fileId: string, title: string, content: string, language: string, icon?: string): void {
+    public openFile(fileId: string, title: string, content: string, language: string, icon?: string, line?: number, column?: number): void {
         const group = this.grid.getGroupForTab(fileId) || this.grid.getActiveGroup();
 
         if (group.hasTab(fileId)) {
             group.activateTab(fileId);
+            // If already open, just navigate
+            const monacoEditor = this.ide.monaco.getEditor(fileId);
+            if (monacoEditor && line !== undefined) {
+                const pos = { lineNumber: line, column: column || 1 };
+                monacoEditor.setPosition(pos);
+                monacoEditor.revealPositionInCenter(pos, (window as any).monaco.editor.ScrollType.Smooth);
+            }
             return;
         }
 
@@ -86,7 +106,7 @@ export class EditorManager {
         if (contentPanel && this.ide.monaco) {
             contentPanel.style.overflow = 'hidden';
             contentPanel.style.position = 'relative';
-            this.ide.monaco.openFile(contentPanel, fileId, content, language);
+            this.ide.monaco.openFile(contentPanel, fileId, content, language, line, column);
         }
     }
 
