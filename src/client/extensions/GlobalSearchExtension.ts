@@ -292,10 +292,17 @@ export const GlobalSearchExtension: Extension = {
                         const icon = document.createElement('i');
                         icon.className = 'fas fa-chevron-down search-file-icon';
 
+                        const workspaceId = ide.activeWorkspace?.id;
+                        const workspaceName = ide.activeWorkspace?.name;
+                        let displayPath = file.path;
+                        if (workspaceId && workspaceName && displayPath.startsWith(`/workspace/${workspaceId}`)) {
+                            displayPath = displayPath.replace(`/workspace/${workspaceId}`, workspaceName);
+                        }
+
                         const name = document.createElement('span');
                         name.className = 'search-file-name';
                         name.textContent = file.path.split('/').pop() || file.path;
-                        name.title = file.path;
+                        name.title = displayPath;
 
                         const count = document.createElement('span');
                         count.className = 'search-match-count';
@@ -340,7 +347,7 @@ export const GlobalSearchExtension: Extension = {
                         fileHeader.addEventListener('click', () => {
                             const collapsed = matchesContainer.style.display === 'none';
                             matchesContainer.style.display = collapsed ? 'block' : 'none';
-                            icon.className = collapsed ? 'fas fa-chevron-right search-file-icon' : 'fas fa-chevron-down search-file-icon';
+                            icon.className = collapsed ? 'fas fa-chevron-down search-file-icon' : 'fas fa-chevron-right search-file-icon';
                         });
 
                         resultsList.appendChild(fileNode);

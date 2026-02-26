@@ -69,12 +69,29 @@ export class EditorManager {
             id: 'editor.openFile',
             label: 'Open File',
             handler: (args: { path: string; line?: number; column?: number }) => {
-                // We need to get content/language. In a real system, we'd fetch from VFS.
-                // For now, we assume the file is already known or we fetch it.
-                this.ide.vfs.readFile(args.path).then(content => {
-                    const name = args.path.split('/').pop() || args.path;
+                let filePath = args.path;
+                const workspaceId = this.ide.activeWorkspace?.id;
+                const workspaceName = this.ide.activeWorkspace?.name;
+
+                // Normalize path: Map backend path (/workspace/ID/...) to VFS path (workspaceName/...)
+                if (workspaceId && workspaceName && filePath.startsWith(`/workspace/${workspaceId}`)) {
+                    filePath = filePath.replace(`/workspace/${workspaceId}`, workspaceName);
+                } else if (filePath.startsWith('/') && workspaceName && !filePath.startsWith(workspaceName)) {
+                    filePath = workspaceName + filePath;
+                }
+
+                // If tab is already open, just navigate without re-reading file
+                if (this.hasTab(filePath)) {
+                    this.openFile(filePath, '', '', '', undefined, args.line, args.column);
+                    return;
+                }
+
+                this.ide.vfs.readFile(filePath).then(content => {
+                    const name = filePath.split('/').pop() || filePath;
                     const language = (this.ide as any).vfsBridge.detectLanguage(name) || 'text';
-                    this.openFile(args.path, name, content, language, undefined, args.line, args.column);
+                    this.openFile(filePath, name, content, language, undefined, args.line, args.column);
+                }).catch(err => {
+                    console.error('Failed to open file via command:', filePath, err);
                 });
             }
         });
