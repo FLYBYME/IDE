@@ -7,7 +7,7 @@ import { IDE } from './core/IDE';
 //import { HelloWorldExtension } from './extensions/HelloWorldExtension';
 import { FileTreeExtension } from './extensions/FileTreeExtension';
 import { ScratchpadExtension } from './extensions/ScratchpadExtension';
-import { SettingsEditorExtension } from './extensions/SettingsEditorExtension';
+import SettingsManagerExtension from './extensions/SettingsEditorExtension';
 import { SourceControlExtension } from './extensions/SourceControlExtension';
 import { OutputExtension } from './extensions/OutputExtension';
 import { ContainerBuildExtension } from './extensions/ContainerBuildExtension';
@@ -59,7 +59,7 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(FileTreeExtension);
         //ide.extensions.register(HelloWorldExtension);
         ide.extensions.register(ScratchpadExtension);
-        ide.extensions.register(SettingsEditorExtension);
+        //ide.extensions.register(SettingsManagerExtension);
         ide.extensions.register(SourceControlExtension);
         ide.extensions.register(OutputExtension);
         ide.extensions.register(TerminalExtension);

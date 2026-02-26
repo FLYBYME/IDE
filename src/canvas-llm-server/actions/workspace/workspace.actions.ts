@@ -139,8 +139,11 @@ export const getWorkspaceAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceIdInput>;
+        const userId = ctx.headers['x-user-id'] as string;
+
         const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
+        if (ws.ownerId !== userId && !ws.isPublic) throw new Error('Unauthorized');
 
         const vfs = await vfsManager.getVFS(id);
         const files = vfs.getAllFiles();
@@ -172,9 +175,11 @@ export const updateWorkspaceAction: ServiceAction = {
     output: z.object({ id: z.string(), updated: z.string() }),
     handler: async (ctx) => {
         const { id, name, description, isPublic } = ctx.params as z.infer<typeof WorkspaceUpdateInput>;
+        const userId = ctx.headers['x-user-id'] as string;
 
         let ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
+        if (ws.ownerId !== userId) throw new Error('Unauthorized');
 
         ws = await prisma.workspace.update({
             where: { id },
@@ -202,12 +207,15 @@ export const deleteWorkspaceAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceDeleteInput>;
+        const userId = ctx.headers['x-user-id'] as string;
 
         const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
+        if (ws.ownerId !== userId) throw new Error('Unauthorized');
 
         await prisma.workspace.delete({ where: { id } });
         await vfsManager.removeWorkspace(id);
+        await workspaceContainerManager.stopWorkspace(id).catch(e => console.error(`Failed to stop container for workspace ${id}:`, e));
 
         return { success: true, message: 'Workspace deleted' };
     },
@@ -226,6 +234,12 @@ export const executeCommandAction: ServiceAction = {
     output: z.object({ executionId: z.string() }),
     handler: async (ctx) => {
         const { id, command } = ctx.params as z.infer<typeof WorkspaceExecuteInput>;
+        const userId = ctx.headers['x-user-id'] as string;
+
+        const ws = await prisma.workspace.findUnique({ where: { id } });
+        if (!ws) throw new Error('Workspace not found');
+        if (ws.ownerId !== userId) throw new Error('Unauthorized');
+
         const executionId = crypto.randomUUID();
 
         // Ensure VFS (and thus container) is loaded
@@ -260,6 +274,11 @@ export const listWorkspaceProcessesAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceIdInput>;
+        const userId = ctx.headers['x-user-id'] as string;
+
+        const ws = await prisma.workspace.findUnique({ where: { id } });
+        if (!ws) throw new Error('Workspace not found');
+        if (ws.ownerId !== userId) throw new Error('Unauthorized');
 
         // Ensure VFS is loaded, though it should be if container is running
         await vfsManager.getVFS(id);

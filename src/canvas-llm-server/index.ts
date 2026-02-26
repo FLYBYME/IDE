@@ -15,6 +15,7 @@ import realtimeActions from './actions/realtime/realtime.actions';
 import metaActions from './actions/meta/meta.actions';
 import sourceControlActions from './actions/source-control/source-control.actions';
 import extensionActions from './actions/extension/extension.actions';
+import secretsActions from './actions/secrets/secrets.actions';
 import { gatewayManager } from './core/gateway-manager';
 
 async function bootstrap() {
@@ -36,6 +37,7 @@ async function bootstrap() {
         ...metaActions,
         ...sourceControlActions,
         ...extensionActions,
+        ...secretsActions,
     ];
 
     serviceManager.registerMany(allActions);

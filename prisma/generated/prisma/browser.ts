@@ -33,10 +33,20 @@ export type Extension = Prisma.ExtensionModel
  */
 export type ExtensionVersion = Prisma.ExtensionVersionModel
 /**
+ * Model UserExtension
+ * 
+ */
+export type UserExtension = Prisma.UserExtensionModel
+/**
  * Model Workspace
  * 
  */
 export type Workspace = Prisma.WorkspaceModel
+/**
+ * Model WorkspaceSecret
+ * 
+ */
+export type WorkspaceSecret = Prisma.WorkspaceSecretModel
 /**
  * Model UserSettings
  * 

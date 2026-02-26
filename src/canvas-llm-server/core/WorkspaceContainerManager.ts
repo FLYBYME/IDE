@@ -6,6 +6,8 @@ import { VirtualFileSystem } from 'vfs';
 import { gatewayManager } from './gateway-manager';
 import { config } from '../config';
 import { ConsoleLogger } from 'tool-ms';
+import { prisma } from './prisma';
+import { decrypt } from '../actions/secrets/secrets.actions';
 
 export interface WorkspaceContainer {
     container: Docker.Container;
@@ -43,10 +45,17 @@ export class WorkspaceContainerManager {
                 await fs.writeFile(hostPath, file.content);
             }
 
-            // 3. Start persistent Docker container
+            // 3. Prepare Environment Variables
+            const secrets = await prisma.workspaceSecret.findMany({ where: { workspaceId } });
+            const envVars = secrets.map(s => `${s.key}=${decrypt(s.value)}`);
+            envVars.push(`WORKSPACE_ID=${workspaceId}`);
+            envVars.push('TERM=xterm-256color');
+
+            // 4. Start persistent Docker container
             const container = await this.docker.createContainer({
                 Image: config.workspaceImage,
                 Cmd: ['tail', '-f', '/dev/null'],
+                Env: envVars,
                 HostConfig: {
                     Binds: [`${bridgeDir}:/workspace:rw`],
                 },
@@ -57,7 +66,7 @@ export class WorkspaceContainerManager {
             await container.start();
             this.logger.info(`🚀 Started container ${container.id} for workspace ${workspaceId} using image ${config.workspaceImage}`);
 
-            // 4. Initialize Host Watcher (Container -> VFS)
+            // 5. Initialize Host Watcher (Container -> VFS)
             const watcher = watch(bridgeDir, {
                 ignoreInitial: true,
                 persistent: true,

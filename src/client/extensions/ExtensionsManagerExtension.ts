@@ -64,10 +64,12 @@ export const ExtensionsManagerExtension: Extension = {
                 wrapper.appendChild(grid);
 
                 // Load Extensions Action
-                const loadExtensions = async () => {
+                const loadExtensions = async (query?: string) => {
                     grid.innerHTML = '<div style="color: #888;">Loading extensions...</div>';
                     try {
-                        const result = await ide.api.listExtensions();
+                        const result = query
+                            ? await ide.api.searchExtensions({ q: query })
+                            : await ide.api.listExtensions();
                         grid.innerHTML = '';
                         const exts = result.extensions || [];
 
@@ -78,30 +80,19 @@ export const ExtensionsManagerExtension: Extension = {
                         for (const ext of exts) {
                             const card = document.createElement('div');
                             card.className = 'extension-card';
-                            card.style.background = '#2a2a2a';
-                            card.style.border = '1px solid #333';
-                            card.style.borderRadius = '6px';
-                            card.style.padding = '15px';
-                            card.style.display = 'flex';
-                            card.style.flexDirection = 'column';
-                            card.style.gap = '10px';
 
                             // Card Header: Name + Toggle
                             const cardHeader = document.createElement('div');
-                            cardHeader.style.display = 'flex';
-                            cardHeader.style.justifyContent = 'space-between';
-                            cardHeader.style.alignItems = 'flex-start';
+                            cardHeader.className = 'extension-card-header';
 
                             const nameWrap = document.createElement('div');
                             const nameEl = document.createElement('h3');
+                            nameEl.className = 'extension-card-title';
                             nameEl.textContent = ext.name;
-                            nameEl.style.margin = '0 0 5px 0';
-                            nameEl.style.fontSize = '16px';
 
                             const authorEl = document.createElement('div');
-                            authorEl.textContent = ext.author;
-                            authorEl.style.fontSize = '12px';
-                            authorEl.style.color = '#888';
+                            authorEl.className = 'extension-card-author';
+                            authorEl.innerHTML = `<i class="fas fa-user-circle"></i> ${ext.author}`;
                             nameWrap.appendChild(nameEl);
                             nameWrap.appendChild(authorEl);
 
@@ -109,25 +100,20 @@ export const ExtensionsManagerExtension: Extension = {
                                 const installedV = (ext.versions || []).find((v: any) => v.id === ext.installedVersionId);
                                 if (installedV) {
                                     const vLabel = document.createElement('div');
-                                    vLabel.textContent = `Installed: v${installedV.version}`;
-                                    vLabel.style.fontSize = '12px';
-                                    vLabel.style.color = '#4caf50'; // Green text
-                                    vLabel.style.marginTop = '4px';
+                                    vLabel.className = 'extension-card-version-label';
+                                    vLabel.innerHTML = `<i class="fas fa-check-circle"></i> Installed: v${installedV.version}`;
                                     nameWrap.appendChild(vLabel);
                                 }
                             }
 
                             cardHeader.appendChild(nameWrap);
 
-                            // Version Selector
+                            // Version Selector & Actions
                             const versionWrap = document.createElement('div');
-                            versionWrap.style.display = 'flex';
-                            versionWrap.style.gap = '10px';
-                            versionWrap.style.alignItems = 'center';
+                            versionWrap.className = 'extension-card-actions';
 
                             const versionSelect = document.createElement('select');
-                            versionSelect.className = 'settings-input'; // Reuse input styles
-                            versionSelect.style.padding = '4px 8px';
+                            versionSelect.className = 'extension-card-select';
 
                             const versions = ext.versions || [];
                             if (versions.length === 0) {
@@ -137,14 +123,12 @@ export const ExtensionsManagerExtension: Extension = {
                                 versionSelect.appendChild(opt);
                                 versionSelect.disabled = true;
                             } else {
-                                // Sort versions descending (assumes semantic versioning or just rely on array order)
                                 const sortedVersions = versions.sort((a: any, b: any) =>
                                     (b.createdAt > a.createdAt) ? 1 : -1
                                 );
 
                                 for (const v of sortedVersions) {
                                     const opt = document.createElement('option');
-                                    // Make it clear if it's not ready
                                     const readySuffix = v.status === 'READY' ? '' : ` (${v.status})`;
                                     opt.textContent = `v${v.version}${readySuffix}`;
                                     opt.value = v.id;
@@ -157,8 +141,8 @@ export const ExtensionsManagerExtension: Extension = {
                             }
 
                             const installBtn = document.createElement('button');
-                            installBtn.className = 'settings-button';
-                            installBtn.textContent = ext.active ? 'Update / Reinstall' : 'Install';
+                            installBtn.className = 'extension-card-btn extension-card-btn-primary';
+                            installBtn.innerHTML = ext.installedVersionId ? '<i class="fas fa-sync-alt"></i> Update' : '<i class="fas fa-download"></i> Install';
                             if (versions.length === 0) {
                                 installBtn.disabled = true;
                             }
@@ -168,15 +152,13 @@ export const ExtensionsManagerExtension: Extension = {
                                 if (!selectedVersionId) return;
 
                                 installBtn.disabled = true;
-                                installBtn.textContent = 'Installing...';
+                                installBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installing...';
                                 try {
                                     await ide.api.installExtension(selectedVersionId);
                                     ide.notifications.notify(`Installed extension: ${ext.name}`, 'success');
 
-                                    // Make sure we forcefully unregister the old version if it was active
                                     await ide.extensions.deactivate(ext.id);
 
-                                    // Load new version dynamically
                                     const selectedVersion = versions.find((v: any) => v.id === selectedVersionId);
                                     if (selectedVersion && selectedVersion.entryPointUrl) {
                                         await ide.extensions.loadFromUrl(selectedVersion.entryPointUrl);
@@ -185,10 +167,10 @@ export const ExtensionsManagerExtension: Extension = {
                                         console.warn('Backend did not provide entryPointUrl, cannot load dynamically.');
                                     }
 
-                                    loadExtensions(); // Refresh UI fully
+                                    loadExtensions(searchInput.value.trim());
                                 } catch (err: any) {
                                     ide.notifications.notify(`Failed to install extension: ${err.message}`, 'error');
-                                    installBtn.textContent = 'Install';
+                                    installBtn.innerHTML = ext.installedVersionId ? '<i class="fas fa-sync-alt"></i> Update' : '<i class="fas fa-download"></i> Install';
                                 } finally {
                                     installBtn.disabled = false;
                                 }
@@ -197,76 +179,115 @@ export const ExtensionsManagerExtension: Extension = {
                             versionWrap.appendChild(versionSelect);
                             versionWrap.appendChild(installBtn);
 
-                            // Also add an uninstall/disable button if active
-                            if (ext.active) {
+                            if (ext.installedVersionId) {
                                 const disableBtn = document.createElement('button');
-                                disableBtn.className = 'settings-button settings-button-danger';
-                                disableBtn.textContent = 'Disable';
-                                disableBtn.style.background = '#f44336';
-                                disableBtn.style.color = 'white';
-                                disableBtn.style.border = 'none';
+                                disableBtn.className = 'extension-card-btn extension-card-btn-danger';
+                                disableBtn.innerHTML = ext.active ? '<i class="fas fa-power-off"></i> Disable' : '<i class="fas fa-play"></i> Enable';
                                 disableBtn.addEventListener('click', async () => {
                                     try {
-                                        await ide.api.toggleExtension(ext.id, false);
-                                        ide.notifications.notify(`Disabled extension: ${ext.name}`, 'info');
-                                        await ide.extensions.deactivate(ext.id);
-                                        loadExtensions(); // Reload the whole list to update buttons
+                                        await ide.api.toggleExtension(ext.id, !ext.active);
+                                        ide.notifications.notify(`${ext.active ? 'Disabled' : 'Enabled'} extension: ${ext.name}`, 'info');
+                                        if (ext.active) {
+                                            await ide.extensions.deactivate(ext.id);
+                                        } else {
+                                            // To truly enable we might need to load from entryPointUrl if it's not registered
+                                            // But for now, we just reload the data
+                                        }
+                                        loadExtensions(searchInput.value.trim());
                                     } catch (err: any) {
-                                        ide.notifications.notify(`Failed to disable extension: ${err.message}`, 'error');
+                                        ide.notifications.notify(`Failed to toggle extension: ${err.message}`, 'error');
                                     }
                                 });
                                 versionWrap.appendChild(disableBtn);
+
+                                const uninstallBtn = document.createElement('button');
+                                uninstallBtn.className = 'extension-card-btn extension-card-btn-danger';
+                                uninstallBtn.innerHTML = '<i class="fas fa-trash"></i> Uninstall';
+                                uninstallBtn.addEventListener('click', async () => {
+                                    if (!confirm(`Are you sure you want to uninstall ${ext.name}?`)) return;
+                                    try {
+                                        uninstallBtn.disabled = true;
+                                        await ide.api.uninstallExtension(ext.id);
+                                        ide.notifications.notify(`Uninstalled extension: ${ext.name}`, 'info');
+                                        await ide.extensions.deactivate(ext.id);
+                                        loadExtensions(searchInput.value.trim());
+                                    } catch (err: any) {
+                                        ide.notifications.notify(`Failed to uninstall extension: ${err.message}`, 'error');
+                                        uninstallBtn.disabled = false;
+                                    }
+                                });
+                                versionWrap.appendChild(uninstallBtn);
                             }
 
-                            cardHeader.appendChild(versionWrap);
+                            const rebuildBtn = document.createElement('button');
+                            rebuildBtn.className = 'extension-card-btn extension-card-btn-secondary';
+                            rebuildBtn.innerHTML = '<i class="fas fa-hammer"></i> Rebuild';
+                            rebuildBtn.title = 'Trigger a new build from the source repository';
+                            rebuildBtn.addEventListener('click', async () => {
+                                try {
+                                    rebuildBtn.disabled = true;
+                                    rebuildBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Triggering...';
+                                    const { buildId } = await ide.api.rebuildExtension(ext.id);
+                                    ide.notifications.notify(`Build triggered for ${ext.name}. Build ID: ${buildId}`, 'info');
+                                } catch (err: any) {
+                                    ide.notifications.notify(`Failed to trigger build: ${err.message}`, 'error');
+                                } finally {
+                                    rebuildBtn.disabled = false;
+                                    rebuildBtn.innerHTML = '<i class="fas fa-hammer"></i> Rebuild';
+                                }
+                            });
+                            versionWrap.appendChild(rebuildBtn);
+
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'extension-card-btn extension-card-btn-danger';
+                            deleteBtn.style.marginTop = '10px';
+                            deleteBtn.innerHTML = '<i class="fas fa-eraser"></i> Delete from Marketplace';
+                            deleteBtn.title = 'Delete this extension completely (Must be author)';
+                            deleteBtn.addEventListener('click', async () => {
+                                if (!confirm(`WARNING: Are you sure you want to completely DELETE ${ext.name} from the marketplace? This cannot be undone.`)) return;
+                                try {
+                                    deleteBtn.disabled = true;
+                                    await ide.api.deleteExtension(ext.id);
+                                    ide.notifications.notify(`Deleted extension: ${ext.name}`, 'success');
+                                    loadExtensions(searchInput.value.trim());
+                                } catch (err: any) {
+                                    ide.notifications.notify(`Failed to delete extension: ${err.message}`, 'error');
+                                    deleteBtn.disabled = false;
+                                }
+                            });
+                            versionWrap.appendChild(deleteBtn);
 
                             card.appendChild(cardHeader);
 
                             const descWrap = document.createElement('div');
-                            descWrap.style.display = 'flex';
-                            descWrap.style.flexDirection = 'column';
-                            descWrap.style.gap = '5px';
-                            descWrap.style.flex = '1';
+                            descWrap.className = 'extension-card-desc-wrap';
 
                             const descDisplayWrap = document.createElement('div');
-                            descDisplayWrap.style.display = 'flex';
-                            descDisplayWrap.style.justifyContent = 'space-between';
-                            descDisplayWrap.style.alignItems = 'flex-start';
-                            descDisplayWrap.style.gap = '10px';
+                            descDisplayWrap.className = 'extension-card-desc-display';
 
                             const descText = document.createElement('p');
+                            descText.className = 'extension-card-desc';
                             descText.textContent = ext.description || 'No description provided.';
-                            descText.style.margin = '0';
-                            descText.style.fontSize = '13px';
-                            descText.style.color = '#ccc';
-                            descText.style.flex = '1';
                             descDisplayWrap.appendChild(descText);
 
                             const editDescBtn = document.createElement('button');
+                            editDescBtn.className = 'extension-card-edit-btn';
                             editDescBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                            editDescBtn.style.background = 'transparent';
-                            editDescBtn.style.border = 'none';
-                            editDescBtn.style.color = '#888';
-                            editDescBtn.style.cursor = 'pointer';
                             editDescBtn.title = 'Edit Description';
                             descDisplayWrap.appendChild(editDescBtn);
 
                             const descEditWrap = document.createElement('div');
-                            descEditWrap.style.display = 'none';
-                            descEditWrap.style.flexDirection = 'column';
-                            descEditWrap.style.gap = '5px';
+                            descEditWrap.className = 'extension-card-desc-edit';
 
                             const descInput = document.createElement('textarea');
                             descInput.value = ext.description || '';
-                            descInput.className = 'settings-input';
-                            descInput.style.minHeight = '60px';
-                            descInput.style.resize = 'vertical';
+                            descInput.className = 'extension-card-textarea';
                             descEditWrap.appendChild(descInput);
 
                             const saveDescBtn = document.createElement('button');
-                            saveDescBtn.className = 'settings-button';
-                            saveDescBtn.textContent = 'Save Description';
+                            saveDescBtn.className = 'extension-card-btn extension-card-btn-primary';
                             saveDescBtn.style.alignSelf = 'flex-start';
+                            saveDescBtn.innerHTML = '<i class="fas fa-save"></i> Save Description';
                             descEditWrap.appendChild(saveDescBtn);
 
                             editDescBtn.addEventListener('click', () => {
@@ -277,7 +298,7 @@ export const ExtensionsManagerExtension: Extension = {
 
                             saveDescBtn.addEventListener('click', async () => {
                                 saveDescBtn.disabled = true;
-                                saveDescBtn.textContent = 'Saving...';
+                                saveDescBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
                                 try {
                                     await ide.api.updateExtension(ext.id, { description: descInput.value });
                                     descText.textContent = descInput.value || 'No description provided.';
@@ -288,31 +309,25 @@ export const ExtensionsManagerExtension: Extension = {
                                     ide.notifications.notify(`Failed to update description: ${err.message}`, 'error');
                                 } finally {
                                     saveDescBtn.disabled = false;
-                                    saveDescBtn.textContent = 'Save Description';
+                                    saveDescBtn.innerHTML = '<i class="fas fa-save"></i> Save Description';
                                 }
                             });
 
                             descWrap.appendChild(descDisplayWrap);
                             descWrap.appendChild(descEditWrap);
                             card.appendChild(descWrap);
-
-                            // Bottom actions
-                            const actions = document.createElement('div');
-                            actions.style.display = 'flex';
-                            actions.style.justifyContent = 'flex-end';
-                            actions.style.marginTop = '10px';
+                            card.appendChild(versionWrap);
 
                             grid.appendChild(card);
                         }
 
-                        // Filtering logic
+                        // Filtering logic (Debounced server-side search)
+                        let searchTimeout: any = null;
                         searchInput.addEventListener('input', () => {
-                            const q = searchInput.value.toLowerCase().trim();
-                            const cards = grid.querySelectorAll('.extension-card') as NodeListOf<HTMLElement>;
-                            for (let i = 0; i < cards.length; i++) {
-                                const text = cards[i].textContent || '';
-                                cards[i].style.display = text.toLowerCase().includes(q) ? 'flex' : 'none';
-                            }
+                            if (searchTimeout) clearTimeout(searchTimeout);
+                            searchTimeout = setTimeout(() => {
+                                loadExtensions(searchInput.value.trim());
+                            }, 300);
                         });
 
 

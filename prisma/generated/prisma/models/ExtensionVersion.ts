@@ -215,6 +215,7 @@ export type ExtensionVersionWhereInput = {
   entryPointUrl?: Prisma.StringNullableFilter<"ExtensionVersion"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ExtensionVersion"> | Date | string
   extension?: Prisma.XOR<Prisma.ExtensionScalarRelationFilter, Prisma.ExtensionWhereInput>
+  installations?: Prisma.UserExtensionListRelationFilter
 }
 
 export type ExtensionVersionOrderByWithRelationInput = {
@@ -228,6 +229,7 @@ export type ExtensionVersionOrderByWithRelationInput = {
   entryPointUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   extension?: Prisma.ExtensionOrderByWithRelationInput
+  installations?: Prisma.UserExtensionOrderByRelationAggregateInput
 }
 
 export type ExtensionVersionWhereUniqueInput = Prisma.AtLeast<{
@@ -244,6 +246,7 @@ export type ExtensionVersionWhereUniqueInput = Prisma.AtLeast<{
   entryPointUrl?: Prisma.StringNullableFilter<"ExtensionVersion"> | string | null
   createdAt?: Prisma.DateTimeFilter<"ExtensionVersion"> | Date | string
   extension?: Prisma.XOR<Prisma.ExtensionScalarRelationFilter, Prisma.ExtensionWhereInput>
+  installations?: Prisma.UserExtensionListRelationFilter
 }, "id">
 
 export type ExtensionVersionOrderByWithAggregationInput = {
@@ -286,6 +289,7 @@ export type ExtensionVersionCreateInput = {
   entryPointUrl?: string | null
   createdAt?: Date | string
   extension: Prisma.ExtensionCreateNestedOneWithoutVersionsInput
+  installations?: Prisma.UserExtensionCreateNestedManyWithoutInstalledVersionInput
 }
 
 export type ExtensionVersionUncheckedCreateInput = {
@@ -298,6 +302,7 @@ export type ExtensionVersionUncheckedCreateInput = {
   buildLogs?: string
   entryPointUrl?: string | null
   createdAt?: Date | string
+  installations?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutInstalledVersionInput
 }
 
 export type ExtensionVersionUpdateInput = {
@@ -310,6 +315,7 @@ export type ExtensionVersionUpdateInput = {
   entryPointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   extension?: Prisma.ExtensionUpdateOneRequiredWithoutVersionsNestedInput
+  installations?: Prisma.UserExtensionUpdateManyWithoutInstalledVersionNestedInput
 }
 
 export type ExtensionVersionUncheckedUpdateInput = {
@@ -322,6 +328,7 @@ export type ExtensionVersionUncheckedUpdateInput = {
   buildLogs?: Prisma.StringFieldUpdateOperationsInput | string
   entryPointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  installations?: Prisma.UserExtensionUncheckedUpdateManyWithoutInstalledVersionNestedInput
 }
 
 export type ExtensionVersionCreateManyInput = {
@@ -405,6 +412,11 @@ export type ExtensionVersionMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
 }
 
+export type ExtensionVersionScalarRelationFilter = {
+  is?: Prisma.ExtensionVersionWhereInput
+  isNot?: Prisma.ExtensionVersionWhereInput
+}
+
 export type ExtensionVersionCreateNestedManyWithoutExtensionInput = {
   create?: Prisma.XOR<Prisma.ExtensionVersionCreateWithoutExtensionInput, Prisma.ExtensionVersionUncheckedCreateWithoutExtensionInput> | Prisma.ExtensionVersionCreateWithoutExtensionInput[] | Prisma.ExtensionVersionUncheckedCreateWithoutExtensionInput[]
   connectOrCreate?: Prisma.ExtensionVersionCreateOrConnectWithoutExtensionInput | Prisma.ExtensionVersionCreateOrConnectWithoutExtensionInput[]
@@ -447,6 +459,20 @@ export type ExtensionVersionUncheckedUpdateManyWithoutExtensionNestedInput = {
   deleteMany?: Prisma.ExtensionVersionScalarWhereInput | Prisma.ExtensionVersionScalarWhereInput[]
 }
 
+export type ExtensionVersionCreateNestedOneWithoutInstallationsInput = {
+  create?: Prisma.XOR<Prisma.ExtensionVersionCreateWithoutInstallationsInput, Prisma.ExtensionVersionUncheckedCreateWithoutInstallationsInput>
+  connectOrCreate?: Prisma.ExtensionVersionCreateOrConnectWithoutInstallationsInput
+  connect?: Prisma.ExtensionVersionWhereUniqueInput
+}
+
+export type ExtensionVersionUpdateOneRequiredWithoutInstallationsNestedInput = {
+  create?: Prisma.XOR<Prisma.ExtensionVersionCreateWithoutInstallationsInput, Prisma.ExtensionVersionUncheckedCreateWithoutInstallationsInput>
+  connectOrCreate?: Prisma.ExtensionVersionCreateOrConnectWithoutInstallationsInput
+  upsert?: Prisma.ExtensionVersionUpsertWithoutInstallationsInput
+  connect?: Prisma.ExtensionVersionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ExtensionVersionUpdateToOneWithWhereWithoutInstallationsInput, Prisma.ExtensionVersionUpdateWithoutInstallationsInput>, Prisma.ExtensionVersionUncheckedUpdateWithoutInstallationsInput>
+}
+
 export type ExtensionVersionCreateWithoutExtensionInput = {
   id?: string
   version: string
@@ -456,6 +482,7 @@ export type ExtensionVersionCreateWithoutExtensionInput = {
   buildLogs?: string
   entryPointUrl?: string | null
   createdAt?: Date | string
+  installations?: Prisma.UserExtensionCreateNestedManyWithoutInstalledVersionInput
 }
 
 export type ExtensionVersionUncheckedCreateWithoutExtensionInput = {
@@ -467,6 +494,7 @@ export type ExtensionVersionUncheckedCreateWithoutExtensionInput = {
   buildLogs?: string
   entryPointUrl?: string | null
   createdAt?: Date | string
+  installations?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutInstalledVersionInput
 }
 
 export type ExtensionVersionCreateOrConnectWithoutExtensionInput = {
@@ -509,6 +537,70 @@ export type ExtensionVersionScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"ExtensionVersion"> | Date | string
 }
 
+export type ExtensionVersionCreateWithoutInstallationsInput = {
+  id?: string
+  version: string
+  gitUrl: string
+  gitBranch?: string
+  status?: string
+  buildLogs?: string
+  entryPointUrl?: string | null
+  createdAt?: Date | string
+  extension: Prisma.ExtensionCreateNestedOneWithoutVersionsInput
+}
+
+export type ExtensionVersionUncheckedCreateWithoutInstallationsInput = {
+  id?: string
+  extensionId: string
+  version: string
+  gitUrl: string
+  gitBranch?: string
+  status?: string
+  buildLogs?: string
+  entryPointUrl?: string | null
+  createdAt?: Date | string
+}
+
+export type ExtensionVersionCreateOrConnectWithoutInstallationsInput = {
+  where: Prisma.ExtensionVersionWhereUniqueInput
+  create: Prisma.XOR<Prisma.ExtensionVersionCreateWithoutInstallationsInput, Prisma.ExtensionVersionUncheckedCreateWithoutInstallationsInput>
+}
+
+export type ExtensionVersionUpsertWithoutInstallationsInput = {
+  update: Prisma.XOR<Prisma.ExtensionVersionUpdateWithoutInstallationsInput, Prisma.ExtensionVersionUncheckedUpdateWithoutInstallationsInput>
+  create: Prisma.XOR<Prisma.ExtensionVersionCreateWithoutInstallationsInput, Prisma.ExtensionVersionUncheckedCreateWithoutInstallationsInput>
+  where?: Prisma.ExtensionVersionWhereInput
+}
+
+export type ExtensionVersionUpdateToOneWithWhereWithoutInstallationsInput = {
+  where?: Prisma.ExtensionVersionWhereInput
+  data: Prisma.XOR<Prisma.ExtensionVersionUpdateWithoutInstallationsInput, Prisma.ExtensionVersionUncheckedUpdateWithoutInstallationsInput>
+}
+
+export type ExtensionVersionUpdateWithoutInstallationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  gitUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  gitBranch?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  buildLogs?: Prisma.StringFieldUpdateOperationsInput | string
+  entryPointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  extension?: Prisma.ExtensionUpdateOneRequiredWithoutVersionsNestedInput
+}
+
+export type ExtensionVersionUncheckedUpdateWithoutInstallationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  extensionId?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  gitUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  gitBranch?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  buildLogs?: Prisma.StringFieldUpdateOperationsInput | string
+  entryPointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type ExtensionVersionCreateManyExtensionInput = {
   id?: string
   version: string
@@ -529,6 +621,7 @@ export type ExtensionVersionUpdateWithoutExtensionInput = {
   buildLogs?: Prisma.StringFieldUpdateOperationsInput | string
   entryPointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  installations?: Prisma.UserExtensionUpdateManyWithoutInstalledVersionNestedInput
 }
 
 export type ExtensionVersionUncheckedUpdateWithoutExtensionInput = {
@@ -540,6 +633,7 @@ export type ExtensionVersionUncheckedUpdateWithoutExtensionInput = {
   buildLogs?: Prisma.StringFieldUpdateOperationsInput | string
   entryPointUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  installations?: Prisma.UserExtensionUncheckedUpdateManyWithoutInstalledVersionNestedInput
 }
 
 export type ExtensionVersionUncheckedUpdateManyWithoutExtensionInput = {
@@ -554,6 +648,35 @@ export type ExtensionVersionUncheckedUpdateManyWithoutExtensionInput = {
 }
 
 
+/**
+ * Count Type ExtensionVersionCountOutputType
+ */
+
+export type ExtensionVersionCountOutputType = {
+  installations: number
+}
+
+export type ExtensionVersionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  installations?: boolean | ExtensionVersionCountOutputTypeCountInstallationsArgs
+}
+
+/**
+ * ExtensionVersionCountOutputType without action
+ */
+export type ExtensionVersionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ExtensionVersionCountOutputType
+   */
+  select?: Prisma.ExtensionVersionCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ExtensionVersionCountOutputType without action
+ */
+export type ExtensionVersionCountOutputTypeCountInstallationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserExtensionWhereInput
+}
+
 
 export type ExtensionVersionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -566,6 +689,8 @@ export type ExtensionVersionSelect<ExtArgs extends runtime.Types.Extensions.Inte
   entryPointUrl?: boolean
   createdAt?: boolean
   extension?: boolean | Prisma.ExtensionDefaultArgs<ExtArgs>
+  installations?: boolean | Prisma.ExtensionVersion$installationsArgs<ExtArgs>
+  _count?: boolean | Prisma.ExtensionVersionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["extensionVersion"]>
 
 export type ExtensionVersionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -609,6 +734,8 @@ export type ExtensionVersionSelectScalar = {
 export type ExtensionVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "extensionId" | "version" | "gitUrl" | "gitBranch" | "status" | "buildLogs" | "entryPointUrl" | "createdAt", ExtArgs["result"]["extensionVersion"]>
 export type ExtensionVersionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   extension?: boolean | Prisma.ExtensionDefaultArgs<ExtArgs>
+  installations?: boolean | Prisma.ExtensionVersion$installationsArgs<ExtArgs>
+  _count?: boolean | Prisma.ExtensionVersionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ExtensionVersionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   extension?: boolean | Prisma.ExtensionDefaultArgs<ExtArgs>
@@ -621,6 +748,7 @@ export type $ExtensionVersionPayload<ExtArgs extends runtime.Types.Extensions.In
   name: "ExtensionVersion"
   objects: {
     extension: Prisma.$ExtensionPayload<ExtArgs>
+    installations: Prisma.$UserExtensionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1027,6 +1155,7 @@ readonly fields: ExtensionVersionFieldRefs;
 export interface Prisma__ExtensionVersionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   extension<T extends Prisma.ExtensionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ExtensionDefaultArgs<ExtArgs>>): Prisma.Prisma__ExtensionClient<runtime.Types.Result.GetResult<Prisma.$ExtensionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  installations<T extends Prisma.ExtensionVersion$installationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ExtensionVersion$installationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserExtensionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1456,6 +1585,30 @@ export type ExtensionVersionDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
    * Limit how many ExtensionVersions to delete.
    */
   limit?: number
+}
+
+/**
+ * ExtensionVersion.installations
+ */
+export type ExtensionVersion$installationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserExtension
+   */
+  select?: Prisma.UserExtensionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserExtension
+   */
+  omit?: Prisma.UserExtensionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserExtensionInclude<ExtArgs> | null
+  where?: Prisma.UserExtensionWhereInput
+  orderBy?: Prisma.UserExtensionOrderByWithRelationInput | Prisma.UserExtensionOrderByWithRelationInput[]
+  cursor?: Prisma.UserExtensionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserExtensionScalarFieldEnum | Prisma.UserExtensionScalarFieldEnum[]
 }
 
 /**

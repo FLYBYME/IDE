@@ -387,7 +387,9 @@ export const ModelName = {
   User: 'User',
   Extension: 'Extension',
   ExtensionVersion: 'ExtensionVersion',
+  UserExtension: 'UserExtension',
   Workspace: 'Workspace',
+  WorkspaceSecret: 'WorkspaceSecret',
   UserSettings: 'UserSettings',
   WorkspaceSettings: 'WorkspaceSettings',
   EditorState: 'EditorState',
@@ -407,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "extension" | "extensionVersion" | "workspace" | "userSettings" | "workspaceSettings" | "editorState" | "tabState"
+    modelProps: "user" | "extension" | "extensionVersion" | "userExtension" | "workspace" | "workspaceSecret" | "userSettings" | "workspaceSettings" | "editorState" | "tabState"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -633,6 +635,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UserExtension: {
+      payload: Prisma.$UserExtensionPayload<ExtArgs>
+      fields: Prisma.UserExtensionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserExtensionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserExtensionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>
+        }
+        findFirst: {
+          args: Prisma.UserExtensionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserExtensionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>
+        }
+        findMany: {
+          args: Prisma.UserExtensionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>[]
+        }
+        create: {
+          args: Prisma.UserExtensionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>
+        }
+        createMany: {
+          args: Prisma.UserExtensionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserExtensionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>[]
+        }
+        delete: {
+          args: Prisma.UserExtensionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>
+        }
+        update: {
+          args: Prisma.UserExtensionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserExtensionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserExtensionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserExtensionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserExtensionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserExtensionPayload>
+        }
+        aggregate: {
+          args: Prisma.UserExtensionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserExtension>
+        }
+        groupBy: {
+          args: Prisma.UserExtensionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserExtensionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserExtensionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserExtensionCountAggregateOutputType> | number
+        }
+      }
+    }
     Workspace: {
       payload: Prisma.$WorkspacePayload<ExtArgs>
       fields: Prisma.WorkspaceFieldRefs
@@ -704,6 +780,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.WorkspaceCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.WorkspaceCountAggregateOutputType> | number
+        }
+      }
+    }
+    WorkspaceSecret: {
+      payload: Prisma.$WorkspaceSecretPayload<ExtArgs>
+      fields: Prisma.WorkspaceSecretFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WorkspaceSecretFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WorkspaceSecretFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>
+        }
+        findFirst: {
+          args: Prisma.WorkspaceSecretFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WorkspaceSecretFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>
+        }
+        findMany: {
+          args: Prisma.WorkspaceSecretFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>[]
+        }
+        create: {
+          args: Prisma.WorkspaceSecretCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>
+        }
+        createMany: {
+          args: Prisma.WorkspaceSecretCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WorkspaceSecretCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>[]
+        }
+        delete: {
+          args: Prisma.WorkspaceSecretDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>
+        }
+        update: {
+          args: Prisma.WorkspaceSecretUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>
+        }
+        deleteMany: {
+          args: Prisma.WorkspaceSecretDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WorkspaceSecretUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WorkspaceSecretUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>[]
+        }
+        upsert: {
+          args: Prisma.WorkspaceSecretUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkspaceSecretPayload>
+        }
+        aggregate: {
+          args: Prisma.WorkspaceSecretAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkspaceSecret>
+        }
+        groupBy: {
+          args: Prisma.WorkspaceSecretGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceSecretGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WorkspaceSecretCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WorkspaceSecretCountAggregateOutputType> | number
         }
       }
     }
@@ -1055,6 +1205,8 @@ export const ExtensionScalarFieldEnum = {
   name: 'name',
   description: 'description',
   authorId: 'authorId',
+  gitUrl: 'gitUrl',
+  gitBranch: 'gitBranch',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   active: 'active',
@@ -1079,6 +1231,19 @@ export const ExtensionVersionScalarFieldEnum = {
 export type ExtensionVersionScalarFieldEnum = (typeof ExtensionVersionScalarFieldEnum)[keyof typeof ExtensionVersionScalarFieldEnum]
 
 
+export const UserExtensionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  extensionId: 'extensionId',
+  installedVersionId: 'installedVersionId',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserExtensionScalarFieldEnum = (typeof UserExtensionScalarFieldEnum)[keyof typeof UserExtensionScalarFieldEnum]
+
+
 export const WorkspaceScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -1090,6 +1255,18 @@ export const WorkspaceScalarFieldEnum = {
 } as const
 
 export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
+
+
+export const WorkspaceSecretScalarFieldEnum = {
+  id: 'id',
+  workspaceId: 'workspaceId',
+  key: 'key',
+  value: 'value',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkspaceSecretScalarFieldEnum = (typeof WorkspaceSecretScalarFieldEnum)[keyof typeof WorkspaceSecretScalarFieldEnum]
 
 
 export const UserSettingsScalarFieldEnum = {
@@ -1299,7 +1476,9 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   extension?: Prisma.ExtensionOmit
   extensionVersion?: Prisma.ExtensionVersionOmit
+  userExtension?: Prisma.UserExtensionOmit
   workspace?: Prisma.WorkspaceOmit
+  workspaceSecret?: Prisma.WorkspaceSecretOmit
   userSettings?: Prisma.UserSettingsOmit
   workspaceSettings?: Prisma.WorkspaceSettingsOmit
   editorState?: Prisma.EditorStateOmit

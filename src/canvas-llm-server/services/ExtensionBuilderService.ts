@@ -12,7 +12,7 @@ export class ExtensionBuilderService {
     /**
      * Orchestrates the complete secure build pipeline.
      */
-    public async build(versionId: string): Promise<void> {
+    public async build(versionId: string, manifestPath: string = '/package.json'): Promise<void> {
         const logEntries: string[] = [];
         const log = (msg: string) => {
             const entry = `[${new Date().toISOString()}] ${msg}`;
@@ -47,21 +47,34 @@ export class ExtensionBuilderService {
             if (cloneExitCode !== 0) throw new Error(`Git clone failed with code ${cloneExitCode}`);
             log("Clone successful.");
 
+            // Wait for VFS to sync
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
             // Step 2: Manifest Validation
-            const pkgFile = vfs.read('package.json');
-            if (!pkgFile) throw new Error("package.json not found in repository root");
+            const normalizedManifestPath = manifestPath.startsWith('/') ? manifestPath.substring(1) : manifestPath;
+            const buildDir = path.dirname(normalizedManifestPath);
+
+            const pkgFile = vfs.read(normalizedManifestPath);
+            if (!pkgFile) throw new Error(`${normalizedManifestPath} not found in repository`);
 
             const pkg = JSON.parse(pkgFile.content);
-            if (!pkg.name || !pkg.version) throw new Error("Invalid package.json: missing name or version");
+            if (!pkg.name || !pkg.version) throw new Error(`Invalid ${normalizedManifestPath}: missing name or version`);
             log(`Validated manifest for ${pkg.name}@${pkg.version}`);
 
+            // Update package version
+            await prisma.extensionVersion.update({
+                where: { id: versionId },
+                data: { version: pkg.version }
+            });
+
             // Step 3: Secure Dependency Installation
-            log("Installing dependencies...");
+            log(`Installing dependencies in ${buildDir}...`);
             await this.updateStatus(versionId, 'INSTALLING', logEntries);
             const installId = crypto.randomUUID();
+            const installCmd = buildDir === '.' ? 'npm install --ignore-scripts' : `cd ${buildDir} && npm install --ignore-scripts`;
             const installExitCode = await workspaceContainerManager.executeCommandAndWait(
                 versionId,
-                ['npm', 'install', '--ignore-scripts'],
+                ['sh', '-c', installCmd],
                 installId
             );
 
@@ -75,13 +88,17 @@ export class ExtensionBuilderService {
             const buildScript = `
 import * as esbuild from 'esbuild';
 import fs from 'fs';
+import path from 'path';
 
+const buildDir = '${buildDir}';
+const srcIndexTs = path.join(buildDir, 'src/index.ts');
+const srcIndexJs = path.join(buildDir, 'src/index.js');
 const entryPoints = [];
-if (fs.existsSync('src/index.ts')) entryPoints.push('src/index.ts');
-if (fs.existsSync('src/index.js')) entryPoints.push('src/index.js');
+if (fs.existsSync(srcIndexTs)) entryPoints.push(srcIndexTs);
+if (fs.existsSync(srcIndexJs)) entryPoints.push(srcIndexJs);
 
 if (entryPoints.length === 0) {
-    console.error('No entry points found (src/index.ts or src/index.js)');
+    console.error('No entry points found (src/index.ts or src/index.js) in ' + buildDir);
     process.exit(1);
 }
 
@@ -89,7 +106,7 @@ try {
     await esbuild.build({
         entryPoints,
         bundle: true,
-        outfile: 'dist/bundle.js',
+        outfile: path.join(buildDir, 'dist/bundle.js'),
         platform: 'browser',
         format: 'esm',
         minify: true,
@@ -124,14 +141,45 @@ try {
             log("Build successful.");
 
             // Step 5: Extraction & Storage
-            const bundleFile = vfs.read('dist/bundle.js');
-            if (!bundleFile) throw new Error("dist/bundle.js not found after build");
+            const bridgeDir = path.resolve('/tmp/canvas-workspaces', versionId);
+            const bundleHostPath = path.join(bridgeDir, buildDir, 'dist/bundle.js');
 
-            const storageDir = path.resolve(process.cwd(), 'public/extensions', version.extensionId, version.version);
+            // Try buildDir README first, fallback to root README
+            let readmeHostPath = path.join(bridgeDir, buildDir, 'README.md');
+
+            let bundleContent: string;
+            try {
+                bundleContent = await fs.readFile(bundleHostPath, 'utf-8');
+            } catch (e) {
+                throw new Error("dist/bundle.js not found after build");
+            }
+
+            let readmeContent: string | null = null;
+            try {
+                readmeContent = await fs.readFile(readmeHostPath, 'utf-8');
+            } catch (e) {
+                try {
+                    // Fallback to repository root
+                    readmeContent = await fs.readFile(path.join(bridgeDir, 'README.md'), 'utf-8');
+                } catch (e2) {
+                    // Ignore if not present at all
+                }
+            }
+            const baseDir = path.resolve(process.cwd(), 'public/extensions');
+            const storageDir = path.resolve(baseDir, version.extensionId, versionId);
+
+            if (!storageDir.startsWith(baseDir)) {
+                throw new Error("Security Violation: Invalid extension ID or version format.");
+            }
+
             await fs.mkdir(storageDir, { recursive: true });
-            await fs.writeFile(path.join(storageDir, 'bundle.js'), bundleFile.content);
+            await fs.writeFile(path.join(storageDir, 'bundle.js'), bundleContent);
+            await fs.writeFile(path.join(storageDir, 'package.json'), pkgFile.content);
+            if (readmeContent) {
+                await fs.writeFile(path.join(storageDir, 'README.md'), readmeContent);
+            }
 
-            const entryPointUrl = `/public/extensions/${version.extensionId}/${version.version}/bundle.js`;
+            const entryPointUrl = `/public/extensions/${version.extensionId}/${versionId}/bundle.js`;
             await prisma.extensionVersion.update({
                 where: { id: versionId },
                 data: {

@@ -54,7 +54,9 @@ export const ModelName = {
   User: 'User',
   Extension: 'Extension',
   ExtensionVersion: 'ExtensionVersion',
+  UserExtension: 'UserExtension',
   Workspace: 'Workspace',
+  WorkspaceSecret: 'WorkspaceSecret',
   UserSettings: 'UserSettings',
   WorkspaceSettings: 'WorkspaceSettings',
   EditorState: 'EditorState',
@@ -90,6 +92,8 @@ export const ExtensionScalarFieldEnum = {
   name: 'name',
   description: 'description',
   authorId: 'authorId',
+  gitUrl: 'gitUrl',
+  gitBranch: 'gitBranch',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   active: 'active',
@@ -114,6 +118,19 @@ export const ExtensionVersionScalarFieldEnum = {
 export type ExtensionVersionScalarFieldEnum = (typeof ExtensionVersionScalarFieldEnum)[keyof typeof ExtensionVersionScalarFieldEnum]
 
 
+export const UserExtensionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  extensionId: 'extensionId',
+  installedVersionId: 'installedVersionId',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserExtensionScalarFieldEnum = (typeof UserExtensionScalarFieldEnum)[keyof typeof UserExtensionScalarFieldEnum]
+
+
 export const WorkspaceScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -125,6 +142,18 @@ export const WorkspaceScalarFieldEnum = {
 } as const
 
 export type WorkspaceScalarFieldEnum = (typeof WorkspaceScalarFieldEnum)[keyof typeof WorkspaceScalarFieldEnum]
+
+
+export const WorkspaceSecretScalarFieldEnum = {
+  id: 'id',
+  workspaceId: 'workspaceId',
+  key: 'key',
+  value: 'value',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type WorkspaceSecretScalarFieldEnum = (typeof WorkspaceSecretScalarFieldEnum)[keyof typeof WorkspaceSecretScalarFieldEnum]
 
 
 export const UserSettingsScalarFieldEnum = {

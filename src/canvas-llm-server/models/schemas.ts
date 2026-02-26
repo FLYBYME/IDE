@@ -144,6 +144,22 @@ export const EditorAutosaveInput = z.object({
     isDraft: z.boolean().optional().nullable(),
 });
 
+// ── Secrets ──────────────────────────────────────────
+export const SecretSetInput = z.object({
+    workspaceId: z.string().uuid(),
+    key: z.string().min(1).regex(/^[A-Z0-9_]+$/, "Key must be uppercase alphanumeric with underscores"),
+    value: z.string().min(1),
+});
+
+export const SecretListInput = z.object({
+    workspaceId: z.string().uuid(),
+});
+
+export const SecretDeleteInput = z.object({
+    workspaceId: z.string().uuid(),
+    key: z.string().min(1),
+});
+
 // ── Settings ─────────────────────────────────────────
 export const SettingsUpdateInput = z.object({
     theme: z.string().optional().nullable(),
@@ -262,6 +278,11 @@ export const EditorStateOutput = z.object({
     tabs: z.array(TabStateOutput),
     activeTabId: z.string().optional().nullable(),
     lastSaved: z.string().optional().nullable(),
+});
+
+export const SecretOutput = z.object({
+    key: z.string(),
+    updatedAt: z.union([z.string(), z.date()]),
 });
 
 export const UserSettingsOutput = z.object({

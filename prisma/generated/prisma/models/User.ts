@@ -185,6 +185,7 @@ export type UserWhereInput = {
   workspaces?: Prisma.WorkspaceListRelationFilter
   settings?: Prisma.XOR<Prisma.UserSettingsNullableScalarRelationFilter, Prisma.UserSettingsWhereInput> | null
   extensions?: Prisma.ExtensionListRelationFilter
+  userExtensions?: Prisma.UserExtensionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -196,6 +197,7 @@ export type UserOrderByWithRelationInput = {
   workspaces?: Prisma.WorkspaceOrderByRelationAggregateInput
   settings?: Prisma.UserSettingsOrderByWithRelationInput
   extensions?: Prisma.ExtensionOrderByRelationAggregateInput
+  userExtensions?: Prisma.UserExtensionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -210,6 +212,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   workspaces?: Prisma.WorkspaceListRelationFilter
   settings?: Prisma.XOR<Prisma.UserSettingsNullableScalarRelationFilter, Prisma.UserSettingsWhereInput> | null
   extensions?: Prisma.ExtensionListRelationFilter
+  userExtensions?: Prisma.UserExtensionListRelationFilter
 }, "id" | "email" | "username">
 
 export type UserOrderByWithAggregationInput = {
@@ -243,6 +246,7 @@ export type UserCreateInput = {
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutOwnerInput
   settings?: Prisma.UserSettingsCreateNestedOneWithoutUserInput
   extensions?: Prisma.ExtensionCreateNestedManyWithoutAuthorInput
+  userExtensions?: Prisma.UserExtensionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -254,6 +258,7 @@ export type UserUncheckedCreateInput = {
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
   settings?: Prisma.UserSettingsUncheckedCreateNestedOneWithoutUserInput
   extensions?: Prisma.ExtensionUncheckedCreateNestedManyWithoutAuthorInput
+  userExtensions?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -265,6 +270,7 @@ export type UserUpdateInput = {
   workspaces?: Prisma.WorkspaceUpdateManyWithoutOwnerNestedInput
   settings?: Prisma.UserSettingsUpdateOneWithoutUserNestedInput
   extensions?: Prisma.ExtensionUpdateManyWithoutAuthorNestedInput
+  userExtensions?: Prisma.UserExtensionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -276,6 +282,7 @@ export type UserUncheckedUpdateInput = {
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
   settings?: Prisma.UserSettingsUncheckedUpdateOneWithoutUserNestedInput
   extensions?: Prisma.ExtensionUncheckedUpdateManyWithoutAuthorNestedInput
+  userExtensions?: Prisma.UserExtensionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -353,6 +360,20 @@ export type UserUpdateOneRequiredWithoutExtensionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutExtensionsInput, Prisma.UserUpdateWithoutExtensionsInput>, Prisma.UserUncheckedUpdateWithoutExtensionsInput>
 }
 
+export type UserCreateNestedOneWithoutUserExtensionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUserExtensionsInput, Prisma.UserUncheckedCreateWithoutUserExtensionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUserExtensionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutUserExtensionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutUserExtensionsInput, Prisma.UserUncheckedCreateWithoutUserExtensionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutUserExtensionsInput
+  upsert?: Prisma.UserUpsertWithoutUserExtensionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutUserExtensionsInput, Prisma.UserUpdateWithoutUserExtensionsInput>, Prisma.UserUncheckedUpdateWithoutUserExtensionsInput>
+}
+
 export type UserCreateNestedOneWithoutWorkspacesInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutWorkspacesInput, Prisma.UserUncheckedCreateWithoutWorkspacesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutWorkspacesInput
@@ -389,6 +410,7 @@ export type UserCreateWithoutExtensionsInput = {
   createdAt?: Date | string
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutOwnerInput
   settings?: Prisma.UserSettingsCreateNestedOneWithoutUserInput
+  userExtensions?: Prisma.UserExtensionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutExtensionsInput = {
@@ -399,6 +421,7 @@ export type UserUncheckedCreateWithoutExtensionsInput = {
   createdAt?: Date | string
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
   settings?: Prisma.UserSettingsUncheckedCreateNestedOneWithoutUserInput
+  userExtensions?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutExtensionsInput = {
@@ -425,6 +448,7 @@ export type UserUpdateWithoutExtensionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workspaces?: Prisma.WorkspaceUpdateManyWithoutOwnerNestedInput
   settings?: Prisma.UserSettingsUpdateOneWithoutUserNestedInput
+  userExtensions?: Prisma.UserExtensionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutExtensionsInput = {
@@ -435,6 +459,67 @@ export type UserUncheckedUpdateWithoutExtensionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
   settings?: Prisma.UserSettingsUncheckedUpdateOneWithoutUserNestedInput
+  userExtensions?: Prisma.UserExtensionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutUserExtensionsInput = {
+  id?: string
+  email: string
+  username: string
+  passwordHash: string
+  createdAt?: Date | string
+  workspaces?: Prisma.WorkspaceCreateNestedManyWithoutOwnerInput
+  settings?: Prisma.UserSettingsCreateNestedOneWithoutUserInput
+  extensions?: Prisma.ExtensionCreateNestedManyWithoutAuthorInput
+}
+
+export type UserUncheckedCreateWithoutUserExtensionsInput = {
+  id?: string
+  email: string
+  username: string
+  passwordHash: string
+  createdAt?: Date | string
+  workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
+  settings?: Prisma.UserSettingsUncheckedCreateNestedOneWithoutUserInput
+  extensions?: Prisma.ExtensionUncheckedCreateNestedManyWithoutAuthorInput
+}
+
+export type UserCreateOrConnectWithoutUserExtensionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutUserExtensionsInput, Prisma.UserUncheckedCreateWithoutUserExtensionsInput>
+}
+
+export type UserUpsertWithoutUserExtensionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutUserExtensionsInput, Prisma.UserUncheckedUpdateWithoutUserExtensionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutUserExtensionsInput, Prisma.UserUncheckedCreateWithoutUserExtensionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutUserExtensionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutUserExtensionsInput, Prisma.UserUncheckedUpdateWithoutUserExtensionsInput>
+}
+
+export type UserUpdateWithoutUserExtensionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  workspaces?: Prisma.WorkspaceUpdateManyWithoutOwnerNestedInput
+  settings?: Prisma.UserSettingsUpdateOneWithoutUserNestedInput
+  extensions?: Prisma.ExtensionUpdateManyWithoutAuthorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutUserExtensionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
+  settings?: Prisma.UserSettingsUncheckedUpdateOneWithoutUserNestedInput
+  extensions?: Prisma.ExtensionUncheckedUpdateManyWithoutAuthorNestedInput
 }
 
 export type UserCreateWithoutWorkspacesInput = {
@@ -445,6 +530,7 @@ export type UserCreateWithoutWorkspacesInput = {
   createdAt?: Date | string
   settings?: Prisma.UserSettingsCreateNestedOneWithoutUserInput
   extensions?: Prisma.ExtensionCreateNestedManyWithoutAuthorInput
+  userExtensions?: Prisma.UserExtensionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWorkspacesInput = {
@@ -455,6 +541,7 @@ export type UserUncheckedCreateWithoutWorkspacesInput = {
   createdAt?: Date | string
   settings?: Prisma.UserSettingsUncheckedCreateNestedOneWithoutUserInput
   extensions?: Prisma.ExtensionUncheckedCreateNestedManyWithoutAuthorInput
+  userExtensions?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWorkspacesInput = {
@@ -481,6 +568,7 @@ export type UserUpdateWithoutWorkspacesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settings?: Prisma.UserSettingsUpdateOneWithoutUserNestedInput
   extensions?: Prisma.ExtensionUpdateManyWithoutAuthorNestedInput
+  userExtensions?: Prisma.UserExtensionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWorkspacesInput = {
@@ -491,6 +579,7 @@ export type UserUncheckedUpdateWithoutWorkspacesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   settings?: Prisma.UserSettingsUncheckedUpdateOneWithoutUserNestedInput
   extensions?: Prisma.ExtensionUncheckedUpdateManyWithoutAuthorNestedInput
+  userExtensions?: Prisma.UserExtensionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSettingsInput = {
@@ -501,6 +590,7 @@ export type UserCreateWithoutSettingsInput = {
   createdAt?: Date | string
   workspaces?: Prisma.WorkspaceCreateNestedManyWithoutOwnerInput
   extensions?: Prisma.ExtensionCreateNestedManyWithoutAuthorInput
+  userExtensions?: Prisma.UserExtensionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSettingsInput = {
@@ -511,6 +601,7 @@ export type UserUncheckedCreateWithoutSettingsInput = {
   createdAt?: Date | string
   workspaces?: Prisma.WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
   extensions?: Prisma.ExtensionUncheckedCreateNestedManyWithoutAuthorInput
+  userExtensions?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSettingsInput = {
@@ -537,6 +628,7 @@ export type UserUpdateWithoutSettingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workspaces?: Prisma.WorkspaceUpdateManyWithoutOwnerNestedInput
   extensions?: Prisma.ExtensionUpdateManyWithoutAuthorNestedInput
+  userExtensions?: Prisma.UserExtensionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSettingsInput = {
@@ -547,6 +639,7 @@ export type UserUncheckedUpdateWithoutSettingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workspaces?: Prisma.WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
   extensions?: Prisma.ExtensionUncheckedUpdateManyWithoutAuthorNestedInput
+  userExtensions?: Prisma.UserExtensionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -557,11 +650,13 @@ export type UserUncheckedUpdateWithoutSettingsInput = {
 export type UserCountOutputType = {
   workspaces: number
   extensions: number
+  userExtensions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workspaces?: boolean | UserCountOutputTypeCountWorkspacesArgs
   extensions?: boolean | UserCountOutputTypeCountExtensionsArgs
+  userExtensions?: boolean | UserCountOutputTypeCountUserExtensionsArgs
 }
 
 /**
@@ -588,6 +683,13 @@ export type UserCountOutputTypeCountExtensionsArgs<ExtArgs extends runtime.Types
   where?: Prisma.ExtensionWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountUserExtensionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserExtensionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -598,6 +700,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   workspaces?: boolean | Prisma.User$workspacesArgs<ExtArgs>
   settings?: boolean | Prisma.User$settingsArgs<ExtArgs>
   extensions?: boolean | Prisma.User$extensionsArgs<ExtArgs>
+  userExtensions?: boolean | Prisma.User$userExtensionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -630,6 +733,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   workspaces?: boolean | Prisma.User$workspacesArgs<ExtArgs>
   settings?: boolean | Prisma.User$settingsArgs<ExtArgs>
   extensions?: boolean | Prisma.User$extensionsArgs<ExtArgs>
+  userExtensions?: boolean | Prisma.User$userExtensionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -641,6 +745,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     workspaces: Prisma.$WorkspacePayload<ExtArgs>[]
     settings: Prisma.$UserSettingsPayload<ExtArgs> | null
     extensions: Prisma.$ExtensionPayload<ExtArgs>[]
+    userExtensions: Prisma.$UserExtensionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1045,6 +1150,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   workspaces<T extends Prisma.User$workspacesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workspacesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   settings<T extends Prisma.User$settingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$settingsArgs<ExtArgs>>): Prisma.Prisma__UserSettingsClient<runtime.Types.Result.GetResult<Prisma.$UserSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   extensions<T extends Prisma.User$extensionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$extensionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExtensionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  userExtensions<T extends Prisma.User$userExtensionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$userExtensionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserExtensionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1529,6 +1635,30 @@ export type User$extensionsArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.ExtensionScalarFieldEnum | Prisma.ExtensionScalarFieldEnum[]
+}
+
+/**
+ * User.userExtensions
+ */
+export type User$userExtensionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserExtension
+   */
+  select?: Prisma.UserExtensionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserExtension
+   */
+  omit?: Prisma.UserExtensionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserExtensionInclude<ExtArgs> | null
+  where?: Prisma.UserExtensionWhereInput
+  orderBy?: Prisma.UserExtensionOrderByWithRelationInput | Prisma.UserExtensionOrderByWithRelationInput[]
+  cursor?: Prisma.UserExtensionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserExtensionScalarFieldEnum | Prisma.UserExtensionScalarFieldEnum[]
 }
 
 /**

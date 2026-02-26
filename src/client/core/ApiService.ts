@@ -119,6 +119,25 @@ export class ApiService {
         });
     }
 
+    // ── Secrets Endpoints ──────────────────────────────────────────
+
+    public async listSecrets(workspaceId: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/secrets`);
+    }
+
+    public async setSecret(workspaceId: string, key: string, value: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/secrets`, {
+            method: 'POST',
+            body: JSON.stringify({ key, value }),
+        });
+    }
+
+    public async deleteSecret(workspaceId: string, key: string): Promise<any> {
+        return this.request<any>(`/workspaces/${workspaceId}/secrets/${encodeURIComponent(key)}`, {
+            method: 'DELETE',
+        });
+    }
+
 
     // ── Editor State Endpoints ─────────────────────────────────────
 
@@ -252,11 +271,40 @@ export class ApiService {
         });
     }
 
+    public async uninstallExtension(id: string): Promise<any> {
+        return this.request<any>(`/extensions/${encodeURIComponent(id)}/uninstall`, {
+            method: 'POST',
+        });
+    }
+
     public async updateExtension(id: string, data: { description: string }): Promise<any> {
-        return this.request<any>(`/extensions/${id}`, {
+        return this.request<any>(`/extensions/${encodeURIComponent(id)}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         });
+    }
+
+    public async deleteExtension(id: string): Promise<any> {
+        return this.request<any>(`/extensions/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+        });
+    }
+
+    public async getExtensionManifest(id: string): Promise<any> {
+        return this.request<any>(`/extensions/${encodeURIComponent(id)}/manifest`);
+    }
+
+    public async searchExtensions(params?: { q?: string; author?: string; sort?: string }): Promise<any> {
+        const query = new URLSearchParams();
+        if (params?.q) query.set('q', params.q);
+        if (params?.author) query.set('author', params.author);
+        if (params?.sort) query.set('sort', params.sort);
+        const qStr = query.toString();
+        return this.request<any>(`/extensions/search${qStr ? '?' + qStr : ''}`);
+    }
+
+    public async getExtension(id: string): Promise<any> {
+        return this.request<any>(`/extensions/${encodeURIComponent(id)}`);
     }
 
     /**
@@ -264,6 +312,12 @@ export class ApiService {
      */
     public async listExtensionVersions(): Promise<any> {
         return this.request<any>('/extensions/versions');
+    }
+
+    public async deleteExtensionVersion(id: string): Promise<any> {
+        return this.request<any>(`/extensions/versions/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+        });
     }
 
     /**
@@ -298,5 +352,11 @@ export class ApiService {
 
     public async getExtensionBuildStatus(buildId: string): Promise<any> {
         return this.request<any>(`/extensions/builds/${encodeURIComponent(buildId)}`);
+    }
+
+    public async rebuildExtension(id: string): Promise<{ buildId: string }> {
+        return this.request<{ buildId: string }>(`/extensions/${encodeURIComponent(id)}/rebuild`, {
+            method: 'POST',
+        });
     }
 }

@@ -29,6 +29,8 @@ export type ExtensionMinAggregateOutputType = {
   name: string | null
   description: string | null
   authorId: string | null
+  gitUrl: string | null
+  gitBranch: string | null
   createdAt: Date | null
   updatedAt: Date | null
   active: boolean | null
@@ -40,6 +42,8 @@ export type ExtensionMaxAggregateOutputType = {
   name: string | null
   description: string | null
   authorId: string | null
+  gitUrl: string | null
+  gitBranch: string | null
   createdAt: Date | null
   updatedAt: Date | null
   active: boolean | null
@@ -51,6 +55,8 @@ export type ExtensionCountAggregateOutputType = {
   name: number
   description: number
   authorId: number
+  gitUrl: number
+  gitBranch: number
   createdAt: number
   updatedAt: number
   active: number
@@ -64,6 +70,8 @@ export type ExtensionMinAggregateInputType = {
   name?: true
   description?: true
   authorId?: true
+  gitUrl?: true
+  gitBranch?: true
   createdAt?: true
   updatedAt?: true
   active?: true
@@ -75,6 +83,8 @@ export type ExtensionMaxAggregateInputType = {
   name?: true
   description?: true
   authorId?: true
+  gitUrl?: true
+  gitBranch?: true
   createdAt?: true
   updatedAt?: true
   active?: true
@@ -86,6 +96,8 @@ export type ExtensionCountAggregateInputType = {
   name?: true
   description?: true
   authorId?: true
+  gitUrl?: true
+  gitBranch?: true
   createdAt?: true
   updatedAt?: true
   active?: true
@@ -170,6 +182,8 @@ export type ExtensionGroupByOutputType = {
   name: string
   description: string | null
   authorId: string
+  gitUrl: string | null
+  gitBranch: string | null
   createdAt: Date
   updatedAt: Date
   active: boolean
@@ -202,12 +216,15 @@ export type ExtensionWhereInput = {
   name?: Prisma.StringFilter<"Extension"> | string
   description?: Prisma.StringNullableFilter<"Extension"> | string | null
   authorId?: Prisma.StringFilter<"Extension"> | string
+  gitUrl?: Prisma.StringNullableFilter<"Extension"> | string | null
+  gitBranch?: Prisma.StringNullableFilter<"Extension"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   active?: Prisma.BoolFilter<"Extension"> | boolean
   installedVersionId?: Prisma.StringNullableFilter<"Extension"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   versions?: Prisma.ExtensionVersionListRelationFilter
+  installations?: Prisma.UserExtensionListRelationFilter
 }
 
 export type ExtensionOrderByWithRelationInput = {
@@ -215,12 +232,15 @@ export type ExtensionOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  gitUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  gitBranch?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   active?: Prisma.SortOrder
   installedVersionId?: Prisma.SortOrderInput | Prisma.SortOrder
   author?: Prisma.UserOrderByWithRelationInput
   versions?: Prisma.ExtensionVersionOrderByRelationAggregateInput
+  installations?: Prisma.UserExtensionOrderByRelationAggregateInput
 }
 
 export type ExtensionWhereUniqueInput = Prisma.AtLeast<{
@@ -231,12 +251,15 @@ export type ExtensionWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ExtensionWhereInput | Prisma.ExtensionWhereInput[]
   description?: Prisma.StringNullableFilter<"Extension"> | string | null
   authorId?: Prisma.StringFilter<"Extension"> | string
+  gitUrl?: Prisma.StringNullableFilter<"Extension"> | string | null
+  gitBranch?: Prisma.StringNullableFilter<"Extension"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   active?: Prisma.BoolFilter<"Extension"> | boolean
   installedVersionId?: Prisma.StringNullableFilter<"Extension"> | string | null
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   versions?: Prisma.ExtensionVersionListRelationFilter
+  installations?: Prisma.UserExtensionListRelationFilter
 }, "id" | "name">
 
 export type ExtensionOrderByWithAggregationInput = {
@@ -244,6 +267,8 @@ export type ExtensionOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  gitUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  gitBranch?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -261,6 +286,8 @@ export type ExtensionScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Extension"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Extension"> | string | null
   authorId?: Prisma.StringWithAggregatesFilter<"Extension"> | string
+  gitUrl?: Prisma.StringNullableWithAggregatesFilter<"Extension"> | string | null
+  gitBranch?: Prisma.StringNullableWithAggregatesFilter<"Extension"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Extension"> | Date | string
   active?: Prisma.BoolWithAggregatesFilter<"Extension"> | boolean
@@ -271,12 +298,15 @@ export type ExtensionCreateInput = {
   id?: string
   name: string
   description?: string | null
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
   installedVersionId?: string | null
   author: Prisma.UserCreateNestedOneWithoutExtensionsInput
   versions?: Prisma.ExtensionVersionCreateNestedManyWithoutExtensionInput
+  installations?: Prisma.UserExtensionCreateNestedManyWithoutExtensionInput
 }
 
 export type ExtensionUncheckedCreateInput = {
@@ -284,23 +314,29 @@ export type ExtensionUncheckedCreateInput = {
   name: string
   description?: string | null
   authorId: string
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
   installedVersionId?: string | null
   versions?: Prisma.ExtensionVersionUncheckedCreateNestedManyWithoutExtensionInput
+  installations?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutExtensionInput
 }
 
 export type ExtensionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutExtensionsNestedInput
   versions?: Prisma.ExtensionVersionUpdateManyWithoutExtensionNestedInput
+  installations?: Prisma.UserExtensionUpdateManyWithoutExtensionNestedInput
 }
 
 export type ExtensionUncheckedUpdateInput = {
@@ -308,11 +344,14 @@ export type ExtensionUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   versions?: Prisma.ExtensionVersionUncheckedUpdateManyWithoutExtensionNestedInput
+  installations?: Prisma.UserExtensionUncheckedUpdateManyWithoutExtensionNestedInput
 }
 
 export type ExtensionCreateManyInput = {
@@ -320,6 +359,8 @@ export type ExtensionCreateManyInput = {
   name: string
   description?: string | null
   authorId: string
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
@@ -330,6 +371,8 @@ export type ExtensionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -341,6 +384,8 @@ export type ExtensionUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -362,6 +407,8 @@ export type ExtensionCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  gitUrl?: Prisma.SortOrder
+  gitBranch?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -373,6 +420,8 @@ export type ExtensionMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  gitUrl?: Prisma.SortOrder
+  gitBranch?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -384,6 +433,8 @@ export type ExtensionMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   authorId?: Prisma.SortOrder
+  gitUrl?: Prisma.SortOrder
+  gitBranch?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   active?: Prisma.SortOrder
@@ -459,26 +510,46 @@ export type ExtensionUpdateOneRequiredWithoutVersionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ExtensionUpdateToOneWithWhereWithoutVersionsInput, Prisma.ExtensionUpdateWithoutVersionsInput>, Prisma.ExtensionUncheckedUpdateWithoutVersionsInput>
 }
 
+export type ExtensionCreateNestedOneWithoutInstallationsInput = {
+  create?: Prisma.XOR<Prisma.ExtensionCreateWithoutInstallationsInput, Prisma.ExtensionUncheckedCreateWithoutInstallationsInput>
+  connectOrCreate?: Prisma.ExtensionCreateOrConnectWithoutInstallationsInput
+  connect?: Prisma.ExtensionWhereUniqueInput
+}
+
+export type ExtensionUpdateOneRequiredWithoutInstallationsNestedInput = {
+  create?: Prisma.XOR<Prisma.ExtensionCreateWithoutInstallationsInput, Prisma.ExtensionUncheckedCreateWithoutInstallationsInput>
+  connectOrCreate?: Prisma.ExtensionCreateOrConnectWithoutInstallationsInput
+  upsert?: Prisma.ExtensionUpsertWithoutInstallationsInput
+  connect?: Prisma.ExtensionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ExtensionUpdateToOneWithWhereWithoutInstallationsInput, Prisma.ExtensionUpdateWithoutInstallationsInput>, Prisma.ExtensionUncheckedUpdateWithoutInstallationsInput>
+}
+
 export type ExtensionCreateWithoutAuthorInput = {
   id?: string
   name: string
   description?: string | null
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
   installedVersionId?: string | null
   versions?: Prisma.ExtensionVersionCreateNestedManyWithoutExtensionInput
+  installations?: Prisma.UserExtensionCreateNestedManyWithoutExtensionInput
 }
 
 export type ExtensionUncheckedCreateWithoutAuthorInput = {
   id?: string
   name: string
   description?: string | null
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
   installedVersionId?: string | null
   versions?: Prisma.ExtensionVersionUncheckedCreateNestedManyWithoutExtensionInput
+  installations?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutExtensionInput
 }
 
 export type ExtensionCreateOrConnectWithoutAuthorInput = {
@@ -514,6 +585,8 @@ export type ExtensionScalarWhereInput = {
   name?: Prisma.StringFilter<"Extension"> | string
   description?: Prisma.StringNullableFilter<"Extension"> | string | null
   authorId?: Prisma.StringFilter<"Extension"> | string
+  gitUrl?: Prisma.StringNullableFilter<"Extension"> | string | null
+  gitBranch?: Prisma.StringNullableFilter<"Extension"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Extension"> | Date | string
   active?: Prisma.BoolFilter<"Extension"> | boolean
@@ -524,11 +597,14 @@ export type ExtensionCreateWithoutVersionsInput = {
   id?: string
   name: string
   description?: string | null
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
   installedVersionId?: string | null
   author: Prisma.UserCreateNestedOneWithoutExtensionsInput
+  installations?: Prisma.UserExtensionCreateNestedManyWithoutExtensionInput
 }
 
 export type ExtensionUncheckedCreateWithoutVersionsInput = {
@@ -536,10 +612,13 @@ export type ExtensionUncheckedCreateWithoutVersionsInput = {
   name: string
   description?: string | null
   authorId: string
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
   installedVersionId?: string | null
+  installations?: Prisma.UserExtensionUncheckedCreateNestedManyWithoutExtensionInput
 }
 
 export type ExtensionCreateOrConnectWithoutVersionsInput = {
@@ -562,11 +641,14 @@ export type ExtensionUpdateWithoutVersionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   author?: Prisma.UserUpdateOneRequiredWithoutExtensionsNestedInput
+  installations?: Prisma.UserExtensionUpdateManyWithoutExtensionNestedInput
 }
 
 export type ExtensionUncheckedUpdateWithoutVersionsInput = {
@@ -574,16 +656,93 @@ export type ExtensionUncheckedUpdateWithoutVersionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  installations?: Prisma.UserExtensionUncheckedUpdateManyWithoutExtensionNestedInput
+}
+
+export type ExtensionCreateWithoutInstallationsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  gitUrl?: string | null
+  gitBranch?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
+  author: Prisma.UserCreateNestedOneWithoutExtensionsInput
+  versions?: Prisma.ExtensionVersionCreateNestedManyWithoutExtensionInput
+}
+
+export type ExtensionUncheckedCreateWithoutInstallationsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  authorId: string
+  gitUrl?: string | null
+  gitBranch?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  active?: boolean
+  installedVersionId?: string | null
+  versions?: Prisma.ExtensionVersionUncheckedCreateNestedManyWithoutExtensionInput
+}
+
+export type ExtensionCreateOrConnectWithoutInstallationsInput = {
+  where: Prisma.ExtensionWhereUniqueInput
+  create: Prisma.XOR<Prisma.ExtensionCreateWithoutInstallationsInput, Prisma.ExtensionUncheckedCreateWithoutInstallationsInput>
+}
+
+export type ExtensionUpsertWithoutInstallationsInput = {
+  update: Prisma.XOR<Prisma.ExtensionUpdateWithoutInstallationsInput, Prisma.ExtensionUncheckedUpdateWithoutInstallationsInput>
+  create: Prisma.XOR<Prisma.ExtensionCreateWithoutInstallationsInput, Prisma.ExtensionUncheckedCreateWithoutInstallationsInput>
+  where?: Prisma.ExtensionWhereInput
+}
+
+export type ExtensionUpdateToOneWithWhereWithoutInstallationsInput = {
+  where?: Prisma.ExtensionWhereInput
+  data: Prisma.XOR<Prisma.ExtensionUpdateWithoutInstallationsInput, Prisma.ExtensionUncheckedUpdateWithoutInstallationsInput>
+}
+
+export type ExtensionUpdateWithoutInstallationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  author?: Prisma.UserUpdateOneRequiredWithoutExtensionsNestedInput
+  versions?: Prisma.ExtensionVersionUpdateManyWithoutExtensionNestedInput
+}
+
+export type ExtensionUncheckedUpdateWithoutInstallationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authorId?: Prisma.StringFieldUpdateOperationsInput | string
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  versions?: Prisma.ExtensionVersionUncheckedUpdateManyWithoutExtensionNestedInput
 }
 
 export type ExtensionCreateManyAuthorInput = {
   id?: string
   name: string
   description?: string | null
+  gitUrl?: string | null
+  gitBranch?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   active?: boolean
@@ -594,28 +753,36 @@ export type ExtensionUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   versions?: Prisma.ExtensionVersionUpdateManyWithoutExtensionNestedInput
+  installations?: Prisma.UserExtensionUpdateManyWithoutExtensionNestedInput
 }
 
 export type ExtensionUncheckedUpdateWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   installedVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   versions?: Prisma.ExtensionVersionUncheckedUpdateManyWithoutExtensionNestedInput
+  installations?: Prisma.UserExtensionUncheckedUpdateManyWithoutExtensionNestedInput
 }
 
 export type ExtensionUncheckedUpdateManyWithoutAuthorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gitBranch?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -629,10 +796,12 @@ export type ExtensionUncheckedUpdateManyWithoutAuthorInput = {
 
 export type ExtensionCountOutputType = {
   versions: number
+  installations: number
 }
 
 export type ExtensionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   versions?: boolean | ExtensionCountOutputTypeCountVersionsArgs
+  installations?: boolean | ExtensionCountOutputTypeCountInstallationsArgs
 }
 
 /**
@@ -652,18 +821,28 @@ export type ExtensionCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Ty
   where?: Prisma.ExtensionVersionWhereInput
 }
 
+/**
+ * ExtensionCountOutputType without action
+ */
+export type ExtensionCountOutputTypeCountInstallationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserExtensionWhereInput
+}
+
 
 export type ExtensionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   description?: boolean
   authorId?: boolean
+  gitUrl?: boolean
+  gitBranch?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   active?: boolean
   installedVersionId?: boolean
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   versions?: boolean | Prisma.Extension$versionsArgs<ExtArgs>
+  installations?: boolean | Prisma.Extension$installationsArgs<ExtArgs>
   _count?: boolean | Prisma.ExtensionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["extension"]>
 
@@ -672,6 +851,8 @@ export type ExtensionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   name?: boolean
   description?: boolean
   authorId?: boolean
+  gitUrl?: boolean
+  gitBranch?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   active?: boolean
@@ -684,6 +865,8 @@ export type ExtensionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   name?: boolean
   description?: boolean
   authorId?: boolean
+  gitUrl?: boolean
+  gitBranch?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   active?: boolean
@@ -696,16 +879,19 @@ export type ExtensionSelectScalar = {
   name?: boolean
   description?: boolean
   authorId?: boolean
+  gitUrl?: boolean
+  gitBranch?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   active?: boolean
   installedVersionId?: boolean
 }
 
-export type ExtensionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "authorId" | "createdAt" | "updatedAt" | "active" | "installedVersionId", ExtArgs["result"]["extension"]>
+export type ExtensionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "authorId" | "gitUrl" | "gitBranch" | "createdAt" | "updatedAt" | "active" | "installedVersionId", ExtArgs["result"]["extension"]>
 export type ExtensionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   versions?: boolean | Prisma.Extension$versionsArgs<ExtArgs>
+  installations?: boolean | Prisma.Extension$installationsArgs<ExtArgs>
   _count?: boolean | Prisma.ExtensionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ExtensionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -720,12 +906,15 @@ export type $ExtensionPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     author: Prisma.$UserPayload<ExtArgs>
     versions: Prisma.$ExtensionVersionPayload<ExtArgs>[]
+    installations: Prisma.$UserExtensionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
     description: string | null
     authorId: string
+    gitUrl: string | null
+    gitBranch: string | null
     createdAt: Date
     updatedAt: Date
     active: boolean
@@ -1126,6 +1315,7 @@ export interface Prisma__ExtensionClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   author<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   versions<T extends Prisma.Extension$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Extension$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExtensionVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  installations<T extends Prisma.Extension$installationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Extension$installationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserExtensionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1159,6 +1349,8 @@ export interface ExtensionFieldRefs {
   readonly name: Prisma.FieldRef<"Extension", 'String'>
   readonly description: Prisma.FieldRef<"Extension", 'String'>
   readonly authorId: Prisma.FieldRef<"Extension", 'String'>
+  readonly gitUrl: Prisma.FieldRef<"Extension", 'String'>
+  readonly gitBranch: Prisma.FieldRef<"Extension", 'String'>
   readonly createdAt: Prisma.FieldRef<"Extension", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Extension", 'DateTime'>
   readonly active: Prisma.FieldRef<"Extension", 'Boolean'>
@@ -1578,6 +1770,30 @@ export type Extension$versionsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ExtensionVersionScalarFieldEnum | Prisma.ExtensionVersionScalarFieldEnum[]
+}
+
+/**
+ * Extension.installations
+ */
+export type Extension$installationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserExtension
+   */
+  select?: Prisma.UserExtensionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserExtension
+   */
+  omit?: Prisma.UserExtensionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserExtensionInclude<ExtArgs> | null
+  where?: Prisma.UserExtensionWhereInput
+  orderBy?: Prisma.UserExtensionOrderByWithRelationInput | Prisma.UserExtensionOrderByWithRelationInput[]
+  cursor?: Prisma.UserExtensionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserExtensionScalarFieldEnum | Prisma.UserExtensionScalarFieldEnum[]
 }
 
 /**

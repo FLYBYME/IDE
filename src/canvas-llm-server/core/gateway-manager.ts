@@ -137,13 +137,16 @@ export class GatewayManager {
                 }
 
                 try {
+                    const containerInfo = await workspace.container.inspect();
+                    const containerEnv = containerInfo.Config.Env || [];
+
                     const exec = await workspace.container.exec({
                         Cmd: ['/bin/sh', '-l'],
                         AttachStdin: true,
                         AttachStdout: true,
                         AttachStderr: true,
                         Tty: true,
-                        Env: ['TERM=xterm-256color']
+                        Env: [...containerEnv, 'TERM=xterm-256color']
                     });
 
                     const stream = await exec.start({ stdin: true, hijack: true });

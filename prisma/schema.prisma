@@ -18,9 +18,10 @@ model User {
   passwordHash String
   createdAt    DateTime  @default(now())
   
-  workspaces   Workspace[]
-  settings     UserSettings?
-  extensions   Extension[]
+  workspaces     Workspace[]
+  settings       UserSettings?
+  extensions     Extension[]
+  userExtensions UserExtension[]
 }
 
 
@@ -29,12 +30,15 @@ model Extension {
   name         String    @unique
   description  String?
   authorId     String
+  gitUrl       String?
+  gitBranch    String?   @default("main")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author             User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   versions           ExtensionVersion[]
-  active             Boolean   @default(false)
+  installations      UserExtension[]
+  active             Boolean            @default(false)
   installedVersionId String?
 }
 
@@ -50,6 +54,23 @@ model ExtensionVersion {
   createdAt      DateTime               @default(now())
 
   extension      Extension              @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  installations  UserExtension[]
+}
+
+model UserExtension {
+  id                 String           @id @default(uuid())
+  userId             String
+  extensionId        String
+  installedVersionId String
+  active             Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extension          Extension        @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  installedVersion   ExtensionVersion @relation(fields: [installedVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, extensionId])
 }
 
 
@@ -66,6 +87,20 @@ model Workspace {
   owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   settings    WorkspaceSettings?
   editorState EditorState?
+  secrets     WorkspaceSecret[]
+}
+
+model WorkspaceSecret {
+  id          String   @id @default(uuid())
+  workspaceId String
+  key         String
+  value       String   // Encrypted string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
 }
 
 model UserSettings {
