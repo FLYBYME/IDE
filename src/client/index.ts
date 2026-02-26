@@ -4,7 +4,7 @@
  */
 
 import { IDE } from './core/IDE';
-import { HelloWorldExtension } from './extensions/HelloWorldExtension';
+//import { HelloWorldExtension } from './extensions/HelloWorldExtension';
 import { FileTreeExtension } from './extensions/FileTreeExtension';
 import { ScratchpadExtension } from './extensions/ScratchpadExtension';
 import { SettingsEditorExtension } from './extensions/SettingsEditorExtension';
@@ -57,7 +57,7 @@ async function initializeApp(): Promise<void> {
 
         // Register extensions before initializing
         ide.extensions.register(FileTreeExtension);
-        ide.extensions.register(HelloWorldExtension);
+        //ide.extensions.register(HelloWorldExtension);
         ide.extensions.register(ScratchpadExtension);
         ide.extensions.register(SettingsEditorExtension);
         ide.extensions.register(SourceControlExtension);
@@ -68,9 +68,24 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(ExtensionBuilderExtension);
 
         await ide.initialize();
+        hideLoadingScreen();
     } catch (error) {
+        hideLoadingScreen(); // Hide it even on error so user can see error screen
         console.error('❌ Failed to initialize application:', error);
         showErrorScreen(error as Error);
+    }
+}
+
+/**
+ * Hide loading screen with fade effect
+ */
+function hideLoadingScreen(): void {
+    const loader = document.getElementById('loading-screen');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.remove();
+        }, 500); // Match transition duration
     }
 }
 
