@@ -85,11 +85,30 @@ export async function bootstrap() {
                 directory: path.join(process.cwd(), 'public'),
             },
         ],
+        authenticate: async (reqOrToken, action) => {
+            let token = "";
+            if (typeof reqOrToken === "string") {
+                token = reqOrToken;
+            } else {
+                const authHeader = reqOrToken.headers.authorization;
+                // FIX: Add '|| ""' to ensure it evaluates to a string
+                if (authHeader?.startsWith("Bearer ")) {
+                    token = authHeader.split(" ")[1] || "";
+                }
+            }
+
+
+            try {
+                const payload = verifyToken(token);
+                return { user: { id: payload.userId, email: payload.email } };
+            } catch (err: any) {
+                throw new Error("Invalid Token");
+            }
+        }
     });
-    console.log('[StaticFiles]', path.join(process.cwd(), 'public'));
 
     // ── 4. Start VFS Manager ────────────────────────
-    vfsManager.start();
+    vfsManager.start(); ``
     logger.info('📁 VFS Manager started');
 
     // ── 5. Start ServiceManager lifecycle ────────────
@@ -126,6 +145,7 @@ process.on('SIGINT', () => handleShutdown('SIGINT'));
 process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 
 import { fileURLToPath } from 'url';
+import { verifyToken } from './utils/token.helper';
 
 // ── Run if direct ────────────────────────────────────
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === (process.argv[1].startsWith('/') ? process.argv[1] : path.resolve(process.cwd(), process.argv[1]));

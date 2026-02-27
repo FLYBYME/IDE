@@ -92,7 +92,7 @@ export const getSessionAction: ServiceAction = {
         tokenExpires: z.string(),
     }),
     handler: async (ctx) => {
-        const userId = ctx.headers['x-user-id'];
+        const userId = ctx.metadata.user.id;;
 
         const foundUser = await prisma.user.findUnique({ where: { id: userId } });
         if (!foundUser) throw new Error('User not found');
@@ -275,7 +275,7 @@ export const updatePasswordAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { currentPassword, newPassword } = ctx.params as z.infer<typeof UpdatePasswordInput>;
-        const userId = ctx.headers['x-user-id'];
+        const userId = ctx.metadata.user.id;;
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) throw new Error('User not found');

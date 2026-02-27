@@ -22,7 +22,7 @@ export const submitExtensionAction: ServiceAction = {
     output: z.object({ buildId: z.string() }),
     handler: async (ctx) => {
         const { gitUrl, gitBranch, manifestPath } = ctx.params as z.infer<typeof ExtensionSubmitInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         // 1. Determine a placeholder name from git URL
         const repoName = gitUrl.split('/').pop()?.replace('.git', '') || 'unknown-extension';
@@ -139,7 +139,7 @@ export const searchExtensionsAction: ServiceAction = {
     output: z.object({ extensions: z.array(z.any()) }),
     handler: async (ctx) => {
         const { q, author, sort } = ctx.params as { q?: string, author?: string, sort?: string };
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         let whereClause: any = {};
 
@@ -193,7 +193,7 @@ export const listExtensionsAction: ServiceAction = {
     input: z.object({}),
     output: z.object({ extensions: z.array(z.any()) }),
     handler: async (ctx) => {
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
         const dbExtensions = await prisma.extension.findMany({
             include: { author: true, versions: true, installations: { where: { userId } } }
         });
@@ -236,7 +236,7 @@ export const getExtensionAction: ServiceAction = {
     output: z.any(),
     handler: async (ctx) => {
         const { id } = ctx.params as { id: string };
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         let extension = await prisma.extension.findUnique({
             where: { id },
@@ -341,7 +341,7 @@ export const toggleExtensionAction: ServiceAction = {
     handler: async (ctx) => {
         const { id } = ctx.params as any;
         const { enabled } = ctx.params as { enabled: boolean };
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         await prisma.userExtension.update({
             where: { userId_extensionId: { userId, extensionId: id } },
@@ -365,7 +365,7 @@ export const installExtensionAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { versionId } = ctx.params as { versionId: string };
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const version = await prisma.extensionVersion.findUnique({
             where: { id: versionId }
@@ -407,7 +407,7 @@ export const uninstallExtensionAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { id } = ctx.params as { id: string };
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const extension = await prisma.extension.findUnique({
             where: { id }
@@ -469,7 +469,7 @@ export const deleteExtensionAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { id } = ctx.params as { id: string };
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const extension = await prisma.extension.findUnique({
             where: { id }
@@ -512,7 +512,7 @@ export const rebuildExtensionAction: ServiceAction = {
     output: z.object({ buildId: z.string() }),
     handler: async (ctx) => {
         const { id } = ctx.params as any;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const extension = await prisma.extension.findUnique({
             where: { id },
@@ -565,7 +565,7 @@ export const deleteExtensionVersionAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { id } = ctx.params as any;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const version = await prisma.extensionVersion.findUnique({
             where: { id },

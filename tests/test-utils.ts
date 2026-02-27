@@ -1,4 +1,4 @@
-import { HttpClient } from 'tool-ms';
+import { GatewayClient } from 'tool-ms';
 import { bootstrap, stopServer } from '../src/canvas-llm-server/index';
 import fs from 'fs';
 
@@ -46,22 +46,26 @@ export class SharedServer {
 }
 
 export class TestHelper {
-    public client: HttpClient;
+    public client: GatewayClient;
     public headers: Record<string, string> = {};
     public workspaceId?: string;
 
     constructor(baseUrl: string = 'http://localhost:3001') {
-        this.client = new HttpClient(baseUrl);
+        this.client = new GatewayClient({ baseUrl });
     }
 
     /**
      * Ensures the shared server is running and the helper is ready.
      * Call this in beforeAll().
      */
-    async start() {
+    async start(auth: boolean = false) {
         await SharedServer.start();
         // Sync singleton state to this instance if needed (redundant for singleton but good for API)
-        await this.client.load();
+        await this.client.init();
+        if (auth) {
+            const token = (await this.client.call('auth.login', { username: 'admin', password: 'admin123' })).token;
+            this.client.call
+        }
     }
 
     /**
@@ -72,7 +76,7 @@ export class TestHelper {
     }
 
     async setup() {
-        await this.client.load();
+        await this.client.init();
 
         // Authenticate
         let auth;
@@ -91,13 +95,13 @@ export class TestHelper {
 
         // Create Workspace
         const workspaceName = `Editor Test Space ${Date.now()}`;
-        const workspace = await this.client.call('workspace.create', { name: workspaceName }, { headers: this.headers });
+        const workspace = await this.client.call('workspace.create', { name: workspaceName });
         this.workspaceId = workspace.id;
     }
 
     async teardown() {
         if (this.workspaceId) {
-            await this.client.call('workspace.delete', { id: this.workspaceId }, { headers: this.headers });
+            await this.client.call('workspace.delete', { id: this.workspaceId });
         }
     }
 
@@ -108,14 +112,14 @@ export class TestHelper {
             path,
             type: 'file',
             content
-        }, { headers: this.headers });
+        });
     }
 
     async call(action: string, params: any = {}) {
         return await this.client.call(action, {
             workspaceId: this.workspaceId,
             ...params
-        }, { headers: this.headers });
+        });
     }
 }
 

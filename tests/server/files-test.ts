@@ -11,7 +11,7 @@ describe('Files API Endpoints', () => {
     const updatedContent = 'console.log("Hello, Universe!");';
 
     beforeAll(async () => {
-        await testHelper.start();
+        await testHelper.start(true);
     });
 
     afterAll(async () => {

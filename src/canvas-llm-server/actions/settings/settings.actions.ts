@@ -40,7 +40,7 @@ export const getUserSettingsAction: ServiceAction = {
     input: z.object({}),
     output: z.object({ user: UserSettingsOutput }),
     handler: async (ctx) => {
-        const userId = ctx.headers['x-user-id'];
+        const userId = ctx.metadata.user.id;;
 
         let userSettings = await prisma.userSettings.upsert({
             where: { userId },
@@ -66,7 +66,7 @@ export const updateUserSettingsAction: ServiceAction = {
     input: SettingsUpdateInput,
     output: z.object({ updated: z.string(), settings: UserSettingsOutput }),
     handler: async (ctx) => {
-        const userId = ctx.headers['x-user-id'];
+        const userId = ctx.metadata.user.id;;
         const updates = ctx.params as any;
 
         // Remove nulls from updates to avoid overwriting with null if the type doesn't allow it

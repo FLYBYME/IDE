@@ -10,10 +10,10 @@ import {
     EditorStateOutput,
 } from '../../models/schemas';
 
-import { TabState as TabStateModel } from '@prisma/client';
 
 import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
+import { TabState } from '../../../../prisma/generated/prisma/client';
 
 async function getState(workspaceId: string) {
     let state = await prisma.editorState.findUnique({
@@ -97,7 +97,7 @@ export const saveEditorStateAction: ServiceAction = {
         });
 
         if (activeTabPath && updatedState) {
-            const activeTab = (updatedState.tabs as TabStateModel[]).find((t: TabStateModel) => t.path === activeTabPath);
+            const activeTab = (updatedState.tabs as TabState[]).find((t: TabState) => t.path === activeTabPath);
             if (activeTab) {
                 await prisma.editorState.update({
                     where: { workspaceId },
@@ -134,7 +134,7 @@ export const openFileAction: ServiceAction = {
         if (!file) throw new Error(`File not found: ${filePath}`);
 
         const state = await getState(workspaceId);
-        let tab = (state.tabs as TabStateModel[]).find((t: TabStateModel) => t.path === filePath);
+        let tab = (state.tabs as TabState[]).find((t: TabState) => t.path === filePath);
 
         if (!tab) {
             tab = await prisma.tabState.create({
@@ -190,7 +190,7 @@ export const closeFileAction: ServiceAction = {
     handler: async (ctx) => {
         const { workspaceId, tabId, force } = ctx.params as z.infer<typeof EditorCloseFileInput>;
         const state = await getState(workspaceId);
-        const tab = (state.tabs as TabStateModel[]).find((t: TabStateModel) => t.id === tabId);
+        const tab = (state.tabs as TabState[]).find((t: TabState) => t.id === tabId);
         if (!tab) throw new Error('Tab not found');
 
         if (tab.isDirty && !force) {

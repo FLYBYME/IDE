@@ -12,11 +12,11 @@ import {
     SuccessOutput,
 } from '../../models/schemas';
 
-import { Workspace as WorkspaceModel } from '@prisma/client';
 
 import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
 import { workspaceContainerManager } from '../../core/WorkspaceContainerManager';
+import { WorkspaceModel } from '../../../../prisma/generated/prisma/models';
 
 
 // ── workspace.list ───────────────────────────────────
@@ -34,7 +34,7 @@ export const listWorkspacesAction: ServiceAction = {
         workspaces: z.array(WorkspaceOutput),
     }),
     handler: async (ctx) => {
-        const userId = ctx.headers['x-user-id'];
+        const userId = ctx.metadata.user.id;;
         const { limit, offset, sort } = ctx.params as z.infer<typeof WorkspaceListInput>;
 
         let orderBy: any = undefined;
@@ -88,7 +88,7 @@ export const createWorkspaceAction: ServiceAction = {
         template: z.string(),
     }),
     handler: async (ctx) => {
-        const userId = ctx.headers['x-user-id'];
+        const userId = ctx.metadata.user.id;
         const { name, description, template, isPublic } = ctx.params as z.infer<typeof WorkspaceCreateInput>;
         const id = crypto.randomUUID();
 
@@ -139,7 +139,7 @@ export const getWorkspaceAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceIdInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
@@ -175,7 +175,7 @@ export const updateWorkspaceAction: ServiceAction = {
     output: z.object({ id: z.string(), updated: z.string() }),
     handler: async (ctx) => {
         const { id, name, description, isPublic } = ctx.params as z.infer<typeof WorkspaceUpdateInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         let ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
@@ -207,7 +207,7 @@ export const deleteWorkspaceAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceDeleteInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
@@ -234,7 +234,7 @@ export const executeCommandAction: ServiceAction = {
     output: z.object({ executionId: z.string() }),
     handler: async (ctx) => {
         const { id, command } = ctx.params as z.infer<typeof WorkspaceExecuteInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');
@@ -274,7 +274,7 @@ export const listWorkspaceProcessesAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { id } = ctx.params as z.infer<typeof WorkspaceIdInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         const ws = await prisma.workspace.findUnique({ where: { id } });
         if (!ws) throw new Error('Workspace not found');

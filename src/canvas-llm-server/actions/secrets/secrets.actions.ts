@@ -63,7 +63,7 @@ export const setSecretAction: ServiceAction = {
     output: SecretOutput,
     handler: async (ctx) => {
         const { workspaceId, key, value } = ctx.params as z.infer<typeof SecretSetInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         // Verify Workspace Ownership
         const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
@@ -114,7 +114,7 @@ export const listSecretsAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof SecretListInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         // Verify Workspace Ownership
         const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
@@ -147,7 +147,7 @@ export const deleteSecretAction: ServiceAction = {
     output: SuccessOutput,
     handler: async (ctx) => {
         const { workspaceId, key } = ctx.params as z.infer<typeof SecretDeleteInput>;
-        const userId = ctx.headers['x-user-id'] as string;
+        const userId = ctx.metadata.user.id;
 
         // Verify Workspace Ownership
         const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
