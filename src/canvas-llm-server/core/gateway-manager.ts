@@ -254,13 +254,20 @@ export class GatewayManager {
                     });
                 });
 
-                // 2. Force close all existing clients
+                // 2. Force close all existing clients and streams
                 for (const client of this.clients) {
                     try {
+                        const streams = this.terminalStreams.get(client);
+                        if (streams) {
+                            for (const session of streams.values()) {
+                                if (session.stream) session.stream.end();
+                            }
+                        }
                         client.terminate(); // terminate is more forceful than close()
                     } catch (err) { }
                 }
                 this.clients.clear();
+                this.terminalStreams.clear();
             } else if (this.server) {
                 this.server.close((err) => {
                     this.server = null;

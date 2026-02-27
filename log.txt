@@ -73,152 +73,6 @@ Configured 65 REST routes.
 🌍 HTTP Server listening on 0.0.0.0:3001
 📋 Meta routes: http://0.0.0.0:3001/api/_meta/routes
 ❤️  Health check: http://0.0.0.0:3001/api/_meta/health
-🚀 Starting CanvasLLM IDE Server...
-Registered service action auth.login v1
-Registered service action auth.logout v1
-Registered service action auth.getSession v1
-Registered service action auth.refreshToken v1
-Registered service action auth.register v1
-Registered service action auth.requestPasswordReset v1
-Registered service action auth.resetPassword v1
-Registered service action auth.updatePassword v1
-Registered service action workspace.list v1
-Registered service action workspace.create v1
-Registered service action workspace.get v1
-Registered service action workspace.update v1
-Registered service action workspace.delete v1
-Registered service action workspace.execute v1
-Registered service action workspace.processes v1
-Registered service action file.listTree v1
-Registered service action file.get v1
-Registered service action file.create v1
-Registered service action file.save v1
-Registered service action file.delete v1
-Registered service action file.rename v1
-Registered service action file.copy v1
-Registered service action file.search v1
-Registered service action editor.getState v1
-Registered service action editor.saveState v1
-Registered service action editor.openFile v1
-Registered service action editor.closeFile v1
-Registered service action editor.autosave v1
-Registered service action settings.getUserSettings v1
-Registered service action settings.updateUserSettings v1
-Registered service action settings.getWorkspaceSettings v1
-Registered service action settings.updateWorkspaceSettings v1
-Registered service action ai.chat v1
-Registered service action ai.generateCode v1
-Registered service action ai.explainCode v1
-Registered service action ai.reviewCode v1
-Registered service action ai.refactor v1
-Registered service action realtime.broadcast v1
-Registered service action meta.healthCheck v1
-Registered service action meta.getCapabilities v1
-Registered service action source-control.status v1
-Registered service action source-control.log v1
-Registered service action source-control.commit v1
-Registered service action source-control.listBranches v1
-Registered service action source-control.createBranch v1
-Registered service action source-control.deleteBranch v1
-Registered service action source-control.checkout v1
-Registered service action source-control.merge v1
-Registered service action extensions.submit v1
-Registered service action extensions.getBuildStatus v1
-Registered service action extensions.listVersions v1
-Registered service action extensions.search v1
-Registered service action extensions.list v1
-Registered service action extensions.get v1
-Registered service action extensions.getManifest v1
-Registered service action extensions.toggle v1
-Registered service action extensions.install v1
-Registered service action extensions.uninstall v1
-Registered service action extensions.update v1
-Registered service action extensions.delete v1
-Registered service action extensions.rebuild v1
-Registered service action extensions.deleteVersion v1
-Registered service action secrets.set v1
-Registered service action secrets.list v1
-Registered service action secrets.delete v1
-✅ Registered 65 service actions across 11 domains
-📁 VFS Manager started
-Starting CronJobManager...
-⚙️  ServiceManager started
-Configured 65 REST routes.
-🚀 Starting CanvasLLM IDE Server...
-Registered service action auth.login v1
-Registered service action auth.logout v1
-Registered service action auth.getSession v1
-Registered service action auth.refreshToken v1
-Registered service action auth.register v1
-Registered service action auth.requestPasswordReset v1
-Registered service action auth.resetPassword v1
-Registered service action auth.updatePassword v1
-Registered service action workspace.list v1
-Registered service action workspace.create v1
-Registered service action workspace.get v1
-Registered service action workspace.update v1
-Registered service action workspace.delete v1
-Registered service action workspace.execute v1
-Registered service action workspace.processes v1
-Registered service action file.listTree v1
-Registered service action file.get v1
-Registered service action file.create v1
-Registered service action file.save v1
-Registered service action file.delete v1
-Registered service action file.rename v1
-Registered service action file.copy v1
-Registered service action file.search v1
-Registered service action editor.getState v1
-Registered service action editor.saveState v1
-Registered service action editor.openFile v1
-Registered service action editor.closeFile v1
-Registered service action editor.autosave v1
-Registered service action settings.getUserSettings v1
-Registered service action settings.updateUserSettings v1
-Registered service action settings.getWorkspaceSettings v1
-Registered service action settings.updateWorkspaceSettings v1
-Registered service action ai.chat v1
-Registered service action ai.generateCode v1
-Registered service action ai.explainCode v1
-Registered service action ai.reviewCode v1
-Registered service action ai.refactor v1
-Registered service action realtime.broadcast v1
-Registered service action meta.healthCheck v1
-Registered service action meta.getCapabilities v1
-Registered service action source-control.status v1
-Registered service action source-control.log v1
-Registered service action source-control.commit v1
-Registered service action source-control.listBranches v1
-Registered service action source-control.createBranch v1
-Registered service action source-control.deleteBranch v1
-Registered service action source-control.checkout v1
-Registered service action source-control.merge v1
-Registered service action extensions.submit v1
-Registered service action extensions.getBuildStatus v1
-Registered service action extensions.listVersions v1
-Registered service action extensions.search v1
-Registered service action extensions.list v1
-Registered service action extensions.get v1
-Registered service action extensions.getManifest v1
-Registered service action extensions.toggle v1
-Registered service action extensions.install v1
-Registered service action extensions.uninstall v1
-Registered service action extensions.update v1
-Registered service action extensions.delete v1
-Registered service action extensions.rebuild v1
-Registered service action extensions.deleteVersion v1
-Registered service action secrets.set v1
-Registered service action secrets.list v1
-Registered service action secrets.delete v1
-✅ Registered 65 service actions across 11 domains
-📁 VFS Manager started
-Starting CronJobManager...
-⚙️  ServiceManager started
-Configured 65 REST routes.
-🚀 Unified Gateway running on http://0.0.0.0:3001
-🌍 HTTP Server listening on 0.0.0.0:3001
-📋 Meta routes: http://0.0.0.0:3001/api/_meta/routes
-❤️  Health check: http://0.0.0.0:3001/api/_meta/health
 ServiceAction meta.healthCheck v1 calling...
 ServiceAction meta.healthCheck v1 completed successfully
 🚀 Starting CanvasLLM IDE Server...
@@ -363,12 +217,14 @@ Registered service action secrets.delete v1
 Starting CronJobManager...
 ⚙️  ServiceManager started
 Configured 65 REST routes.
-🚀 Unified Gateway running on http://0.0.0.0:3001
-🌍 HTTP Server listening on 0.0.0.0:3001
-📋 Meta routes: http://0.0.0.0:3001/api/_meta/routes
-❤️  Health check: http://0.0.0.0:3001/api/_meta/health
-ServiceAction meta.healthCheck v1 calling...
-ServiceAction meta.healthCheck v1 completed successfully
+🛑 Shutting down server gracefully...
+Stopping ServiceManager...
+Stopping CronJobManager...
+ServiceManager stopped
+Stopping GatewayManager...
+GatewayManager stopped
+Stopping VFS Manager...
+👋 Goodbye!
 🚀 Starting CanvasLLM IDE Server...
 Registered service action auth.login v1
 Registered service action auth.logout v1
@@ -511,10 +367,14 @@ Registered service action secrets.delete v1
 Starting CronJobManager...
 ⚙️  ServiceManager started
 Configured 65 REST routes.
-🚀 Unified Gateway running on http://0.0.0.0:3001
-🌍 HTTP Server listening on 0.0.0.0:3001
-📋 Meta routes: http://0.0.0.0:3001/api/_meta/routes
-❤️  Health check: http://0.0.0.0:3001/api/_meta/health
+🛑 Shutting down server gracefully...
+Stopping ServiceManager...
+Stopping CronJobManager...
+ServiceManager stopped
+Stopping GatewayManager...
+GatewayManager stopped
+Stopping VFS Manager...
+👋 Goodbye!
 🚀 Starting CanvasLLM IDE Server...
 Registered service action auth.login v1
 Registered service action auth.logout v1
@@ -531,6 +391,7 @@ Registered service action workspace.update v1
 Registered service action workspace.delete v1
 Registered service action workspace.execute v1
 Registered service action workspace.processes v1
+Registered service action file.search v1
 Registered service action file.listTree v1
 Registered service action file.get v1
 Registered service action file.create v1
@@ -538,78 +399,6 @@ Registered service action file.save v1
 Registered service action file.delete v1
 Registered service action file.rename v1
 Registered service action file.copy v1
-Registered service action file.search v1
-Registered service action editor.getState v1
-Registered service action editor.saveState v1
-Registered service action editor.openFile v1
-Registered service action editor.closeFile v1
-Registered service action editor.autosave v1
-Registered service action settings.getUserSettings v1
-Registered service action settings.updateUserSettings v1
-Registered service action settings.getWorkspaceSettings v1
-Registered service action settings.updateWorkspaceSettings v1
-Registered service action ai.chat v1
-Registered service action ai.generateCode v1
-Registered service action ai.explainCode v1
-Registered service action ai.reviewCode v1
-Registered service action ai.refactor v1
-Registered service action realtime.broadcast v1
-Registered service action meta.healthCheck v1
-Registered service action meta.getCapabilities v1
-Registered service action source-control.status v1
-Registered service action source-control.log v1
-Registered service action source-control.commit v1
-Registered service action source-control.listBranches v1
-Registered service action source-control.createBranch v1
-Registered service action source-control.deleteBranch v1
-Registered service action source-control.checkout v1
-Registered service action source-control.merge v1
-Registered service action extensions.submit v1
-Registered service action extensions.getBuildStatus v1
-Registered service action extensions.listVersions v1
-Registered service action extensions.search v1
-Registered service action extensions.list v1
-Registered service action extensions.get v1
-Registered service action extensions.getManifest v1
-Registered service action extensions.toggle v1
-Registered service action extensions.install v1
-Registered service action extensions.uninstall v1
-Registered service action extensions.update v1
-Registered service action extensions.delete v1
-Registered service action extensions.rebuild v1
-Registered service action extensions.deleteVersion v1
-Registered service action secrets.set v1
-Registered service action secrets.list v1
-Registered service action secrets.delete v1
-✅ Registered 65 service actions across 11 domains
-📁 VFS Manager started
-Starting CronJobManager...
-⚙️  ServiceManager started
-Configured 65 REST routes.
-🚀 Starting CanvasLLM IDE Server...
-Registered service action auth.login v1
-Registered service action auth.logout v1
-Registered service action auth.getSession v1
-Registered service action auth.refreshToken v1
-Registered service action auth.register v1
-Registered service action auth.requestPasswordReset v1
-Registered service action auth.resetPassword v1
-Registered service action auth.updatePassword v1
-Registered service action workspace.list v1
-Registered service action workspace.create v1
-Registered service action workspace.get v1
-Registered service action workspace.update v1
-Registered service action workspace.delete v1
-Registered service action workspace.execute v1
-Registered service action workspace.processes v1
-Registered service action file.listTree v1
-Registered service action file.get v1
-Registered service action file.create v1
-Registered service action file.save v1
-Registered service action file.delete v1
-Registered service action file.rename v1
-Registered service action file.copy v1
-Registered service action file.search v1
 Registered service action editor.getState v1
 Registered service action editor.saveState v1
 Registered service action editor.openFile v1
@@ -661,74 +450,13 @@ Configured 65 REST routes.
 🌍 HTTP Server listening on 0.0.0.0:3001
 📋 Meta routes: http://0.0.0.0:3001/api/_meta/routes
 ❤️  Health check: http://0.0.0.0:3001/api/_meta/health
-🚀 Starting CanvasLLM IDE Server...
-Registered service action auth.login v1
-Registered service action auth.logout v1
-Registered service action auth.getSession v1
-Registered service action auth.refreshToken v1
-Registered service action auth.register v1
-Registered service action auth.requestPasswordReset v1
-Registered service action auth.resetPassword v1
-Registered service action auth.updatePassword v1
-Registered service action workspace.list v1
-Registered service action workspace.create v1
-Registered service action workspace.get v1
-Registered service action workspace.update v1
-Registered service action workspace.delete v1
-Registered service action workspace.execute v1
-Registered service action workspace.processes v1
-Registered service action file.listTree v1
-Registered service action file.get v1
-Registered service action file.create v1
-Registered service action file.save v1
-Registered service action file.delete v1
-Registered service action file.rename v1
-Registered service action file.copy v1
-Registered service action file.search v1
-Registered service action editor.getState v1
-Registered service action editor.saveState v1
-Registered service action editor.openFile v1
-Registered service action editor.closeFile v1
-Registered service action editor.autosave v1
-Registered service action settings.getUserSettings v1
-Registered service action settings.updateUserSettings v1
-Registered service action settings.getWorkspaceSettings v1
-Registered service action settings.updateWorkspaceSettings v1
-Registered service action ai.chat v1
-Registered service action ai.generateCode v1
-Registered service action ai.explainCode v1
-Registered service action ai.reviewCode v1
-Registered service action ai.refactor v1
-Registered service action realtime.broadcast v1
-Registered service action meta.healthCheck v1
-Registered service action meta.getCapabilities v1
-Registered service action source-control.status v1
-Registered service action source-control.log v1
-Registered service action source-control.commit v1
-Registered service action source-control.listBranches v1
-Registered service action source-control.createBranch v1
-Registered service action source-control.deleteBranch v1
-Registered service action source-control.checkout v1
-Registered service action source-control.merge v1
-Registered service action extensions.submit v1
-Registered service action extensions.getBuildStatus v1
-Registered service action extensions.listVersions v1
-Registered service action extensions.search v1
-Registered service action extensions.list v1
-Registered service action extensions.get v1
-Registered service action extensions.getManifest v1
-Registered service action extensions.toggle v1
-Registered service action extensions.install v1
-Registered service action extensions.uninstall v1
-Registered service action extensions.update v1
-Registered service action extensions.delete v1
-Registered service action extensions.rebuild v1
-Registered service action extensions.deleteVersion v1
-Registered service action secrets.set v1
-Registered service action secrets.list v1
-Registered service action secrets.delete v1
-✅ Registered 65 service actions across 11 domains
-📁 VFS Manager started
-Starting CronJobManager...
-⚙️  ServiceManager started
-Configured 65 REST routes.
+
+🛑 Received SIGINT.
+🛑 Shutting down server gracefully...
+Stopping ServiceManager...
+Stopping CronJobManager...
+ServiceManager stopped
+Stopping GatewayManager...
+GatewayManager stopped
+Stopping VFS Manager...
+👋 Goodbye!

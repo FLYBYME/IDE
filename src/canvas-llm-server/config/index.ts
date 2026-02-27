@@ -10,7 +10,7 @@ export const config = {
     terminalPort: parseInt(process.env.TERMINAL_PORT || '3003', 10),
     host: process.env.HOST || '0.0.0.0',
     apiPrefix: process.env.API_PREFIX || '/api',
-    debug: true,// process.env.DEBUG === 'true',
+    debug: process.env.DEBUG === 'true',
 
     docsPath: process.env.DOCS_PATH || '/_meta/routes',
 

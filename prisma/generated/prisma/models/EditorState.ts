@@ -312,10 +312,6 @@ export type EditorStateUncheckedUpdateOneWithoutWorkspaceNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EditorStateUpdateToOneWithWhereWithoutWorkspaceInput, Prisma.EditorStateUpdateWithoutWorkspaceInput>, Prisma.EditorStateUncheckedUpdateWithoutWorkspaceInput>
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type EditorStateCreateNestedOneWithoutTabsInput = {
   create?: Prisma.XOR<Prisma.EditorStateCreateWithoutTabsInput, Prisma.EditorStateUncheckedCreateWithoutTabsInput>
   connectOrCreate?: Prisma.EditorStateCreateOrConnectWithoutTabsInput

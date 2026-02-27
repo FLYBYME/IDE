@@ -16,6 +16,14 @@ model User {
   email        String    @unique
   username     String    @unique
   passwordHash String
+  
+  // --- New RBAC & Audit Fields ---
+  role         String    @default("USER") // "USER" or "ADMIN"
+  isActive     Boolean   @default(true)   // Soft-delete or ban users
+  lastLogin    DateTime?                  // Updated on successful login
+  bio          String?                    // Additional user detail
+  // -------------------------------
+
   createdAt    DateTime  @default(now())
   
   workspaces     Workspace[]

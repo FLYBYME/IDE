@@ -37,17 +37,30 @@ export const loginAction: ServiceAction = {
         const valid = await verifyPassword(password, user.passwordHash);
         if (!valid) throw new Error('Invalid credentials');
 
+        // NEW: Check if the user is suspended
+        if (!user.isActive) throw new Error('Account is suspended');
+
+        // NEW: Update lastLogin timestamp
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLogin: new Date() }
+        });
+
         const expiresIn = rememberMe ? config.jwt.refreshExpiresIn : config.jwt.expiresIn;
-        const token = signToken({ userId: user.id, email: user.email }, expiresIn);
+        const token = signToken({ userId: updatedUser.id, email: updatedUser.email, role: updatedUser.role }, expiresIn);
 
         return {
             success: true,
             token,
             user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                createdAt: user.createdAt.toISOString(),
+                id: updatedUser.id,
+                username: updatedUser.username,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                isActive: updatedUser.isActive,
+                lastLogin: updatedUser.lastLogin?.toISOString(),
+                bio: updatedUser.bio,
+                createdAt: updatedUser.createdAt.toISOString(),
             },
             expiresIn,
         };
@@ -102,8 +115,13 @@ export const getSessionAction: ServiceAction = {
                 id: foundUser.id,
                 username: foundUser.username,
                 email: foundUser.email,
+                role: foundUser.role,
+                isActive: foundUser.isActive,
+                lastLogin: foundUser.lastLogin?.toISOString(),
+                bio: foundUser.bio,
+                createdAt: foundUser.createdAt.toISOString(),
             },
-            permissions: ['read', 'write'],
+            permissions: foundUser.role === 'ADMIN' ? ['read', 'write', 'admin'] : ['read', 'write'],
             tokenExpires: new Date(Date.now() + config.jwt.expiresIn * 1000).toISOString(),
         };
     },
@@ -128,7 +146,7 @@ export const refreshTokenAction: ServiceAction = {
             // Allow expired tokens for refresh — just verify signature
             const payload = verifyToken(oldToken, true);
 
-            const newToken = signToken({ userId: payload.userId, email: payload.email });
+            const newToken = signToken({ userId: payload.userId, email: payload.email, role: payload.role });
             return {
                 token: newToken,
                 expiresIn: config.jwt.expiresIn,
@@ -169,7 +187,7 @@ export const registerAction: ServiceAction = {
             }
         });
 
-        const token = signToken({ userId: user.id, email: user.email });
+        const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
         return {
             success: true,
@@ -178,6 +196,10 @@ export const registerAction: ServiceAction = {
                 id: user.id,
                 username: user.username,
                 email: user.email,
+                role: user.role,
+                isActive: user.isActive,
+                lastLogin: user.lastLogin?.toISOString(),
+                bio: user.bio,
                 createdAt: user.createdAt.toISOString(),
             },
         };

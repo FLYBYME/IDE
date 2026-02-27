@@ -28,6 +28,13 @@ const DEFAULT_USER_SETTINGS = {
     lineNumbers: true,
 };
 
+const DEFAULT_WORKSPACE_SETTINGS = {
+    language: 'typescript',
+    formatter: 'prettier',
+    linter: 'eslint',
+    theme: null,
+};
+
 // ── settings.getUserSettings ─────────────────────────
 export const getUserSettingsAction: ServiceAction = {
     name: 'settings.getUserSettings',
@@ -103,10 +110,11 @@ export const getWorkspaceSettingsAction: ServiceAction = {
             where: { workspaceId }
         });
 
-        let current = {};
+        let current = { ...DEFAULT_WORKSPACE_SETTINGS };
         if (wsSettings && wsSettings.settings) {
             try {
-                current = JSON.parse(wsSettings.settings);
+                const parsed = JSON.parse(wsSettings.settings);
+                current = { ...current, ...parsed };
             } catch (e) { }
         }
 

@@ -46,6 +46,7 @@ export class VFSManager {
             await this.persistSnapshot(entry.workspaceId, entry.vfs);
         }
         this.instances.clear();
+        await workspaceContainerManager.stopAll();
     }
 
     /**

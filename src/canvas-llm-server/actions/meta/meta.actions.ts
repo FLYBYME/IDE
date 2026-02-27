@@ -11,6 +11,7 @@ export const healthCheckAction: ServiceAction = {
     domain: 'meta',
     tags: ['meta', 'health'],
     rest: { method: 'GET', path: '/_meta/health' },
+    auth: { required: false },
     input: z.object({}),
     output: z.object({
         status: z.enum(['healthy', 'degraded', 'down']),

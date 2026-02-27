@@ -343,6 +343,15 @@ export class WorkspaceContainerManager {
         await fs.mkdir(path.dirname(hostPath), { recursive: true });
         await fs.writeFile(hostPath, content);
     }
+    /**
+     * Stops all active workspace containers and cleans up resources.
+     */
+    public async stopAll(): Promise<void> {
+        const workspaceIds = Array.from(this.activeContainers.keys());
+        for (const workspaceId of workspaceIds) {
+            await this.stopWorkspace(workspaceId);
+        }
+    }
 }
 
 export const workspaceContainerManager = new WorkspaceContainerManager();

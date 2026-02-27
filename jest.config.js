@@ -14,8 +14,7 @@ export default {
         ],
     },
     testMatch: [
-        '**/tests/server/**/*.ts',
-        '**/tests/client/**/*.ts',
+        '**/tests/integration/**/*.ts',
     ],
     extensionsToTreatAsEsm: ['.ts'],
     testPathIgnorePatterns: [

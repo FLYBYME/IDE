@@ -95,7 +95,7 @@ export const getFileAction: ServiceAction = {
         gatewayManager.broadcast('system', 'file.opened', { workspaceId, path: filePath });
 
         return {
-            path: file.path,
+            path: file.path.replace(vfs.rootDir, ''),
             type: 'file' as const,
             content: file.content,
             encoding: 'utf8',
@@ -212,6 +212,7 @@ export const deleteFileAction: ServiceAction = {
                     count++;
                 }
             }
+            vfs.delete(filePath);
             // Broadcast event for folder deletion (with recursive flag)
             gatewayManager.broadcast('vfs', 'file.deleted', { workspaceId, path: filePath, recursive: true });
             return { success: true, deleted: count };
@@ -346,7 +347,7 @@ export const searchFilesAction: ServiceAction = {
 
             // 1. Name Search
             if ((searchType === 'name' || searchType === 'both') && normalizedPath.includes(q)) {
-                matches.push({ snippet: file.path });
+                matches.push({ snippet: file.path.replace(vfs.rootDir, '') });
             }
 
             // 2. Content Search (Memory efficient, no .split())
@@ -383,7 +384,7 @@ export const searchFilesAction: ServiceAction = {
             }
 
             if (matches.length > 0) {
-                results.push({ path: file.path, matches });
+                results.push({ path: file.path.replace(vfs.rootDir, ''), matches });
             }
 
             if (results.length >= maxResults) break;
@@ -394,6 +395,7 @@ export const searchFilesAction: ServiceAction = {
 };
 
 export default [
+    searchFilesAction,
     listTreeAction,
     getFileAction,
     createFileAction,
@@ -401,5 +403,4 @@ export default [
     deleteFileAction,
     renameFileAction,
     copyFileAction,
-    searchFilesAction,
 ];

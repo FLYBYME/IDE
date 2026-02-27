@@ -4,18 +4,10 @@ import { authGuard } from './middleware/auth-guard';
 import { vfsManager } from './core/vfs-manager';
 import path from 'path';
 
+
 // ── Import all service actions ───────────────────────
-import authActions from './actions/auth/auth.actions';
-import workspaceActions from './actions/workspace/workspace.actions';
-import filesActions from './actions/files/files.actions';
-import editorActions from './actions/editor/editor.actions';
-import settingsActions from './actions/settings/settings.actions';
-import aiActions from './actions/ai/ai.actions';
-import realtimeActions from './actions/realtime/realtime.actions';
-import metaActions from './actions/meta/meta.actions';
-import sourceControlActions from './actions/source-control/source-control.actions';
-import extensionActions from './actions/extension/extension.actions';
-import secretsActions from './actions/secrets/secrets.actions';
+import allActions from './actions';
+
 import { Logger } from 'tool-ms';
 import fs from 'fs';
 
@@ -60,20 +52,6 @@ export async function bootstrap() {
     serviceManager = new ServiceManager({ logger });
 
     // ── 2. Register all actions ──────────────────────
-    const allActions = [
-        ...authActions,
-        ...workspaceActions,
-        ...filesActions,
-        ...editorActions,
-        ...settingsActions,
-        ...aiActions,
-        ...realtimeActions,
-        ...metaActions,
-        ...sourceControlActions,
-        ...extensionActions,
-        ...secretsActions,
-    ];
-
     serviceManager.registerMany(allActions);
     logger.info(`✅ Registered ${allActions.length} service actions across ${serviceManager.getDomains().length} domains`);
 
@@ -100,15 +78,33 @@ export async function bootstrap() {
         authenticate: async (token, action) => {
             try {
                 const payload = verifyToken(token);
-                return { user: { id: payload.userId, email: payload.email } };
+
+                // 1. Enforce RBAC if the action requires specific roles
+                if (action.auth?.roles && action.auth.roles.length > 0) {
+                    if (!action.auth.roles.includes(payload.role)) {
+                        throw new Error("Forbidden: Insufficient privileges");
+                    }
+                }
+
+                // 2. Return enriched user object to Context metadata
+                return {
+                    user: {
+                        id: payload.userId,
+                        email: payload.email,
+                        role: payload.role
+                    }
+                };
             } catch (err: any) {
+                if (err.message === "Forbidden: Insufficient privileges") {
+                    throw err;
+                }
                 throw new Error("Invalid Token");
             }
         }
     });
 
     // ── 4. Start VFS Manager ────────────────────────
-    vfsManager.start(); ``
+    vfsManager.start();
     logger.info('📁 VFS Manager started');
 
     // ── 5. Start ServiceManager lifecycle ────────────

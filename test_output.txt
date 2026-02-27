@@ -1,0 +1,185 @@
+
+> canvas-ide-core@1.0.0 test
+> NODE_OPTIONS=--experimental-vm-modules jest -i
+
+(node:9431) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:9431) Warning: `--localstorage-file` was provided without a valid path
+FAIL tests/server/settings-tests.ts
+  ● Settings API Endpoints › should retrieve default workspace settings initially
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "typescript"
+    Received: "javascript"
+
+      102 |
+      103 |         expect(result).toHaveProperty('workspace');
+    > 104 |         expect(result.workspace.language).toBe('typescript');
+          |                                           ^
+      105 |         expect(result.workspace.formatter).toBe('prettier');
+      106 |     });
+      107 |
+
+      at Object.<anonymous> (tests/server/settings-tests.ts:104:43)
+
+PASS tests/server/workspace-tests.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (5) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+    console.info
+      🚀 Started container a46aa5d4e3b74a91f75f739cc70c368ed840cd103c91c9f6f2bc6dac4c25bd8c for workspace 6e6df442-19f4-4dfb-9424-391df7d9fe17 using image canvas-workspace:latest
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      Stopped workspace container for 6e6df442-19f4-4dfb-9424-391df7d9fe17
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+PASS tests/server/editor-tests.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (5) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+    console.info
+      🚀 Started container 379403b6dfcc7b2ff44f92c8fe3d0c57aea5882919c8f18aac1642e2a0adccde for workspace 22222222-2222-2222-2222-222222222222 using image canvas-workspace:latest
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      Stopped workspace container for 22222222-2222-2222-2222-222222222222
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+PASS tests/server/files-test.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (5) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+    console.info
+      [GatewayClient] connectWs: Connecting to ws://localhost:3007/ws?token=test-token with protocols: ucb, test-token
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: WebSocket OPEN
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"connected","payload":{"status":"ok"},"timestamp":1772168270270}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Connection confirmed
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      🚀 Started container a7000658a72398eb0b5b81a265c85d9bb81bf3d83492198e5fbebf64000a40bc for workspace 44444444-4444-4444-4444-444444444444 using image canvas-workspace:latest
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir","type":"folder","created":"2026-02-27T04:57:50.443Z"},"messageId":"mntjcfnqjel","timestamp":1772168270443}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir/hello.ts","type":"file","created":"2026-02-27T04:57:50.453Z"},"messageId":"8ld2znn0wer","timestamp":1772168270453}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir/hello.ts","type":"file","content":"console.log(\"Hello, World!\");","encoding":"utf8","size":29,"language":"typescript","modified":"2026-02-27T04:57:50.457Z"},"messageId":"627436ymzon","timestamp":1772168270457}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.debug
+      Synced to VFS & Frontend: test-dir/hello.ts (add)
+
+      at ConsoleLogger.debug (../tool-ms/src/lib/Logger.ts:20:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir","entries":[{"name":".keep","type":"file","path":"/test-dir/.keep","size":0,"modified":"2026-02-27T04:57:50.461Z"},{"name":"hello.ts","type":"file","path":"/test-dir/hello.ts","size":29,"modified":"2026-02-27T04:57:50.461Z"}]},"messageId":"eey38wlx65h","timestamp":1772168270461}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.debug
+      Synced to VFS & Frontend: test-dir/hello.ts (change)
+
+      at ConsoleLogger.debug (../tool-ms/src/lib/Logger.ts:20:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir/hello.ts","size":32,"modified":"2026-02-27T04:57:50.467Z"},"messageId":"qwwpgycl7rf","timestamp":1772168270467}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir/hello.ts","type":"file","content":"console.log(\"Hello, Universe!\");","encoding":"utf8","size":32,"language":"typescript","modified":"2026-02-27T04:57:50.470Z"},"messageId":"0k7tit5qp02","timestamp":1772168270470}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"original":"/test-dir/hello.ts","copy":"/test-dir/hello-copy.ts","created":"2026-02-27T04:57:50.475Z"},"messageId":"d0dufc9e70q","timestamp":1772168270475}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/test-dir/hello-copy.ts","type":"file","content":"console.log(\"Hello, Universe!\");","encoding":"utf8","size":32,"language":"typescript","modified":"2026-02-27T04:57:50.477Z"},"messageId":"5bn7ttww","timestamp":1772168270477}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"oldPath":"/test-dir/hello.ts","newPath":"/test-dir/hello-renamed.ts","moved":"2026-02-27T04:57:50.482Z"},"messageId":"w4gzdc03vi","timestamp":1772168270482}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"error","payload":{"message":"File not found: /test-dir/hello.ts"},"messageId":"fstn05gkgdp","timestamp":1772168270510}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.debug
+      Synced to VFS & Frontend: test-dir/hello-renamed.ts (add)
+
+      at ConsoleLogger.debug (../tool-ms/src/lib/Logger.ts:20:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"total":2,"results":[{"path":"/test-dir/hello-copy.ts","matches":[{"line":1,"column":21,"snippet":"console.log(\"Hello, Universe!\");"}]},{"path":"/test-dir/hello-renamed.ts","matches":[{"line":1,"column":21,"snippet":"console.log(\"Hello, Universe!\");"}]}]},"messageId":"nkrbzj6k9jp","timestamp":1772168270520}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"success":true,"deleted":3},"messageId":"eeora5jfkk7","timestamp":1772168270523}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      [GatewayClient] connectWs: Received message: {"channel":"system","type":"response","payload":{"path":"/","entries":[]},"messageId":"3pnljfgarg3","timestamp":1772168270524}
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+    console.info
+      Stopped workspace container for 44444444-4444-4444-4444-444444444444
+
+      at ConsoleLogger.info (../tool-ms/src/lib/Logger.ts:11:17)
+
+
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       1 failed, 22 passed, 23 total
+Snapshots:   0 total
+Time:        12.166 s
+Ran all test suites.

@@ -267,6 +267,10 @@ export const AuthUserOutput = z.object({
     id: z.string().uuid(),
     username: z.string(),
     email: z.string(),
+    role: z.string(),
+    isActive: z.boolean(),
+    lastLogin: z.union([z.string(), z.date()]).optional().nullable(),
+    bio: z.string().optional().nullable(),
     createdAt: z.union([z.string(), z.date()]),
 });
 

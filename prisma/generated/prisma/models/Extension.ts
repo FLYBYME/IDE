@@ -488,14 +488,6 @@ export type ExtensionUncheckedUpdateManyWithoutAuthorNestedInput = {
   deleteMany?: Prisma.ExtensionScalarWhereInput | Prisma.ExtensionScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type ExtensionCreateNestedOneWithoutVersionsInput = {
   create?: Prisma.XOR<Prisma.ExtensionCreateWithoutVersionsInput, Prisma.ExtensionUncheckedCreateWithoutVersionsInput>
   connectOrCreate?: Prisma.ExtensionCreateOrConnectWithoutVersionsInput
