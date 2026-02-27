@@ -41,16 +41,16 @@ export class PromptDialog extends Modal {
                     label: options.cancelLabel || 'Cancel',
                     variant: 'secondary',
                     onClick: () => {
-                        this.hide();
                         resolve(null);
+                        this.hide();
                     }
                 }),
                 new Button({
                     label: options.okLabel || 'OK',
                     variant: 'primary',
                     onClick: () => {
-                        this.hide();
                         resolve(currentValue);
+                        this.hide();
                     }
                 })
             ],

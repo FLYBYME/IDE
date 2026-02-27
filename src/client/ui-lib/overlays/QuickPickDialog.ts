@@ -36,7 +36,7 @@ export class QuickPickDialog<T extends QuickPickItem> extends Modal {
                 `;
                 row.onmouseenter = () => row.style.backgroundColor = 'rgba(255,255,255,0.05)';
                 row.onmouseleave = () => row.style.backgroundColor = 'transparent';
-                row.onclick = () => { this.hide(); resolve(item); };
+                row.onclick = () => { resolve(item); this.hide(); };
 
                 if (item.icon) {
                     const icon = document.createElement('i');

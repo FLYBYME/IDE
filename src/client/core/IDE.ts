@@ -70,6 +70,9 @@ export class IDE {
             // Only initialize workspace AFTER gateway is confirmed up
             await this.workspace.initialize();
 
+            this.notifications.setStatusMessage('Loading extensions...');
+            await this.extensions.activateAll();
+
             this.initialized = true;
             this.commands.emit(IDEEvents.APP_READY, { timestamp: Date.now() });
         } catch (error) {

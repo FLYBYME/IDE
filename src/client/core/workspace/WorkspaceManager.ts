@@ -304,12 +304,14 @@ export class WorkspaceManager {
                         return;
                     }
 
+                    const activeWs = this.state.getState().activeWorkspace;
                     const items = workspaces.map((ws: any) => ({
                         id: ws.id,
-                        label: ws.name,
+                        label: ws.name + (activeWs?.id === ws.id ? ' (current)' : ''),
                         description: ws.description || '',
-                        icon: 'fas fa-folder',
+                        icon: activeWs?.id === ws.id ? 'fas fa-check' : 'fas fa-folder',
                     }));
+
                     console.log(items);
                     const selected = await QuickPickDialog.show(items, {
                         placeholder: 'Select a workspace...',
@@ -317,6 +319,8 @@ export class WorkspaceManager {
 
                     if (selected) {
                         await this.loadWorkspace(selected.id, selected.label);
+                    } else {
+                        this.ide.notifications.notify('No workspace selected.', 'info');
                     }
                 } catch (err: any) {
                     this.state.setLoading(false);
@@ -348,6 +352,7 @@ export class WorkspaceManager {
             // await this.ide.loadWorkspace(id, name);
             this.state.setActiveWorkspace({ id, name });
             localStorage.setItem('ide-last-workspace', JSON.stringify({ id, name }));
+            this.ide.notifications.notify(`Workspace "${name}" loaded.`, 'success', 14000);
         } catch (err: any) {
             this.ide.notifications.notify(`Failed to load workspace: ${err.message}`, 'error');
         }

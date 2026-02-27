@@ -9,7 +9,7 @@
         "./package.json": "./package.json"
     },
     "scripts": {
-        "build": "webpack --mode production",
+        "build": "tsc",
         "start": "webpack serve --mode development",
         "watch": "webpack --watch",
         "server": "tsx --tsconfig tsconfig.server.json src/canvas-llm-server/index.ts",

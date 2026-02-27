@@ -30,16 +30,16 @@ export class ConfirmDialog extends Modal {
                     label: options.cancelLabel || 'Cancel',
                     variant: 'secondary',
                     onClick: () => {
-                        this.hide();
                         resolve(false);
+                        this.hide();
                     }
                 }),
                 new Button({
                     label: options.primaryLabel || 'OK',
                     variant: options.isDestructive ? 'danger' : 'primary',
                     onClick: () => {
-                        this.hide();
                         resolve(true);
+                        this.hide();
                     }
                 })
             ],

@@ -164,5 +164,7 @@ export const ProjectScaffolderExtension: Extension = {
                 }
             })
         );
+
+        console.log('Project Scaffolder Extension activated');
     }
 };

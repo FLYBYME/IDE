@@ -91,7 +91,7 @@ export class FormDialog extends Modal {
                 new Button({
                     label: options.cancelLabel || 'Cancel',
                     variant: 'secondary',
-                    onClick: () => { this.hide(); resolve(null); }
+                    onClick: () => { resolve(null); this.hide(); }
                 }),
                 new Button({
                     label: options.okLabel || 'Submit',
@@ -105,8 +105,8 @@ export class FormDialog extends Modal {
                                 return;
                             }
                         }
-                        this.hide();
                         resolve(values);
+                        this.hide();
                     }
                 })
             ],
