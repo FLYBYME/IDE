@@ -5,7 +5,7 @@ import { FSWatcher, watch } from 'chokidar';
 import { VirtualFileSystem } from 'vfs';
 import { gatewayManager } from './gateway-manager';
 import { config } from '../config';
-import { ConsoleLogger } from 'tool-ms';
+import { Logger } from 'tool-ms';
 import { prisma } from './prisma';
 import { decrypt } from '../actions/secrets/secrets.actions';
 
@@ -20,14 +20,14 @@ export interface WorkspaceContainer {
 export class WorkspaceContainerManager {
     private docker = new Docker();
     private activeContainers: Map<string, WorkspaceContainer> = new Map();
-    private logger = new ConsoleLogger();
+
 
     /**
      * Starts a dedicated container for a workspace with bidirectional file sync.
      */
-    public async startWorkspace(workspaceId: string, vfs: VirtualFileSystem): Promise<void> {
+    public async startWorkspace(workspaceId: string, vfs: VirtualFileSystem, logger: Logger): Promise<void> {
         if (this.activeContainers.has(workspaceId)) {
-            this.logger.warn(`Workspace container already running for ${workspaceId}`);
+            logger.warn(`Workspace container already running for ${workspaceId}`);
             return;
         }
 
@@ -64,7 +64,7 @@ export class WorkspaceContainerManager {
             });
 
             await container.start();
-            this.logger.info(`🚀 Started container ${container.id} for workspace ${workspaceId} using image ${config.workspaceImage}`);
+            logger.info(`🚀 Started container ${container.id} for workspace ${workspaceId} using image ${config.workspaceImage}`);
 
             // 5. Initialize Host Watcher (Container -> VFS)
             const watcher = watch(bridgeDir, {
@@ -93,7 +93,7 @@ export class WorkspaceContainerManager {
                             content
                         });
 
-                        this.logger.debug(`Synced to VFS & Frontend: ${relativePath} (${event})`);
+                        logger.debug(`Synced to VFS & Frontend: ${relativePath} (${event})`);
                     } else if (event === 'unlink' || event === 'unlinkDir') {
                         // Ensure it's prefixed with a slash for frontend
                         const vfsPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
@@ -106,10 +106,10 @@ export class WorkspaceContainerManager {
                             path: vfsPath
                         });
 
-                        this.logger.debug(`Deleted from VFS & Frontend: ${relativePath}`);
+                        logger.debug(`Deleted from VFS & Frontend: ${relativePath}`);
                     }
                 } catch (err) {
-                    this.logger.error(`Failed to sync host change to VFS/Frontend: ${relativePath}`, err);
+                    logger.error(`Failed to sync host change to VFS/Frontend: ${relativePath}`, err);
                 }
             });
 
@@ -122,7 +122,7 @@ export class WorkspaceContainerManager {
             });
 
         } catch (err) {
-            this.logger.error(`Failed to start workspace container for ${workspaceId}`, err);
+            logger.error(`Failed to start workspace container for ${workspaceId}`, err);
             throw err;
         }
     }
@@ -130,7 +130,7 @@ export class WorkspaceContainerManager {
     /**
      * Executes a command inside the workspace container and streams output via SSE.
      */
-    public async executeCommand(workspaceId: string, command: string[], executionId: string): Promise<void> {
+    public async executeCommand(workspaceId: string, command: string[], executionId: string, logger: Logger): Promise<void> {
         const ws = this.activeContainers.get(workspaceId);
         if (!ws) {
             throw new Error(`No active container for workspace ${workspaceId}`);
@@ -189,7 +189,7 @@ export class WorkspaceContainerManager {
                     exitCode
                 }, workspaceId);
             } catch (err) {
-                this.logger.error(`Failed to inspect exec ${executionId}:`, err);
+                logger.error(`Failed to inspect exec ${executionId}:`, err);
                 gatewayManager.broadcast('terminal', 'workspace.exec.exit', {
                     workspaceId,
                     executionId,
@@ -274,7 +274,7 @@ export class WorkspaceContainerManager {
     /**
      * Stops the container and cleans up resources.
      */
-    public async stopWorkspace(workspaceId: string): Promise<void> {
+    public async stopWorkspace(workspaceId: string, logger: Logger): Promise<void> {
         const ws = this.activeContainers.get(workspaceId);
         if (!ws) return;
 
@@ -309,9 +309,9 @@ export class WorkspaceContainerManager {
             await fs.rm(ws.bridgeDir, { recursive: true, force: true }).catch(() => { });
 
             this.activeContainers.delete(workspaceId);
-            this.logger.info(`Stopped workspace container for ${workspaceId}`);
+            logger.info(`Stopped workspace container for ${workspaceId}`);
         } catch (err) {
-            this.logger.error(`Error stopping workspace container for ${workspaceId}`, err);
+            logger.error(`Error stopping workspace container for ${workspaceId}`, err);
         }
     }
 
@@ -346,10 +346,10 @@ export class WorkspaceContainerManager {
     /**
      * Stops all active workspace containers and cleans up resources.
      */
-    public async stopAll(): Promise<void> {
+    public async stopAll(logger: Logger): Promise<void> {
         const workspaceIds = Array.from(this.activeContainers.keys());
         for (const workspaceId of workspaceIds) {
-            await this.stopWorkspace(workspaceId);
+            await this.stopWorkspace(workspaceId, logger);
         }
     }
 }

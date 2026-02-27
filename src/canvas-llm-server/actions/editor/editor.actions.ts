@@ -134,7 +134,7 @@ export const openFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
@@ -245,7 +245,7 @@ export const autosaveAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         if (isDraft) {
             vfs.write(`__drafts__/${filePath}`, content);

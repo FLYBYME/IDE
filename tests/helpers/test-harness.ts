@@ -36,7 +36,7 @@ class FileLogger implements Logger {
     }
 }
 
-const mockLogger = new FileLogger();
+export const mockLogger = new FileLogger();
 
 export class TestHarness {
     public serviceManager!: ServiceManager;
@@ -75,7 +75,7 @@ export class TestHarness {
             authenticate: async () => ({ user: { id: userId, email, role } })
         });
 
-        await vfsManager.start();
+        await vfsManager.start(mockLogger);
         await this.serviceManager.start();
         await this.gatewayManager.start();
 
@@ -90,7 +90,7 @@ export class TestHarness {
     async teardown() {
         if (this.gatewayManager) await this.gatewayManager.stop();
         if (this.serviceManager) await this.serviceManager.stop();
-        await vfsManager.stop();
+        await vfsManager.stop(mockLogger);
         await prisma.$disconnect();
     }
 }

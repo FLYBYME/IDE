@@ -103,7 +103,7 @@ export const createWorkspaceAction: ServiceAction = {
         });
 
         // Initialise VFS for this workspace
-        await vfsManager.getVFS(newWs.id);
+        await vfsManager.getVFS(newWs.id, ctx.serviceManager.getLogger());
 
         return {
             id: newWs.id,
@@ -145,7 +145,7 @@ export const getWorkspaceAction: ServiceAction = {
         if (!ws) throw new Error('Workspace not found');
         if (ws.ownerId !== userId && !ws.isPublic) throw new Error('Unauthorized');
 
-        const vfs = await vfsManager.getVFS(id);
+        const vfs = await vfsManager.getVFS(id, ctx.serviceManager.getLogger());
         const files = vfs.getAllFiles();
 
         return {
@@ -215,7 +215,7 @@ export const deleteWorkspaceAction: ServiceAction = {
 
         await prisma.workspace.delete({ where: { id } });
         await vfsManager.removeWorkspace(id);
-        await workspaceContainerManager.stopWorkspace(id).catch(e => console.error(`Failed to stop container for workspace ${id}:`, e));
+        await workspaceContainerManager.stopWorkspace(id, ctx.serviceManager.getLogger()).catch(e => console.error(`Failed to stop container for workspace ${id}:`, e));
 
         return { success: true, message: 'Workspace deleted' };
     },
@@ -243,10 +243,10 @@ export const executeCommandAction: ServiceAction = {
         const executionId = crypto.randomUUID();
 
         // Ensure VFS (and thus container) is loaded
-        await vfsManager.getVFS(id);
+        await vfsManager.getVFS(id, ctx.serviceManager.getLogger());
 
         // Start execution in background (SSE will stream output)
-        workspaceContainerManager.executeCommand(id, command, executionId).catch((err: any) => {
+        workspaceContainerManager.executeCommand(id, command, executionId, ctx.serviceManager.getLogger()).catch((err: any) => {
             console.error(`Command execution failed for ${id}:`, err);
         });
 
@@ -281,7 +281,7 @@ export const listWorkspaceProcessesAction: ServiceAction = {
         if (ws.ownerId !== userId) throw new Error('Unauthorized');
 
         // Ensure VFS is loaded, though it should be if container is running
-        await vfsManager.getVFS(id);
+        await vfsManager.getVFS(id, ctx.serviceManager.getLogger());
 
         const processes = workspaceContainerManager.getActiveProcesses(id);
         return { processes };

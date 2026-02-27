@@ -4,19 +4,23 @@ import crypto from 'crypto';
 import { vfsManager } from '../core/vfs-manager';
 import { workspaceContainerManager } from '../core/WorkspaceContainerManager';
 import { prisma } from '../core/prisma';
-import { ConsoleLogger } from 'tool-ms';
+import { Logger } from 'tool-ms';
 
 export class ExtensionBuilderService {
-    private logger = new ConsoleLogger();
+
 
     /**
      * Orchestrates the complete secure build pipeline.
      */
-    public async build(versionId: string, manifestPath: string = '/package.json'): Promise<void> {
+    public async build(
+        versionId: string,
+        manifestPath: string = '/package.json',
+        logger: Logger
+    ): Promise<void> {
         const logEntries: string[] = [];
         const log = (msg: string) => {
             const entry = `[${new Date().toISOString()}] ${msg}`;
-            this.logger.info(`[BUILD ${versionId}] ${msg}`);
+            logger.info(`[BUILD ${versionId}] ${msg}`);
             logEntries.push(entry);
         };
 
@@ -33,7 +37,7 @@ export class ExtensionBuilderService {
             await this.updateStatus(versionId, 'CLONING', logEntries);
 
             // Step 1: Initialize VFS & Containerized Cloning
-            const vfs = await vfsManager.getVFS(versionId);
+            const vfs = await vfsManager.getVFS(versionId, logger);
 
             log(`Cloning repository: ${version.gitUrl} (branch: ${version.gitBranch})`);
             const cloneId = crypto.randomUUID();
@@ -198,13 +202,13 @@ try {
                     status: 'FAILED',
                     buildLogs: logEntries.join('\n')
                 }
-            }).catch((e: any) => this.logger.error("Failed to update error status in DB", e));
+            }).catch((e: any) => logger.error("Failed to update error status in DB", e));
 
         } finally {
             // Step 6: Teardown
             log("Cleaning up build environment...");
-            await workspaceContainerManager.stopWorkspace(versionId).catch((e: any) => this.logger.error("Teardown container failed", e));
-            await vfsManager.removeWorkspace(versionId).catch((e: any) => this.logger.error("Teardown VFS failed", e));
+            await workspaceContainerManager.stopWorkspace(versionId, logger).catch((e: any) => logger.error("Teardown container failed", e));
+            await vfsManager.removeWorkspace(versionId).catch((e: any) => logger.error("Teardown VFS failed", e));
 
         }
     }

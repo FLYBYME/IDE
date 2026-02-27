@@ -1,10 +1,10 @@
-import { HttpClient, Terminal, TerminalCommand } from 'tool-ms';
+import { GatewayClient, Terminal, TerminalCommand } from 'tool-ms';
 import { WebSocket } from 'ws';
 
 const API_URL = 'http://localhost:3001';
 
 class IDESession {
-    private client: HttpClient;
+    private client: GatewayClient;
     private term: Terminal;
     private token: string | null = null;
     private workspaceId: string | null = null;
@@ -13,7 +13,10 @@ class IDESession {
     private ucbConnection: WebSocket | null = null;
 
     constructor() {
-        this.client = new HttpClient(API_URL);
+        this.client = new GatewayClient({
+            baseUrl: API_URL,
+
+        });
         this.term = new Terminal({
             title: '🖥️  CanvasLLM IDE TUI',
             prompt: 'ide> ',
@@ -29,7 +32,7 @@ class IDESession {
     }
 
     private callAuth<T = any>(action: string, params: any = {}): Promise<T> {
-        return this.client.call<T>(action, params, { headers: this.authHeaders() });
+        return this.client.call<T>(action, params);
     }
 
     private logJSON(data: any) {
@@ -532,7 +535,7 @@ class IDESession {
     async start() {
         try {
             console.log('Starting CanvasLLM IDE Terminal Client...');
-            await this.client.load();
+            await this.client.init();
             this.term.run();
 
             this.term.log('🖥️  CanvasLLM IDE Terminal Client');

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
 import { workspaceContainerManager } from './WorkspaceContainerManager';
-
+import { Logger } from 'tool-ms';
 
 export interface WorkspaceVFS {
     vfs: VirtualFileSystem;
@@ -33,26 +33,26 @@ export class VFSManager {
     /**
      * Start the eviction timer.
      */
-    start(): void {
-        this.evictionTimer = setInterval(() => this.evictIdle(), this.evictionIntervalMs);
+    start(logger: Logger): void {
+        this.evictionTimer = setInterval(() => this.evictIdle(logger), this.evictionIntervalMs);
     }
 
     /**
      * Stop eviction and persist all active workspaces.
      */
-    async stop(): Promise<void> {
+    async stop(logger: Logger): Promise<void> {
         if (this.evictionTimer) clearInterval(this.evictionTimer);
         for (const entry of this.instances.values()) {
             await this.persistSnapshot(entry.workspaceId, entry.vfs);
         }
         this.instances.clear();
-        await workspaceContainerManager.stopAll();
+        await workspaceContainerManager.stopAll(logger);
     }
 
     /**
      * Get or load a VFS instance for a workspace.
      */
-    async getVFS(workspaceId: string): Promise<VirtualFileSystem> {
+    async getVFS(workspaceId: string, logger: Logger): Promise<VirtualFileSystem> {
         let entry = this.instances.get(workspaceId);
         if (entry) {
             entry.lastAccessed = Date.now();
@@ -73,7 +73,7 @@ export class VFSManager {
         });
 
         // Ensure container is started when VFS is active
-        await workspaceContainerManager.startWorkspace(workspaceId, vfs);
+        await workspaceContainerManager.startWorkspace(workspaceId, vfs, logger);
 
         return vfs;
     }
@@ -104,12 +104,12 @@ export class VFSManager {
     /**
      * Evict idle VFS instances, saving their snapshots first.
      */
-    private async evictIdle(): Promise<void> {
+    private async evictIdle(logger: Logger): Promise<void> {
         const now = Date.now();
         for (const [id, entry] of this.instances) {
             if (now - entry.lastAccessed > this.maxIdleMs) {
                 await this.persistSnapshot(id, entry.vfs);
-                await workspaceContainerManager.stopWorkspace(id);
+                await workspaceContainerManager.stopWorkspace(id, logger);
                 this.instances.delete(id);
             }
         }

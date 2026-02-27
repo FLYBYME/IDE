@@ -101,22 +101,14 @@ export class IDE {
         this.notifications = new NotificationService(this.layout.statusBar);
         this.notifications.setStatusMessage('Initializing...');
 
+        this.api.initClient(true);
+
         try {
             this.layout.buildStructure();
             this.layout.initialize();
 
             // Register core settings before UI and extensions
             this.registerCoreSettings();
-
-            // Connect to Unified Communication Bridge
-            this.ucb.connect();
-
-            // Forward VFS events to the web worker
-            this.ucb.subscribe('vfs', (frame) => {
-                if (this.vfs && 'handleRemoteEvent' in this.vfs) {
-                    (this.vfs as any).handleRemoteEvent(frame.type, frame.payload);
-                }
-            });
 
             this.initializeUI();
             this.setupStateSyncing();

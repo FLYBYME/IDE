@@ -32,7 +32,7 @@ export const statusAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const result = await vfs.status();
         return {
@@ -66,7 +66,7 @@ export const logAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const history = await vfs.log();
         return history.map((c) => ({
@@ -96,7 +96,7 @@ export const commitAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         // Extract author from authenticated user headers
@@ -136,7 +136,7 @@ export const listBranchesAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const dump = await vfs.getDatabaseDump();
 
@@ -169,7 +169,7 @@ export const createBranchAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         await vfs.createBranch(name);
         return { name, created: true };
@@ -193,7 +193,7 @@ export const deleteBranchAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         try {
@@ -226,7 +226,7 @@ export const checkoutAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         // Check for uncommitted changes — warn before destructive operation
@@ -266,7 +266,7 @@ export const mergeAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         let result: string;

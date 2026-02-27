@@ -1,4 +1,4 @@
-import { TestHarness } from '../helpers/test-harness';
+import { mockLogger, TestHarness } from '../helpers/test-harness';
 import editorActions from '../../src/canvas-llm-server/actions/editor/editor.actions';
 import filesActions from '../../src/canvas-llm-server/actions/files/files.actions';
 import { createTestWorkspace } from '../helpers/factories';
@@ -15,7 +15,7 @@ describe('Editor API', () => {
         await harness.setup(userId, 'test-editor@example.com');
         await createTestWorkspace(workspaceId, 'Test Workspace Editor', userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, mockLogger);
         vfs.write(testFilePath, 'console.log("Initial Content");');
     });
 

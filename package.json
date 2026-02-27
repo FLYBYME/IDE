@@ -14,7 +14,7 @@
         "watch": "webpack --watch",
         "server": "tsx --tsconfig tsconfig.server.json src/canvas-llm-server/index.ts",
         "tui": "tsx --tsconfig tsconfig.server.json src/canvas-llm-server/tui.ts",
-        "test": "NODE_OPTIONS=--experimental-vm-modules jest -i"
+        "test": "NODE_OPTIONS=--experimental-vm-modules jest -i --verbose"
     },
     "keywords": [],
     "author": "",

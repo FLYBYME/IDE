@@ -353,7 +353,11 @@ export const submitExtensionAction: ServiceAction = {
             },
         });
 
-        extensionBuilderService.build(version.id, manifestPath).catch((err) => {
+        extensionBuilderService.build(
+            version.id,
+            manifestPath,
+            ctx.serviceManager.getLogger()
+        ).catch((err) => {
             console.error(`Background build failed for ${version.id}:`, err);
         });
 
@@ -472,7 +476,11 @@ export const rebuildExtensionAction: ServiceAction = {
             },
         });
 
-        extensionBuilderService.build(newVersion.id, '/package.json').catch((err) => {
+        extensionBuilderService.build(
+            newVersion.id,
+            '/package.json',
+            ctx.serviceManager.getLogger()
+        ).catch((err) => {
             console.error(`Background rebuild failed for ${newVersion.id}:`, err);
         });
 

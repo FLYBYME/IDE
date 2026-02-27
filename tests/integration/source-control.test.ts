@@ -1,4 +1,4 @@
-import { TestHarness } from '../helpers/test-harness';
+import { mockLogger, TestHarness } from '../helpers/test-harness';
 import sourceControlActions from '../../src/canvas-llm-server/actions/source-control/source-control.actions';
 import { createTestWorkspace } from '../helpers/factories';
 import { vfsManager } from '../../src/canvas-llm-server/core/vfs-manager';
@@ -25,7 +25,7 @@ describe('Source Control API', () => {
     afterAll(() => harness.teardown());
 
     it('should show new files in status and allow committing them', async () => {
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, mockLogger);
         await vfs.write('/test.txt', 'hello sc');
 
         const status = await harness.client.call('source-control.status', { workspaceId });

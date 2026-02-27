@@ -95,6 +95,7 @@ export async function bootstrap() {
                     }
                 };
             } catch (err: any) {
+                console.log(err);
                 if (err.message === "Forbidden: Insufficient privileges") {
                     throw err;
                 }
@@ -104,7 +105,7 @@ export async function bootstrap() {
     });
 
     // ── 4. Start VFS Manager ────────────────────────
-    vfsManager.start();
+    vfsManager.start(logger);
     logger.info('📁 VFS Manager started');
 
     // ── 5. Start ServiceManager lifecycle ────────────
@@ -134,7 +135,7 @@ export async function stopServer() {
         logger.info('GatewayManager stopped');
     }
     logger.info('Stopping VFS Manager...');
-    await vfsManager.stop();
+    await vfsManager.stop(logger);
     logger.info('👋 Goodbye!');
 }
 

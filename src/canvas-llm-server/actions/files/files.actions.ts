@@ -35,7 +35,7 @@ export const listTreeAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const names = vfs.readdir(dirPath || '/', { recursive: recursive ?? false });
         const entries = names.map((name) => {
@@ -87,7 +87,7 @@ export const getFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
@@ -123,7 +123,7 @@ export const createFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         if (type === 'file') {
@@ -163,7 +163,7 @@ export const saveFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         vfs.write(filePath, content);
         await workspaceContainerManager.syncFileToHost(workspaceId, filePath, content);
@@ -199,7 +199,7 @@ export const deleteFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         if (recursive) {
@@ -242,7 +242,7 @@ export const renameFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         const file = vfs.read(oldPath);
@@ -279,7 +279,7 @@ export const copyFileAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
 
         const file = vfs.read(filePath);
@@ -319,7 +319,7 @@ export const searchFilesAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
         await checkWorkspaceAccess(workspaceId, userId);
 
-        const vfs = await vfsManager.getVFS(workspaceId);
+        const vfs = await vfsManager.getVFS(workspaceId, ctx.serviceManager.getLogger());
 
         const allFiles = vfs.getAllFiles(); // Object refs are cheap
         const searchType = type ?? 'both';
