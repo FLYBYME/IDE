@@ -15,6 +15,7 @@ import { TerminalExtension } from './extensions/TerminalExtension';
 import { ExtensionsManagerExtension } from './extensions/ExtensionsManagerExtension';
 import { ExtensionBuilderExtension } from './extensions/ExtensionBuilderExtension';
 import { GlobalSearchExtension } from './extensions/GlobalSearchExtension';
+import { CommandRegistryViewerExtension } from './extensions/CommandRegistryViewerExtension';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -68,6 +69,7 @@ async function initializeApp(): Promise<void> {
         ide.extensions.register(ExtensionsManagerExtension);
         ide.extensions.register(ExtensionBuilderExtension);
         ide.extensions.register(GlobalSearchExtension);
+        ide.extensions.register(CommandRegistryViewerExtension);
 
         await ide.initialize();
         hideLoadingScreen();

@@ -241,25 +241,31 @@ export class GatewayManager {
             this.heartbeatTimer = null;
         }
 
-        for (const client of this.clients) {
-            this.cleanupClient(client);
-            try {
-                client.close();
-            } catch (err) { }
-        }
-        this.clients.clear();
-
         return new Promise((resolve, reject) => {
             if (this.wss) {
-                this.wss.close(() => {
-                    this.server?.close((err) => {
-                        if (err) reject(err);
-                        else {
-                            this.server = null;
-                            this.wss = null;
-                            resolve();
-                        }
+                // 1. Stop accepting new connections
+                this.wss.close((wssErr) => {
+                    // 3. Finally close the underlying HTTP server
+                    this.server?.close((serverErr) => {
+                        this.server = null;
+                        this.wss = null;
+                        if (wssErr || serverErr) reject(wssErr || serverErr);
+                        else resolve();
                     });
+                });
+
+                // 2. Force close all existing clients
+                for (const client of this.clients) {
+                    try {
+                        client.terminate(); // terminate is more forceful than close()
+                    } catch (err) { }
+                }
+                this.clients.clear();
+            } else if (this.server) {
+                this.server.close((err) => {
+                    this.server = null;
+                    if (err) reject(err);
+                    else resolve();
                 });
             } else {
                 resolve();

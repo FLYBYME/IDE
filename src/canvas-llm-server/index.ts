@@ -1,4 +1,4 @@
-import { ServiceManager, HttpServerManager, ConsoleLogger, Adapter } from 'tool-ms';
+import { ServiceManager, GatewayManager } from 'tool-ms';
 import { config } from './config';
 import { authGuard } from './middleware/auth-guard';
 import { vfsManager } from './core/vfs-manager';
@@ -16,14 +16,36 @@ import metaActions from './actions/meta/meta.actions';
 import sourceControlActions from './actions/source-control/source-control.actions';
 import extensionActions from './actions/extension/extension.actions';
 import secretsActions from './actions/secrets/secrets.actions';
-import { gatewayManager } from './core/gateway-manager';
+import { Logger } from 'tool-ms';
+import fs from 'fs';
 
-async function bootstrap() {
-    const logger = new ConsoleLogger();
+class FileLogger implements Logger {
+    info(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+    }
+    debug(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+    }
+    warn(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+    }
+    error(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+    }
+    createChild(name: string): Logger {
+        return new FileLogger();
+    }
+}
+
+const logger = new FileLogger();
+let gatewayManager: GatewayManager | null = null;
+let serviceManager: ServiceManager | null = null;
+
+export async function bootstrap() {
     logger.info('🚀 Starting CanvasLLM IDE Server...');
 
     // ── 1. Create ServiceManager ─────────────────────
-    const serviceManager = new ServiceManager({ logger });
+    serviceManager = new ServiceManager({ logger });
 
     // ── 2. Register all actions ──────────────────────
     const allActions = [
@@ -44,7 +66,7 @@ async function bootstrap() {
     logger.info(`✅ Registered ${allActions.length} service actions across ${serviceManager.getDomains().length} domains`);
 
     // ── 3. Create HTTP Server ────────────────────────
-    const httpServer = new HttpServerManager(serviceManager, {
+    gatewayManager = new GatewayManager(serviceManager, {
         port: config.port,
         //host: config.host,
         apiPrefix: config.apiPrefix,
@@ -57,7 +79,6 @@ async function bootstrap() {
         middlewareRegistry: {
             requireAuth: authGuard,
         },
-        routers: [],
         staticFiles: [
             {
                 path: '/public',
@@ -76,31 +97,42 @@ async function bootstrap() {
     logger.info('⚙️  ServiceManager started');
 
     // ── 6. Start Unified Communications Bridge Gateway  ────────────────
-    await gatewayManager.init(config.ssePort);
-    logger.info(`🌐 UCB Gateway Server started on port ${config.ssePort}`);
+    await gatewayManager.start();
+    logger.info(`🌐 UCB Gateway Server started on port ${config.port}`);
 
-    // ── 7. Start HTTP Server ─────────────────────────
-    await httpServer.start();
     logger.info(`🌍 HTTP Server listening on ${config.host}:${config.port}`);
     logger.info(`📋 Meta routes: http://${config.host}:${config.port}${config.apiPrefix}/_meta/routes`);
     logger.info(`❤️  Health check: http://${config.host}:${config.port}/api/_meta/health`);
 
-    // ── Graceful Shutdown ────────────────────────────
-    const shutdown = async (signal: string) => {
-        logger.info(`\n🛑 Received ${signal}. Shutting down gracefully...`);
-        await httpServer.stop();
-        await serviceManager.stop();
-        await gatewayManager.stop();
-        await vfsManager.stop();
-        logger.info('👋 Goodbye!');
-        process.exit(0);
-    };
-
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    return { serviceManager, gatewayManager, vfsManager };
 }
 
-bootstrap().catch((err) => {
-    console.error('❌ Fatal error during bootstrap:', err);
-    process.exit(1);
-});
+export async function stopServer() {
+    logger.info('🛑 Shutting down server gracefully...');
+    if (serviceManager) await serviceManager.stop();
+    if (gatewayManager) await gatewayManager.stop();
+    await vfsManager.stop();
+    logger.info('👋 Goodbye!');
+}
+
+// ── Graceful Shutdown for Process ────────────────────
+const handleShutdown = async (signal: string) => {
+    logger.info(`\n🛑 Received ${signal}.`);
+    await stopServer();
+    process.exit(0);
+};
+
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+
+import { fileURLToPath } from 'url';
+
+// ── Run if direct ────────────────────────────────────
+const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === (process.argv[1].startsWith('/') ? process.argv[1] : path.resolve(process.cwd(), process.argv[1]));
+
+if (isDirectRun) {
+    bootstrap().catch((err) => {
+        console.error('❌ Fatal error during bootstrap:', err);
+        process.exit(1);
+    });
+}

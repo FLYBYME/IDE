@@ -285,17 +285,31 @@ export class WorkspaceContainerManager {
             try {
                 const exec = await ws.container.exec({ Cmd: ['sh', '-c', 'rm -rf /workspace/* /workspace/.* 2>/dev/null || true'] });
                 const stream = await exec.start({});
-                await new Promise((resolve) => stream.on('end', resolve));
+                await new Promise((resolve) => {
+                    const timer = setTimeout(() => {
+                        resolve(null);
+                    }, 5000);
+
+                    stream.on('end', () => {
+                        clearTimeout(timer);
+                        resolve(null);
+                    });
+                    stream.on('error', () => {
+                        clearTimeout(timer);
+                        resolve(null);
+                    });
+                    stream.resume(); // Consume the stream
+                });
             } catch (cleanupErr) {
                 // Ignore cleanup errors
             }
 
-            await ws.container.stop();
+            await ws.container.stop({ t: 2 }); // Use short timeout for tests
             await ws.container.remove();
             await fs.rm(ws.bridgeDir, { recursive: true, force: true }).catch(() => { });
 
             this.activeContainers.delete(workspaceId);
-            this.logger.info(`🛑 Stopped workspace container for ${workspaceId}`);
+            this.logger.info(`Stopped workspace container for ${workspaceId}`);
         } catch (err) {
             this.logger.error(`Error stopping workspace container for ${workspaceId}`, err);
         }

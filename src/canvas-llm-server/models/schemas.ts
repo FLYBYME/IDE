@@ -11,6 +11,26 @@ export const RefreshInput = z.object({
     token: z.string().min(1),
 });
 
+export const RegisterInput = z.object({
+    username: z.string().min(3).max(50),
+    email: z.string().email(),
+    password: z.string().min(8),
+});
+
+export const RequestPasswordResetInput = z.object({
+    email: z.string().email(),
+});
+
+export const ResetPasswordInput = z.object({
+    token: z.string(),
+    newPassword: z.string().min(8),
+});
+
+export const UpdatePasswordInput = z.object({
+    currentPassword: z.string(),
+    newPassword: z.string().min(8),
+});
+
 // ── Workspace ────────────────────────────────────────
 export const WorkspaceCreateInput = z.object({
     name: z.string().min(1),
@@ -242,6 +262,19 @@ export const SuccessOutput = z.object({
 }).passthrough();
 
 export const TimestampOutput = z.object({}).passthrough();
+
+export const AuthUserOutput = z.object({
+    id: z.string().uuid(),
+    username: z.string(),
+    email: z.string(),
+    createdAt: z.union([z.string(), z.date()]),
+});
+
+export const RegisterOutput = z.object({
+    success: z.boolean(),
+    token: z.string().optional(),
+    user: AuthUserOutput,
+});
 
 // ── Specific Output Schemas ───────────────────────────
 export const WorkspaceOutput = z.object({
