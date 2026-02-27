@@ -2,14 +2,41 @@ import { jest } from '@jest/globals';
 import { ServiceManager, GatewayManager, GatewayClient } from 'tool-ms';
 import { vfsManager } from '../../src/canvas-llm-server/core/vfs-manager';
 import { prisma } from '../../src/canvas-llm-server/core/prisma';
+import { Logger } from 'tool-ms';
+import fs from 'fs';
+import { config } from '../../src/canvas-llm-server/config';
 
-export const mockLogger = {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-    debug: jest.fn(),
-    createChild: function () { return this; }
-} as any;
+class FileLogger implements Logger {
+    info(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
+    }
+    debug(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
+    }
+    warn(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
+    }
+    error(message: string): void {
+        fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
+    }
+    createChild(name: string): Logger {
+        return new FileLogger();
+    }
+}
+
+const mockLogger = new FileLogger();
 
 export class TestHarness {
     public serviceManager!: ServiceManager;

@@ -6,119 +6,50 @@ import { extensionBuilderService } from '../../services/ExtensionBuilderService'
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-// In-memory store for active extensions for prototype
-const activeExtensions = new Set<string>();
+// ============================================================================
+// I. Marketplace Discovery & Usage (USER or ADMIN)
+// ============================================================================
 
-// ── extensions.submit ────────────────────────────────
-export const submitExtensionAction: ServiceAction = {
-    name: 'extensions.submit',
+// ── extensions.list ──────────────────────────────────
+export const listExtensionsAction: ServiceAction = {
+    name: 'extensions.list',
     version: 1,
-    description: 'Submit an extension for building and publication',
+    description: 'Returns a list of all available extensions and their current status',
     domain: 'extension',
-    tags: ['extension', 'marketplace', 'build'],
-    rest: { method: 'POST', path: '/extensions/submit' },
-    auth: { required: true },
-    input: ExtensionSubmitInput,
-    output: z.object({ buildId: z.string() }),
-    handler: async (ctx) => {
-        const { gitUrl, gitBranch, manifestPath } = ctx.params as z.infer<typeof ExtensionSubmitInput>;
-        const userId = ctx.metadata.user.id;
-
-        // 1. Determine a placeholder name from git URL
-        const repoName = gitUrl.split('/').pop()?.replace('.git', '') || 'unknown-extension';
-
-        // 2. Create/Find Extension and Create Version record
-        const extension = await prisma.extension.upsert({
-            where: { name: repoName }, // Temporary until validated
-            update: {},
-            create: {
-                name: repoName,
-                authorId: userId,
-                description: 'Build in progress...',
-                gitUrl,
-                gitBranch,
-            },
-        });
-
-        const version = await prisma.extensionVersion.create({
-            data: {
-                extensionId: extension.id,
-                version: 'pending', // Temporary until validated
-                gitUrl,
-                gitBranch,
-                status: 'PENDING',
-            },
-        });
-
-        // 3. Initiate build asynchronously (floating promise)
-        extensionBuilderService.build(version.id, manifestPath).catch((err) => {
-            console.error(`Background build failed for ${version.id}:`, err);
-        });
-
-        return { buildId: version.id };
-    },
-};
-
-// ── extensions.getBuildStatus ────────────────────────
-export const getBuildStatusAction: ServiceAction = {
-    name: 'extensions.getBuildStatus',
-    version: 1,
-    description: 'Get the status of an extension build',
-    domain: 'extension',
-    tags: ['extension', 'marketplace', 'status'],
-    rest: { method: 'GET', path: '/extensions/builds/:buildId' },
-    auth: { required: true },
-    input: z.object({ buildId: z.string().uuid() }),
-    output: ExtensionBuildStatusOutput,
-    handler: async (ctx) => {
-        const { buildId } = ctx.params as any;
-        const version = await prisma.extensionVersion.findUnique({
-            where: { id: buildId },
-        });
-
-        if (!version) {
-            throw new Error(`Build ${buildId} not found`);
-        }
-
-        return {
-            id: version.id,
-            extensionId: version.extensionId,
-            status: version.status as any,
-            buildLogs: version.buildLogs,
-            entryPointUrl: version.entryPointUrl,
-        };
-    },
-};
-
-// ── extensions.listVersions ──────────────────────────
-export const listExtensionVersionsAction: ServiceAction = {
-    name: 'extensions.listVersions',
-    version: 1,
-    description: 'Returns a list of all extension builds/versions',
-    domain: 'extension',
-    tags: ['extension', 'marketplace', 'listVersions', 'builds'],
-    rest: { method: 'GET', path: '/extensions/versions' },
+    tags: ['extension', 'marketplace', 'list'],
+    rest: { method: 'GET', path: '/extensions' },
     auth: { required: true },
     input: z.object({}),
-    output: z.object({ versions: z.array(z.any()) }), // Define generic array schema for now
-    handler: async () => {
-        const versions = await prisma.extensionVersion.findMany({
-            include: { extension: true },
-            orderBy: { createdAt: 'desc' } // Return newest first
+    output: z.object({ extensions: z.array(z.any()) }),
+    handler: async (ctx) => {
+        const userId = ctx.metadata.user.id;
+        const dbExtensions = await prisma.extension.findMany({
+            where: { active: true }, // Only show globally active extensions in the main list
+            include: { author: true, versions: true, installations: { where: { userId } } }
         });
 
-        const formattedVersions = versions.map(v => ({
-            id: v.id,
-            extensionId: v.extensionId,
-            extensionName: v.extension.name,
-            version: v.version,
-            gitUrl: v.gitUrl,
-            status: v.status as any,
-            createdAt: v.createdAt,
-            hasLogs: !!v.buildLogs,
-        }));
+        const extensions = dbExtensions.map(ext => {
+            const userInst = ext.installations[0];
+            return {
+                id: ext.id,
+                name: ext.name,
+                description: ext.description,
+                author: ext.author.username,
+                active: userInst ? userInst.active : false,
+                installedVersionId: userInst ? userInst.installedVersionId : null,
+                versions: ext.versions
+            };
+        });
 
-        return { versions: formattedVersions };
+        if (extensions.length === 0) {
+            extensions.push(
+                { id: 'ext-dummy-1', name: 'Python Support', description: 'IntelliSense, linting, and debugging for Python.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] },
+                { id: 'ext-dummy-2', name: 'Docker Explorer', description: 'Manage Docker containers, images, and registries.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] },
+                { id: 'ext-dummy-3', name: 'GitLens Preview', description: 'Supercharge Git within the IDE.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] }
+            );
+        }
+
+        return { extensions };
     },
 };
 
@@ -141,7 +72,7 @@ export const searchExtensionsAction: ServiceAction = {
         const { q, author, sort } = ctx.params as { q?: string, author?: string, sort?: string };
         const userId = ctx.metadata.user.id;
 
-        let whereClause: any = {};
+        let whereClause: any = { active: true }; // Only search globally active extensions
 
         if (q) {
             whereClause.OR = [
@@ -181,48 +112,6 @@ export const searchExtensionsAction: ServiceAction = {
     },
 };
 
-// ── extensions.list ──────────────────────────────────
-export const listExtensionsAction: ServiceAction = {
-    name: 'extensions.list',
-    version: 1,
-    description: 'Returns a list of all available extensions and their current status',
-    domain: 'extension',
-    tags: ['extension', 'marketplace', 'list'],
-    rest: { method: 'GET', path: '/extensions' },
-    auth: { required: true },
-    input: z.object({}),
-    output: z.object({ extensions: z.array(z.any()) }),
-    handler: async (ctx) => {
-        const userId = ctx.metadata.user.id;
-        const dbExtensions = await prisma.extension.findMany({
-            include: { author: true, versions: true, installations: { where: { userId } } }
-        });
-
-        const extensions = dbExtensions.map(ext => {
-            const userInst = ext.installations[0];
-            return {
-                id: ext.id,
-                name: ext.name,
-                description: ext.description,
-                author: ext.author.username,
-                active: userInst ? userInst.active : false,
-                installedVersionId: userInst ? userInst.installedVersionId : null,
-                versions: ext.versions
-            };
-        });
-
-        if (extensions.length === 0) {
-            extensions.push(
-                { id: 'ext-dummy-1', name: 'Python Support', description: 'IntelliSense, linting, and debugging for Python.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] },
-                { id: 'ext-dummy-2', name: 'Docker Explorer', description: 'Manage Docker containers, images, and registries.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] },
-                { id: 'ext-dummy-3', name: 'GitLens Preview', description: 'Supercharge Git within the IDE.', author: 'tool-ms', active: false, installedVersionId: null, versions: [] }
-            );
-        }
-
-        return { extensions };
-    },
-};
-
 // ── extensions.get ───────────────────────────────────
 export const getExtensionAction: ServiceAction = {
     name: 'extensions.get',
@@ -244,7 +133,6 @@ export const getExtensionAction: ServiceAction = {
         });
 
         if (!extension) {
-            // Check by name
             const extensionsByName = await prisma.extension.findMany({
                 where: { name: id },
                 include: { author: true, versions: { orderBy: { createdAt: 'desc' } }, installations: { where: { userId } } }
@@ -256,7 +144,6 @@ export const getExtensionAction: ServiceAction = {
             }
         }
 
-        // Fetch README.md if available from the latest READY version
         let readme = null;
         const latestReady = extension.versions.find(v => v.status === 'READY');
         if (latestReady) {
@@ -326,32 +213,6 @@ export const getManifestAction: ServiceAction = {
     },
 };
 
-
-// ── extensions.toggle ─────────────────────────────────
-export const toggleExtensionAction: ServiceAction = {
-    name: 'extensions.toggle',
-    version: 1,
-    description: 'Enable or disable a specific extension by ID for a user',
-    domain: 'extension',
-    tags: ['extension', 'marketplace', 'toggle'],
-    rest: { method: 'POST', path: '/extensions/:id/toggle' },
-    auth: { required: true },
-    input: z.object({ id: z.string(), enabled: z.boolean() }),
-    output: SuccessOutput,
-    handler: async (ctx) => {
-        const { id } = ctx.params as any;
-        const { enabled } = ctx.params as { enabled: boolean };
-        const userId = ctx.metadata.user.id;
-
-        await prisma.userExtension.update({
-            where: { userId_extensionId: { userId, extensionId: id } },
-            data: { active: enabled }
-        });
-
-        return { success: true };
-    },
-};
-
 // ── extensions.install ────────────────────────────────
 export const installExtensionAction: ServiceAction = {
     name: 'extensions.install',
@@ -375,7 +236,6 @@ export const installExtensionAction: ServiceAction = {
             throw new Error(`ExtensionVersion ${versionId} not found`);
         }
 
-        // Install it by creating a UserExtension mapping
         await prisma.userExtension.upsert({
             where: { userId_extensionId: { userId, extensionId: version.extensionId } },
             create: {
@@ -413,16 +273,11 @@ export const uninstallExtensionAction: ServiceAction = {
             where: { id }
         });
 
-        if (!extension) {
-            throw new Error(`Extension ${id} not found`);
-        }
+        if (!extension) throw new Error(`Extension ${id} not found`);
 
         await prisma.userExtension.delete({
             where: {
-                userId_extensionId: {
-                    userId,
-                    extensionId: id
-                }
+                userId_extensionId: { userId, extensionId: id }
             }
         });
 
@@ -430,20 +285,141 @@ export const uninstallExtensionAction: ServiceAction = {
     },
 };
 
+// ── extensions.toggle ─────────────────────────────────
+export const toggleExtensionAction: ServiceAction = {
+    name: 'extensions.toggle',
+    version: 1,
+    description: 'Enable or disable a specific extension by ID for a user',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'toggle'],
+    rest: { method: 'POST', path: '/extensions/:id/toggle' },
+    auth: { required: true },
+    input: z.object({ id: z.string(), enabled: z.boolean() }),
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id, enabled } = ctx.params as { id: string, enabled: boolean };
+        const userId = ctx.metadata.user.id;
+
+        await prisma.userExtension.update({
+            where: { userId_extensionId: { userId, extensionId: id } },
+            data: { active: enabled }
+        });
+
+        return { success: true };
+    },
+};
+
+// ============================================================================
+// II. Extension Developer Operations (Ownership or ADMIN Bypass)
+// ============================================================================
+
+// ── extensions.submit ────────────────────────────────
+export const submitExtensionAction: ServiceAction = {
+    name: 'extensions.submit',
+    version: 1,
+    description: 'Submit an extension for building and publication',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'build'],
+    rest: { method: 'POST', path: '/extensions/submit' },
+    auth: { required: true },
+    input: ExtensionSubmitInput,
+    output: z.object({ buildId: z.string() }),
+    handler: async (ctx) => {
+        const { gitUrl, gitBranch, manifestPath } = ctx.params as z.infer<typeof ExtensionSubmitInput>;
+        const userId = ctx.metadata.user.id;
+
+        const repoName = gitUrl.split('/').pop()?.replace('.git', '') || 'unknown-extension';
+
+        const extension = await prisma.extension.upsert({
+            where: { name: repoName },
+            update: {},
+            create: {
+                name: repoName,
+                authorId: userId,
+                description: 'Build in progress...',
+                gitUrl,
+                gitBranch,
+                active: false // Requires admin approval or manual toggle depending on business logic
+            },
+        });
+
+        const version = await prisma.extensionVersion.create({
+            data: {
+                extensionId: extension.id,
+                version: 'pending',
+                gitUrl,
+                gitBranch,
+                status: 'PENDING',
+            },
+        });
+
+        extensionBuilderService.build(version.id, manifestPath).catch((err) => {
+            console.error(`Background build failed for ${version.id}:`, err);
+        });
+
+        return { buildId: version.id };
+    },
+};
+
+// ── extensions.getBuildStatus ────────────────────────
+export const getBuildStatusAction: ServiceAction = {
+    name: 'extensions.getBuildStatus',
+    version: 1,
+    description: 'Get the status of an extension build',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'status'],
+    rest: { method: 'GET', path: '/extensions/builds/:buildId' },
+    auth: { required: true },
+    input: z.object({ buildId: z.string().uuid() }),
+    output: ExtensionBuildStatusOutput,
+    handler: async (ctx) => {
+        const { buildId } = ctx.params as { buildId: string };
+        const userId = ctx.metadata.user.id;
+        const userRole = ctx.metadata.user.role;
+
+        const version = await prisma.extensionVersion.findUnique({
+            where: { id: buildId },
+            include: { extension: true }
+        });
+
+        if (!version) throw new Error(`Build ${buildId} not found`);
+
+        if (version.extension.authorId !== userId && userRole !== 'ADMIN') {
+            throw new Error("Unauthorized: You do not have permission to view these build logs.");
+        }
+
+        return {
+            id: version.id,
+            extensionId: version.extensionId,
+            status: version.status as any,
+            buildLogs: version.buildLogs,
+            entryPointUrl: version.entryPointUrl,
+        };
+    },
+};
+
 // ── extensions.update ─────────────────────────────────
 export const updateExtensionAction: ServiceAction = {
     name: 'extensions.update',
     version: 1,
-    description: 'Update an extension (e.g. description)',
+    description: 'Update an extension metadata',
     domain: 'extension',
     tags: ['extension', 'marketplace', 'update'],
     rest: { method: 'PATCH', path: '/extensions/:id' },
     auth: { required: true },
-    input: z.object({ id: z.string(), description: z.string().optional() }), // and other fields later
+    input: z.object({ id: z.string(), description: z.string().optional() }),
     output: SuccessOutput,
     handler: async (ctx) => {
-        const { id } = ctx.params as any;
-        const { description } = ctx.params as { description?: string };
+        const { id, description } = ctx.params as { id: string, description?: string };
+        const userId = ctx.metadata.user.id;
+        const userRole = ctx.metadata.user.role;
+
+        const extension = await prisma.extension.findUnique({ where: { id } });
+        if (!extension) throw new Error(`Extension ${id} not found`);
+
+        if (extension.authorId !== userId && userRole !== 'ADMIN') {
+            throw new Error("Unauthorized: You are not the author of this extension.");
+        }
 
         await prisma.extension.update({
             where: { id },
@@ -455,49 +431,6 @@ export const updateExtensionAction: ServiceAction = {
         return { success: true };
     },
 };
-
-// ── extensions.delete ─────────────────────────────────
-export const deleteExtensionAction: ServiceAction = {
-    name: 'extensions.delete',
-    version: 1,
-    description: 'Deletes an extension and all its versions',
-    domain: 'extension',
-    tags: ['extension', 'marketplace', 'delete'],
-    rest: { method: 'DELETE', path: '/extensions/:id' },
-    auth: { required: true },
-    input: z.object({ id: z.string() }),
-    output: SuccessOutput,
-    handler: async (ctx) => {
-        const { id } = ctx.params as { id: string };
-        const userId = ctx.metadata.user.id;
-
-        const extension = await prisma.extension.findUnique({
-            where: { id }
-        });
-
-        if (!extension) {
-            throw new Error(`Extension ${id} not found`);
-        }
-
-        if (extension.authorId !== userId) {
-            throw new Error("Unauthorized: You are not the author of this extension.");
-        }
-
-        await prisma.extension.delete({
-            where: { id }
-        });
-
-        // Optionally delete files from public/extensions/:id
-        try {
-            const storageDir = path.resolve(process.cwd(), 'public/extensions', extension.id);
-            await fs.rm(storageDir, { recursive: true, force: true });
-        } catch (e) { }
-
-        return { success: true };
-    },
-};
-
-
 
 // ── extensions.rebuild ────────────────────────────────
 export const rebuildExtensionAction: ServiceAction = {
@@ -511,39 +444,34 @@ export const rebuildExtensionAction: ServiceAction = {
     input: z.object({ id: z.string().uuid() }),
     output: z.object({ buildId: z.string() }),
     handler: async (ctx) => {
-        const { id } = ctx.params as any;
+        const { id } = ctx.params as { id: string };
         const userId = ctx.metadata.user.id;
+        const userRole = ctx.metadata.user.role;
 
         const extension = await prisma.extension.findUnique({
             where: { id },
             include: { versions: { orderBy: { createdAt: 'desc' }, take: 1 } },
         });
 
-        if (!extension) {
-            throw new Error(`Extension ${id} not found`);
-        }
+        if (!extension) throw new Error(`Extension ${id} not found`);
 
-        if (extension.authorId !== userId) {
+        if (extension.authorId !== userId && userRole !== 'ADMIN') {
             throw new Error("Unauthorized: You are not the author of this extension.");
         }
 
         const latestVersion = extension.versions[0];
-        if (!latestVersion) {
-            throw new Error("No previous versions found to rebuild from.");
-        }
+        if (!latestVersion) throw new Error("No previous versions found to rebuild from.");
 
         const newVersion = await prisma.extensionVersion.create({
             data: {
                 extensionId: extension.id,
-                version: 'pending', // Temporary until validated
+                version: 'pending',
                 gitUrl: latestVersion.gitUrl,
                 gitBranch: latestVersion.gitBranch,
                 status: 'PENDING',
             },
         });
 
-        // Use the default manifestPath since we didn't store it from previous submissions
-        // In a real app, storing manifestPath on ExtensionVersion is recommended
         extensionBuilderService.build(newVersion.id, '/package.json').catch((err) => {
             console.error(`Background rebuild failed for ${newVersion.id}:`, err);
         });
@@ -564,23 +492,21 @@ export const deleteExtensionVersionAction: ServiceAction = {
     input: z.object({ id: z.string().uuid() }),
     output: SuccessOutput,
     handler: async (ctx) => {
-        const { id } = ctx.params as any;
+        const { id } = ctx.params as { id: string };
         const userId = ctx.metadata.user.id;
+        const userRole = ctx.metadata.user.role;
 
         const version = await prisma.extensionVersion.findUnique({
             where: { id },
             include: { extension: true }
         });
 
-        if (!version) {
-            throw new Error(`ExtensionVersion ${id} not found`);
-        }
+        if (!version) throw new Error(`ExtensionVersion ${id} not found`);
 
-        if (version.extension.authorId !== userId) {
+        if (version.extension.authorId !== userId && userRole !== 'ADMIN') {
             throw new Error("Unauthorized: You are not the author of this extension.");
         }
 
-        // 1. Delete static bundle files (if they exist)
         const storageDir = path.resolve(process.cwd(), 'public/extensions', version.extensionId, version.id);
         const baseDir = path.resolve(process.cwd(), 'public/extensions');
         if (storageDir.startsWith(baseDir)) {
@@ -591,28 +517,154 @@ export const deleteExtensionVersionAction: ServiceAction = {
             }
         }
 
-        // 2. Delete database mapping
-        await prisma.extensionVersion.delete({
-            where: { id }
-        });
+        await prisma.extensionVersion.delete({ where: { id } });
 
         return { success: true };
     }
 };
 
+// ── extensions.delete ─────────────────────────────────
+export const deleteExtensionAction: ServiceAction = {
+    name: 'extensions.delete',
+    version: 1,
+    description: 'Deletes an extension and all its versions',
+    domain: 'extension',
+    tags: ['extension', 'marketplace', 'delete'],
+    rest: { method: 'DELETE', path: '/extensions/:id' },
+    auth: { required: true },
+    input: z.object({ id: z.string() }),
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id } = ctx.params as { id: string };
+        const userId = ctx.metadata.user.id;
+        const userRole = ctx.metadata.user.role;
+
+        const extension = await prisma.extension.findUnique({ where: { id } });
+
+        if (!extension) throw new Error(`Extension ${id} not found`);
+
+        if (extension.authorId !== userId && userRole !== 'ADMIN') {
+            throw new Error("Unauthorized: You are not the author of this extension.");
+        }
+
+        await prisma.extension.delete({ where: { id } });
+
+        try {
+            const storageDir = path.resolve(process.cwd(), 'public/extensions', extension.id);
+            await fs.rm(storageDir, { recursive: true, force: true });
+        } catch (e) { }
+
+        return { success: true };
+    },
+};
+
+// ============================================================================
+// III. Admin Moderation (Requires ADMIN Role)
+// ============================================================================
+
+// ── admin.extensions.listVersions ────────────────────
+export const adminListExtensionVersionsAction: ServiceAction = {
+    name: 'admin.extensions.listVersions',
+    version: 1,
+    description: 'Returns a list of all extension builds/versions globally',
+    domain: 'admin',
+    tags: ['admin', 'extension', 'listVersions', 'builds'],
+    rest: { method: 'GET', path: '/admin/extensions/versions' },
+    auth: { required: true, roles: ['ADMIN'] },
+    input: z.object({}),
+    output: z.object({ versions: z.array(z.any()) }),
+    handler: async () => {
+        const versions = await prisma.extensionVersion.findMany({
+            include: { extension: true },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const formattedVersions = versions.map(v => ({
+            id: v.id,
+            extensionId: v.extensionId,
+            extensionName: v.extension.name,
+            version: v.version,
+            gitUrl: v.gitUrl,
+            status: v.status as any,
+            createdAt: v.createdAt,
+            hasLogs: !!v.buildLogs,
+        }));
+
+        return { versions: formattedVersions };
+    },
+};
+
+// ── admin.extensions.toggleStatus ────────────────────
+export const adminToggleExtensionStatusAction: ServiceAction = {
+    name: 'admin.extensions.toggleStatus',
+    version: 1,
+    description: 'Toggle global active/approved status of an extension',
+    domain: 'admin',
+    tags: ['admin', 'extension', 'status'],
+    rest: { method: 'PATCH', path: '/admin/extensions/:id/status' },
+    auth: { required: true, roles: ['ADMIN'] },
+    input: z.object({ id: z.string().uuid(), isActive: z.boolean() }),
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id, isActive } = ctx.params as { id: string, isActive: boolean };
+
+        const extension = await prisma.extension.findUnique({ where: { id } });
+        if (!extension) throw new Error(`Extension ${id} not found`);
+
+        await prisma.extension.update({
+            where: { id },
+            data: { active: isActive }
+        });
+
+        return { success: true, message: `Extension ${id} status updated to ${isActive}` };
+    }
+};
+
+// ── admin.extensions.delete ──────────────────────────
+export const adminDeleteExtensionAction: ServiceAction = {
+    name: 'admin.extensions.delete',
+    version: 1,
+    description: 'Force-delete any extension from the system',
+    domain: 'admin',
+    tags: ['admin', 'extension', 'delete'],
+    rest: { method: 'DELETE', path: '/admin/extensions/:id' },
+    auth: { required: true, roles: ['ADMIN'] },
+    input: z.object({ id: z.string().uuid() }),
+    output: SuccessOutput,
+    handler: async (ctx) => {
+        const { id } = ctx.params as { id: string };
+
+        const extension = await prisma.extension.findUnique({ where: { id } });
+        if (!extension) throw new Error(`Extension ${id} not found`);
+
+        // Cascade delete via Prisma handles the DB mapping
+        await prisma.extension.delete({ where: { id } });
+
+        // Cleanup associated physical files
+        try {
+            const storageDir = path.resolve(process.cwd(), 'public/extensions', extension.id);
+            await fs.rm(storageDir, { recursive: true, force: true });
+        } catch (e) { }
+
+        return { success: true, message: 'Extension force-deleted successfully' };
+    }
+};
+
 export default [
-    submitExtensionAction,
-    getBuildStatusAction,
-    listExtensionVersionsAction,
-    searchExtensionsAction,
     listExtensionsAction,
+    searchExtensionsAction,
     getExtensionAction,
     getManifestAction,
-    toggleExtensionAction,
     installExtensionAction,
     uninstallExtensionAction,
+    toggleExtensionAction,
+    submitExtensionAction,
+    getBuildStatusAction,
     updateExtensionAction,
-    deleteExtensionAction,
     rebuildExtensionAction,
-    deleteExtensionVersionAction
+    deleteExtensionVersionAction,
+    deleteExtensionAction,
+    adminListExtensionVersionsAction,
+    adminToggleExtensionStatusAction,
+    adminDeleteExtensionAction
 ];
