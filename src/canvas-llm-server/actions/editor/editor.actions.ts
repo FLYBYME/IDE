@@ -14,6 +14,7 @@ import {
 import { vfsManager } from '../../core/vfs-manager';
 import { prisma } from '../../core/prisma';
 import { TabState } from '../../../../prisma/generated/prisma/client';
+import { checkWorkspaceAccess } from '../workspace/workspace.actions';
 
 async function getState(workspaceId: string) {
     let state = await prisma.editorState.findUnique({
@@ -36,7 +37,7 @@ export const getEditorStateAction: ServiceAction = {
     description: 'Get editor state (open tabs, cursor position)',
     domain: 'editor',
     tags: ['editor', 'state', 'read'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/editor/state', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/editor/state' },
     auth: { required: true },
     input: EditorStateInput,
     output: EditorStateOutput,
@@ -57,7 +58,7 @@ export const saveEditorStateAction: ServiceAction = {
     description: 'Save editor state (session restore)',
     domain: 'editor',
     tags: ['editor', 'state', 'save'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/state', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/state' },
     auth: { required: true },
     input: EditorSaveStateInput,
     output: z.object({ saved: z.string() }),
@@ -117,7 +118,7 @@ export const openFileAction: ServiceAction = {
     description: 'Open a file in the editor',
     domain: 'editor',
     tags: ['editor', 'open'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/openFile', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/openFile' },
     auth: { required: true },
     input: EditorOpenFileInput,
     output: z.object({
@@ -129,7 +130,12 @@ export const openFileAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath, activate } = ctx.params as z.infer<typeof EditorOpenFileInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
 
@@ -183,7 +189,7 @@ export const closeFileAction: ServiceAction = {
     description: 'Close a tab',
     domain: 'editor',
     tags: ['editor', 'close'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/closeFile', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/closeFile' },
     auth: { required: true },
     input: EditorCloseFileInput,
     output: z.object({ success: z.boolean(), hadUnsavedChanges: z.boolean() }),
@@ -229,12 +235,16 @@ export const autosaveAction: ServiceAction = {
     description: 'Auto-save a file with draft/backup mechanism',
     domain: 'editor',
     tags: ['editor', 'autosave'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/autosave', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/editor/autosave' },
     auth: { required: true },
     input: EditorAutosaveInput,
     output: z.object({ saved: z.string(), isDraft: z.boolean() }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath, content, isDraft } = ctx.params as z.infer<typeof EditorAutosaveInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
 
         if (isDraft) {

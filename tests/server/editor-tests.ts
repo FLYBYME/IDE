@@ -7,7 +7,7 @@ describe('Editor API Endpoints', () => {
     const testFilePath = '/test-editor.ts';
 
     beforeAll(async () => {
-        await testHelper.start();
+        await testHelper.start(true);
 
         // Create a test file to be used across the editor tests
         await testHelper.createTestFile(testFilePath);

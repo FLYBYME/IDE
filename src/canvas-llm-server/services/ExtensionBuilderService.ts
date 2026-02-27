@@ -18,7 +18,6 @@ export class ExtensionBuilderService {
             const entry = `[${new Date().toISOString()}] ${msg}`;
             this.logger.info(`[BUILD ${versionId}] ${msg}`);
             logEntries.push(entry);
-            // Throttle database logging or append at end? Let's append at end for simplicity.
         };
 
         try {

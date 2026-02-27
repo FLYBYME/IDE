@@ -22,15 +22,27 @@ import fs from 'fs';
 class FileLogger implements Logger {
     info(message: string): void {
         fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
     }
     debug(message: string): void {
         fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
     }
     warn(message: string): void {
         fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
     }
     error(message: string): void {
         fs.appendFileSync('log.txt', message + '\n');
+        if (config.debug) {
+            console.log(message);
+        }
     }
     createChild(name: string): Logger {
         return new FileLogger();
@@ -77,7 +89,7 @@ export async function bootstrap() {
             credentials: config.cors.credentials,
         },
         middlewareRegistry: {
-            requireAuth: authGuard,
+            //requireAuth: authGuard,
         },
         staticFiles: [
             {
@@ -85,19 +97,7 @@ export async function bootstrap() {
                 directory: path.join(process.cwd(), 'public'),
             },
         ],
-        authenticate: async (reqOrToken, action) => {
-            let token = "";
-            if (typeof reqOrToken === "string") {
-                token = reqOrToken;
-            } else {
-                const authHeader = reqOrToken.headers.authorization;
-                // FIX: Add '|| ""' to ensure it evaluates to a string
-                if (authHeader?.startsWith("Bearer ")) {
-                    token = authHeader.split(" ")[1] || "";
-                }
-            }
-
-
+        authenticate: async (token, action) => {
             try {
                 const payload = verifyToken(token);
                 return { user: { id: payload.userId, email: payload.email } };
@@ -117,7 +117,6 @@ export async function bootstrap() {
 
     // ── 6. Start Unified Communications Bridge Gateway  ────────────────
     await gatewayManager.start();
-    logger.info(`🌐 UCB Gateway Server started on port ${config.port}`);
 
     logger.info(`🌍 HTTP Server listening on ${config.host}:${config.port}`);
     logger.info(`📋 Meta routes: http://${config.host}:${config.port}${config.apiPrefix}/_meta/routes`);
@@ -128,8 +127,17 @@ export async function bootstrap() {
 
 export async function stopServer() {
     logger.info('🛑 Shutting down server gracefully...');
-    if (serviceManager) await serviceManager.stop();
-    if (gatewayManager) await gatewayManager.stop();
+    if (serviceManager) {
+        logger.info('Stopping ServiceManager...');
+        await serviceManager.stop();
+        logger.info('ServiceManager stopped');
+    }
+    if (gatewayManager) {
+        logger.info('Stopping GatewayManager...');
+        await gatewayManager.stop();
+        logger.info('GatewayManager stopped');
+    }
+    logger.info('Stopping VFS Manager...');
     await vfsManager.stop();
     logger.info('👋 Goodbye!');
 }

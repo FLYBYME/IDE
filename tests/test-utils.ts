@@ -64,7 +64,7 @@ export class TestHelper {
         await this.client.init();
         if (auth) {
             const token = (await this.client.call('auth.login', { username: 'admin', password: 'admin123' })).token;
-            this.client.call
+            this.client.setToken(token);
         }
     }
 
@@ -73,6 +73,7 @@ export class TestHelper {
      */
     async stop() {
         await SharedServer.stop();
+        this.client.deleteToken();
     }
 
     async setup() {

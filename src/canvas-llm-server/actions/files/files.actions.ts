@@ -15,6 +15,7 @@ import {
 import { vfsManager } from '../../core/vfs-manager';
 import { gatewayManager } from '../../core/gateway-manager';
 import { workspaceContainerManager } from '../../core/WorkspaceContainerManager';
+import { checkWorkspaceAccess } from '../workspace/workspace.actions';
 
 
 // ── file.listTree ────────────────────────────────────
@@ -24,12 +25,16 @@ export const listTreeAction: ServiceAction = {
     description: 'List all files/folders in workspace (tree structure)',
     domain: 'files',
     tags: ['files', 'list', 'tree'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/files', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/files' },
     auth: { required: true },
     input: FileListTreeInput,
     output: z.object({ path: z.string(), entries: z.array(FileInfoOutput) }),
     handler: async (ctx) => {
-        const { workspaceId, path: dirPath, recursive } = ctx.params as z.infer<typeof FileListTreeInput>;
+        const { workspaceId, path: dirPath, recursive } = ctx.params;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
 
         const names = vfs.readdir(dirPath || '/', { recursive: recursive ?? false });
@@ -64,7 +69,7 @@ export const getFileAction: ServiceAction = {
     description: 'Get file content',
     domain: 'files',
     tags: ['files', 'read'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/files/:path', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/files/:path' },
     auth: { required: true },
     input: FileGetInput,
     output: z.object({
@@ -78,7 +83,12 @@ export const getFileAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath } = ctx.params as z.infer<typeof FileGetInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
 
@@ -103,13 +113,18 @@ export const createFileAction: ServiceAction = {
     description: 'Create new file or folder',
     domain: 'files',
     tags: ['files', 'create'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/files', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/files' },
     auth: { required: true },
     input: FileCreateInput,
     output: z.object({ path: z.string(), type: z.string(), created: z.string() }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath, type, content } = ctx.params as z.infer<typeof FileCreateInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         if (type === 'file') {
             vfs.write(filePath, content ?? '');
@@ -134,7 +149,7 @@ export const saveFileAction: ServiceAction = {
     description: 'Save/update file content',
     domain: 'files',
     tags: ['files', 'save', 'update'],
-    rest: { method: 'PUT', path: '/workspaces/:workspaceId/files/:path', middleware: ['requireAuth'] },
+    rest: { method: 'PUT', path: '/workspaces/:workspaceId/files/:path' },
     auth: { required: true },
     input: FileSaveInput,
     output: z.object({
@@ -144,7 +159,12 @@ export const saveFileAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath, content } = ctx.params as z.infer<typeof FileSaveInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         vfs.write(filePath, content);
         await workspaceContainerManager.syncFileToHost(workspaceId, filePath, content);
 
@@ -169,13 +189,18 @@ export const deleteFileAction: ServiceAction = {
     description: 'Delete file or folder',
     domain: 'files',
     tags: ['files', 'delete'],
-    rest: { method: 'DELETE', path: '/workspaces/:workspaceId/files/:path', middleware: ['requireAuth'] },
+    rest: { method: 'DELETE', path: '/workspaces/:workspaceId/files/:path' },
     auth: { required: true },
     input: FileDeleteInput,
     output: z.object({ success: z.boolean(), deleted: z.number() }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath, recursive } = ctx.params as z.infer<typeof FileDeleteInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         if (recursive) {
             const entries = vfs.readdir(filePath, { recursive: true });
@@ -206,13 +231,18 @@ export const renameFileAction: ServiceAction = {
     description: 'Rename or move file/folder',
     domain: 'files',
     tags: ['files', 'rename', 'move'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/files/rename', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/files/rename' },
     auth: { required: true },
     input: FileRenameInput,
     output: z.object({ oldPath: z.string(), newPath: z.string(), moved: z.string() }),
     handler: async (ctx) => {
         const { workspaceId, oldPath, newPath } = ctx.params as z.infer<typeof FileRenameInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         const file = vfs.read(oldPath);
         if (!file) throw new Error(`File not found: ${oldPath}`);
@@ -238,13 +268,18 @@ export const copyFileAction: ServiceAction = {
     description: 'Duplicate file or folder',
     domain: 'files',
     tags: ['files', 'copy'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/files/copy', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/files/copy' },
     auth: { required: true },
     input: FileCopyInput,
     output: z.object({ original: z.string(), copy: z.string(), created: z.string() }),
     handler: async (ctx) => {
         const { workspaceId, path: filePath, destinationPath } = ctx.params as z.infer<typeof FileCopyInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         const file = vfs.read(filePath);
         if (!file) throw new Error(`File not found: ${filePath}`);
@@ -263,7 +298,7 @@ export const searchFilesAction: ServiceAction = {
     description: 'Search files by name or content',
     domain: 'files',
     tags: ['files', 'search'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/files/search', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/files/search' },
     auth: { required: true },
     input: FileSearchInput,
     output: z.object({
@@ -279,7 +314,12 @@ export const searchFilesAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId, query, type, caseSensitive, limit } = ctx.params as z.infer<typeof FileSearchInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         const allFiles = vfs.getAllFiles(); // Object refs are cheap
         const searchType = type ?? 'both';
         const maxResults = limit ?? 100;

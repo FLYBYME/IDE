@@ -9,6 +9,7 @@ import {
 } from '../../models/schemas';
 import { vfsManager } from '../../core/vfs-manager';
 import { gatewayManager } from '../../core/gateway-manager';
+import { checkWorkspaceAccess } from '../workspace/workspace.actions';
 
 // ── source-control.status ────────────────────────────
 export const statusAction: ServiceAction = {
@@ -17,7 +18,7 @@ export const statusAction: ServiceAction = {
     description: 'Get uncommitted changes compared to HEAD',
     domain: 'source-control',
     tags: ['source-control', 'status'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/source-control/status', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/source-control/status' },
     auth: { required: true },
     input: SourceControlWorkspaceInput,
     output: z.object({
@@ -27,7 +28,12 @@ export const statusAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof SourceControlWorkspaceInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         const result = await vfs.status();
         return {
             modified: result.modified,
@@ -44,7 +50,7 @@ export const logAction: ServiceAction = {
     description: 'Get linear commit history from HEAD backwards',
     domain: 'source-control',
     tags: ['source-control', 'log', 'history'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/source-control/log', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/source-control/log' },
     auth: { required: true },
     input: SourceControlWorkspaceInput,
     output: z.array(z.object({
@@ -56,7 +62,12 @@ export const logAction: ServiceAction = {
     })),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof SourceControlWorkspaceInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         const history = await vfs.log();
         return history.map((c) => ({
             hash: c.hash,
@@ -75,13 +86,18 @@ export const commitAction: ServiceAction = {
     description: 'Create an immutable snapshot of the current working directory',
     domain: 'source-control',
     tags: ['source-control', 'commit'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/commit', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/commit' },
     auth: { required: true },
     input: SourceControlCommitInput,
     output: z.object({ hash: z.string() }),
     handler: async (ctx) => {
         const { workspaceId, message } = ctx.params as z.infer<typeof SourceControlCommitInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         // Extract author from authenticated user headers
         const authorId = (ctx as any).headers?.['x-user-id'] || 'unknown';
@@ -103,7 +119,7 @@ export const listBranchesAction: ServiceAction = {
     description: 'List all branches and the current HEAD reference',
     domain: 'source-control',
     tags: ['source-control', 'branches'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/source-control/branches', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/source-control/branches' },
     auth: { required: true },
     input: SourceControlWorkspaceInput,
     output: z.object({
@@ -116,7 +132,12 @@ export const listBranchesAction: ServiceAction = {
     }),
     handler: async (ctx) => {
         const { workspaceId } = ctx.params as z.infer<typeof SourceControlWorkspaceInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         const dump = await vfs.getDatabaseDump();
 
         const branches = dump.refs
@@ -138,13 +159,18 @@ export const createBranchAction: ServiceAction = {
     description: 'Create a new branch pointing to the current HEAD',
     domain: 'source-control',
     tags: ['source-control', 'branches', 'create'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/branches', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/branches' },
     auth: { required: true },
     input: SourceControlBranchInput,
     output: z.object({ name: z.string(), created: z.boolean() }),
     handler: async (ctx) => {
         const { workspaceId, name } = ctx.params as z.infer<typeof SourceControlBranchInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
         await vfs.createBranch(name);
         return { name, created: true };
     },
@@ -157,13 +183,18 @@ export const deleteBranchAction: ServiceAction = {
     description: 'Delete a branch reference',
     domain: 'source-control',
     tags: ['source-control', 'branches', 'delete'],
-    rest: { method: 'DELETE', path: '/workspaces/:workspaceId/source-control/branches/:name', middleware: ['requireAuth'] },
+    rest: { method: 'DELETE', path: '/workspaces/:workspaceId/source-control/branches/:name' },
     auth: { required: true },
     input: SourceControlBranchInput,
     output: z.object({ name: z.string(), deleted: z.boolean() }),
     handler: async (ctx) => {
         const { workspaceId, name } = ctx.params as z.infer<typeof SourceControlBranchInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         try {
             vfs.deleteBranch(name);
@@ -185,13 +216,18 @@ export const checkoutAction: ServiceAction = {
     description: 'Restore the working directory to a specific branch or commit',
     domain: 'source-control',
     tags: ['source-control', 'checkout'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/checkout', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/checkout' },
     auth: { required: true },
     input: SourceControlCheckoutInput,
     output: z.object({ ref: z.string(), success: z.boolean() }),
     handler: async (ctx) => {
         const { workspaceId, ref } = ctx.params as z.infer<typeof SourceControlCheckoutInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         // Check for uncommitted changes — warn before destructive operation
         const status = await vfs.status();
@@ -220,13 +256,18 @@ export const mergeAction: ServiceAction = {
     description: 'Merge a branch into the current branch',
     domain: 'source-control',
     tags: ['source-control', 'merge'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/merge', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/source-control/merge' },
     auth: { required: true },
     input: SourceControlMergeInput,
     output: z.object({ result: z.string(), success: z.boolean() }),
     handler: async (ctx) => {
         const { workspaceId, branchName } = ctx.params as z.infer<typeof SourceControlMergeInput>;
+
+        const userId = ctx.metadata.user.id;
+        await checkWorkspaceAccess(workspaceId, userId);
+
         const vfs = await vfsManager.getVFS(workspaceId);
+
 
         let result: string;
         try {

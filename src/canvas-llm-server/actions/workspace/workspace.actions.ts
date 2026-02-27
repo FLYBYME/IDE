@@ -26,7 +26,7 @@ export const listWorkspacesAction: ServiceAction = {
     description: 'List all workspaces for authenticated user',
     domain: 'workspace',
     tags: ['workspace', 'list', 'user'],
-    rest: { method: 'GET', path: '/workspaces', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces' },
     auth: { required: true },
     input: WorkspaceListInput,
     output: z.object({
@@ -76,7 +76,7 @@ export const createWorkspaceAction: ServiceAction = {
     description: 'Create a new workspace',
     domain: 'workspace',
     tags: ['workspace', 'create'],
-    rest: { method: 'POST', path: '/workspaces', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces' },
     auth: { required: true },
     input: WorkspaceCreateInput,
     output: z.object({
@@ -123,7 +123,7 @@ export const getWorkspaceAction: ServiceAction = {
     description: 'Get workspace details',
     domain: 'workspace',
     tags: ['workspace', 'read'],
-    rest: { method: 'GET', path: '/workspaces/:id', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:id' },
     auth: { required: true },
     input: WorkspaceIdInput,
     output: z.object({
@@ -169,7 +169,7 @@ export const updateWorkspaceAction: ServiceAction = {
     description: 'Update workspace metadata',
     domain: 'workspace',
     tags: ['workspace', 'update'],
-    rest: { method: 'PATCH', path: '/workspaces/:id', middleware: ['requireAuth'] },
+    rest: { method: 'PATCH', path: '/workspaces/:id' },
     auth: { required: true },
     input: WorkspaceUpdateInput,
     output: z.object({ id: z.string(), updated: z.string() }),
@@ -201,7 +201,7 @@ export const deleteWorkspaceAction: ServiceAction = {
     description: 'Delete a workspace',
     domain: 'workspace',
     tags: ['workspace', 'delete'],
-    rest: { method: 'DELETE', path: '/workspaces/:id', middleware: ['requireAuth'] },
+    rest: { method: 'DELETE', path: '/workspaces/:id' },
     auth: { required: true },
     input: WorkspaceDeleteInput,
     output: SuccessOutput,
@@ -228,7 +228,7 @@ export const executeCommandAction: ServiceAction = {
     description: 'Execute a command in the workspace container',
     domain: 'workspace',
     tags: ['workspace', 'execute', 'docker'],
-    rest: { method: 'POST', path: '/workspaces/:id/execute', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:id/execute' },
     auth: { required: true },
     input: WorkspaceExecuteInput,
     output: z.object({ executionId: z.string() }),
@@ -262,7 +262,7 @@ export const listWorkspaceProcessesAction: ServiceAction = {
     description: 'List active processes in the workspace container',
     domain: 'workspace',
     tags: ['workspace', 'process', 'execute'],
-    rest: { method: 'GET', path: '/workspaces/:id/processes', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:id/processes' },
     auth: { required: true },
     input: WorkspaceIdInput,
     output: z.object({
@@ -287,6 +287,12 @@ export const listWorkspaceProcessesAction: ServiceAction = {
         return { processes };
     }
 };
+
+export async function checkWorkspaceAccess(workspaceId: string, userId: string) {
+    const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (!ws) throw new Error('Workspace not found');
+    if (ws.ownerId !== userId) throw new Error('Unauthorized');
+}
 
 export default [
     listWorkspacesAction,

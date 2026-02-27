@@ -12,6 +12,7 @@ import {
 import { prisma } from '../../core/prisma';
 import { gatewayManager } from '../../core/gateway-manager';
 import { config } from '../../config';
+import { checkWorkspaceAccess } from '../workspace/workspace.actions';
 
 // ── Encryption Utilities ─────────────────────────────
 
@@ -57,7 +58,7 @@ export const setSecretAction: ServiceAction = {
     description: 'Set an environment variable secret for a workspace',
     domain: 'secrets',
     tags: ['secrets', 'environment', 'set'],
-    rest: { method: 'POST', path: '/workspaces/:workspaceId/secrets', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/workspaces/:workspaceId/secrets' },
     auth: { required: true },
     input: SecretSetInput,
     output: SecretOutput,
@@ -66,9 +67,7 @@ export const setSecretAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
 
         // Verify Workspace Ownership
-        const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
-        if (!ws) throw new Error('Workspace not found');
-        if (ws.ownerId !== userId) throw new Error('Unauthorized');
+        await checkWorkspaceAccess(workspaceId, userId);
 
         // Upsert Secret (encrypted)
         const encryptedValue = encrypt(value);
@@ -106,7 +105,7 @@ export const listSecretsAction: ServiceAction = {
     description: 'List workspace secrets',
     domain: 'secrets',
     tags: ['secrets', 'list'],
-    rest: { method: 'GET', path: '/workspaces/:workspaceId/secrets', middleware: ['requireAuth'] },
+    rest: { method: 'GET', path: '/workspaces/:workspaceId/secrets' },
     auth: { required: true },
     input: SecretListInput,
     output: z.object({
@@ -117,9 +116,7 @@ export const listSecretsAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
 
         // Verify Workspace Ownership
-        const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
-        if (!ws) throw new Error('Workspace not found');
-        if (ws.ownerId !== userId && !ws.isPublic) throw new Error('Unauthorized'); // Read-only access allowed for public w/o decrypted values
+        await checkWorkspaceAccess(workspaceId, userId);
 
         const secrets = await prisma.workspaceSecret.findMany({
             where: { workspaceId },
@@ -141,7 +138,7 @@ export const deleteSecretAction: ServiceAction = {
     description: 'Delete a workspace secret',
     domain: 'secrets',
     tags: ['secrets', 'delete'],
-    rest: { method: 'DELETE', path: '/workspaces/:workspaceId/secrets/:key', middleware: ['requireAuth'] },
+    rest: { method: 'DELETE', path: '/workspaces/:workspaceId/secrets/:key' },
     auth: { required: true },
     input: SecretDeleteInput,
     output: SuccessOutput,
@@ -150,9 +147,7 @@ export const deleteSecretAction: ServiceAction = {
         const userId = ctx.metadata.user.id;
 
         // Verify Workspace Ownership
-        const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
-        if (!ws) throw new Error('Workspace not found');
-        if (ws.ownerId !== userId) throw new Error('Unauthorized');
+        await checkWorkspaceAccess(workspaceId, userId);
 
         try {
             await prisma.workspaceSecret.delete({

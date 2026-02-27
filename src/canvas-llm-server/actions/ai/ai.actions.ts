@@ -20,7 +20,7 @@ export const aiChatAction: ServiceAction = {
     description: 'Send message to AI code assistant',
     domain: 'ai',
     tags: ['ai', 'chat'],
-    rest: { method: 'POST', path: '/ai/chat', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/ai/chat' },
     auth: { required: true },
     input: AIChatInput,
     output: z.object({
@@ -64,7 +64,7 @@ export const aiGenerateCodeAction: ServiceAction = {
     description: 'Generate code from description',
     domain: 'ai',
     tags: ['ai', 'generate'],
-    rest: { method: 'POST', path: '/ai/codeGenerate', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/ai/codeGenerate' },
     auth: { required: true },
     input: AIGenerateInput,
     output: z.object({
@@ -91,7 +91,7 @@ export const aiExplainCodeAction: ServiceAction = {
     description: 'Explain selected code',
     domain: 'ai',
     tags: ['ai', 'explain'],
-    rest: { method: 'POST', path: '/ai/codeExplain', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/ai/codeExplain' },
     auth: { required: true },
     input: AIExplainInput,
     output: z.object({
@@ -114,7 +114,7 @@ export const aiReviewCodeAction: ServiceAction = {
     description: 'Review code for issues',
     domain: 'ai',
     tags: ['ai', 'review'],
-    rest: { method: 'POST', path: '/ai/codeReview', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/ai/codeReview' },
     auth: { required: true },
     input: AIReviewInput,
     output: z.object({
@@ -138,7 +138,7 @@ export const aiRefactorAction: ServiceAction = {
     description: 'Refactor code',
     domain: 'ai',
     tags: ['ai', 'refactor'],
-    rest: { method: 'POST', path: '/ai/codeRefactor', middleware: ['requireAuth'] },
+    rest: { method: 'POST', path: '/ai/codeRefactor' },
     auth: { required: true },
     input: AIRefactorInput,
     output: z.object({
