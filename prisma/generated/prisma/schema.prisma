@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  username     String @unique
+  passwordHash String
+
+  // --- New RBAC & Audit Fields ---
+  role      String    @default("USER") // "USER" or "ADMIN"
+  isActive  Boolean   @default(true) // Soft-delete or ban users
+  lastLogin DateTime? // Updated on successful login
+  bio       String? // Additional user detail
+  // -------------------------------
+
+  createdAt DateTime @default(now())
+
+  workspaces     Workspace[]
+  settings       UserSettings?
+  extensions     Extension[]
+  userExtensions UserExtension[]
+}
+
+model Extension {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  authorId    String
+  gitUrl      String?
+  gitBranch   String?  @default("main")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author             User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions           ExtensionVersion[]
+  installations      UserExtension[]
+  active             Boolean            @default(false)
+  installedVersionId String?
+}
+
+model ExtensionVersion {
+  id            String   @id @default(uuid())
+  extensionId   String
+  version       String
+  gitUrl        String
+  gitBranch     String   @default("main")
+  status        String   @default("PENDING") // PENDING, CLONING, INSTALLING, BUILDING, READY, FAILED
+  buildLogs     String   @default("")
+  entryPointUrl String?
+  createdAt     DateTime @default(now())
+
+  extension     Extension       @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  installations UserExtension[]
+}
+
+model UserExtension {
+  id                 String   @id @default(uuid())
+  userId             String
+  extensionId        String
+  installedVersionId String
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extension        Extension        @relation(fields: [extensionId], references: [id], onDelete: Cascade)
+  installedVersion ExtensionVersion @relation(fields: [installedVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, extensionId])
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  settings    WorkspaceSettings?
+  editorState EditorState?
+  secrets     WorkspaceSecret[]
+}
+
+model WorkspaceSecret {
+  id          String   @id @default(uuid())
+  workspaceId String
+  key         String
+  value       String // Encrypted string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
+}
+
+model UserSettings {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  theme         String  @default("dark")
+  fontSize      Int     @default(14)
+  fontFamily    String  @default("JetBrains Mono, monospace")
+  lineHeight    Float   @default(1.6)
+  tabSize       Int     @default(2)
+  useSpaces     Boolean @default(true)
+  autoFormat    Boolean @default(true)
+  formatOnSave  Boolean @default(true)
+  autoSave      Boolean @default(true)
+  autoSaveDelay Int     @default(1000)
+  wordWrap      Boolean @default(false)
+  minimap       Boolean @default(true)
+  lineNumbers   Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceSettings {
+  workspaceId String @id
+  settings    String // Stored as stringified JSON since current implementation uses Record<string, any>
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EditorState {
+  workspaceId String    @id
+  activeTabId String?
+  lastSaved   DateTime?
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tabs      TabState[]
+}
+
+model TabState {
+  id            String  @id @default(uuid())
+  editorStateId String
+  path          String
+  title         String
+  isDirty       Boolean @default(false)
+  isActive      Boolean @default(false)
+  cursorLine    Int     @default(1)
+  cursorColumn  Int     @default(1)
+  scrollTop     Int     @default(0)
+
+  editorState EditorState @relation(fields: [editorStateId], references: [workspaceId], onDelete: Cascade)
+}

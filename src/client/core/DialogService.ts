@@ -1,14 +1,18 @@
-/**
- * DialogService – Themed modal dialogs that replace native prompt() and confirm().
- *
- * All methods return Promises so callers can `await` them just like their
- * native counterparts.
- *
- *   const name = await ide.dialogs.prompt('Rename to:', oldName);
- *   const ok   = await ide.dialogs.confirm('Delete this file?');
- */
+import {
+    Modal,
+    Button,
+    TextInput,
+    TextArea,
+    Checkbox,
+    Select,
+    Stack,
+    Text,
+    SearchInput,
+    VirtualList,
+    BaseComponent
+} from '../ui-lib'; // Adjust path as needed [cite: 336, 337, 344]
 
-export type DialogResult<T> = T | null;
+// ── Types and Interfaces ──
 
 export type InputValidator = (value: string) => string | null | Promise<string | null>;
 
@@ -28,505 +32,280 @@ export interface ConfirmOptions {
     isDestructive?: boolean;
 }
 
-export interface QuickPickItem {
-    id: string;             // Unique identifier for the selection
-    label: string;          // Primary text 
-    icon?: string;          // FontAwesome class 
-    description?: string;   // Secondary text, usually faded
-    detail?: string;        // Third line of text for extra info
-    category?: string;      // Used to group items
-    alwaysShow?: boolean;   // If true, bypasses the search filter
+export interface FormField {
+    id: string;
+    label: string;
+    type?: 'text' | 'password' | 'checkbox' | 'select' | 'email' | 'textarea';
+    defaultValue?: any;
+    value?: any;
+    placeholder?: string;
+    options?: { label: string; value: string }[];
+    required?: boolean;
+    disabled?: boolean;
 }
 
-export interface QuickPickOptions {
-    placeholder?: string;   // Text shown in the empty input box
-    title?: string;         // Optional title shown above the input
-    matchOnDescription?: boolean; // Whether fuzzy search checks the description field
-    matchOnDetail?: boolean;      // Whether fuzzy search checks the detail field
+export interface FormOptions {
+    title?: string;
+    message?: string;
+    okLabel?: string;
+    validateForm?: (values: Record<string, any>) => string | null | Promise<string | null>;
 }
+
+// ── Service Implementation ──
 
 export class DialogService {
 
-    // ── confirm() ───────────────────────────────────────────
-
     /**
-     * Show a confirmation dialog.
-     * Resolves `true` if the user clicks OK, `false` otherwise.
+     * Replaces native confirm() using Modal and Button components[cite: 585, 122].
      */
     public confirm(message: string, options?: ConfirmOptions): Promise<boolean> {
         return new Promise((resolve) => {
-            const title = options?.title || 'Confirm';
-            const { overlay, body, footer, card } = this.scaffold(title);
-
-            const msg = document.createElement('p');
-            msg.className = 'dialog-message';
-            msg.textContent = message;
-            body.appendChild(msg);
+            const body = new Stack({ gap: 'sm', padding: 'none' });
+            body.appendChildren(new Text({ text: message }));
 
             if (options?.detail) {
-                const detailMsg = document.createElement('p');
-                detailMsg.className = 'dialog-detail';
-                detailMsg.style.fontSize = '12px';
-                detailMsg.style.opacity = '0.8';
-                detailMsg.style.marginTop = '8px';
-                detailMsg.textContent = options.detail;
-                body.appendChild(detailMsg);
+                body.appendChildren(new Text({ text: options.detail, variant: 'muted', size: 'sm' }));
             }
 
-            const cancelBtn = this.button('Cancel', 'secondary');
-            const okBtn = this.button(options?.primaryLabel || 'OK', 'primary');
+            const modal = new Modal({
+                title: options?.title || 'Confirm',
+                children: [body],
+                width: '400px',
+                footer: [
+                    new Button({
+                        label: 'Cancel',
+                        variant: 'secondary',
+                        onClick: () => { modal.hide(); resolve(false); }
+                    }),
+                    new Button({
+                        label: options?.primaryLabel || 'OK',
+                        variant: 'primary',
+                        onClick: () => { resolve(true); modal.hide(); }
+                    })
+                ],
+                onClose: () => resolve(false)
+            });
 
-            if (options?.isDestructive) {
-                okBtn.classList.add('dialog-btn-danger');
-            }
-
-            footer.appendChild(cancelBtn);
-            footer.appendChild(okBtn);
-
-            let isClosing = false;
-            const doResolve = (val: boolean) => {
-                if (isClosing) return;
-                isClosing = true;
-                this.close(overlay);
-                resolve(val);
-            };
-
-            cancelBtn.addEventListener('click', () => doResolve(false));
-            okBtn.addEventListener('click', () => doResolve(true));
-
-            // ESC = cancel, Enter = confirm
-            const onKey = (e: KeyboardEvent) => {
-                if (e.key === 'Escape') doResolve(false);
-                if (e.key === 'Enter') doResolve(true);
-            };
-            overlay.addEventListener('keydown', onKey);
-
-            document.body.appendChild(overlay);
-
-            this.trapFocus(card);
-            okBtn.focus();
+            modal.show();
         });
     }
 
-    // ── prompt() ────────────────────────────────────────────
-
     /**
-     * Show an input dialog.
-     * Resolves the entered string, or `null` if the user cancels.
+     * Replaces native prompt() using TextInput and Modal components[cite: 278, 585].
      */
     public prompt(message: string, options?: PromptOptions): Promise<string | null> {
         return new Promise((resolve) => {
-            const title = options?.title || 'Input';
-            const { overlay, body, footer, card } = this.scaffold(title);
-
-            const msg = document.createElement('p');
-            msg.className = 'dialog-message';
-            msg.textContent = message;
-            body.appendChild(msg);
-
-            const input = document.createElement('input');
-            input.type = options?.password ? 'password' : 'text';
-            input.className = 'dialog-input';
-            input.value = options?.defaultValue || '';
-            if (options?.placeholder) {
-                input.placeholder = options.placeholder;
-            }
-            input.id = 'dialog-prompt-input';
-            body.appendChild(input);
-
-            const errorMsg = document.createElement('p');
-            errorMsg.className = 'dialog-error-text';
-            errorMsg.style.color = '#f44336';
-            errorMsg.style.fontSize = '12px';
-            errorMsg.style.marginTop = '8px';
-            errorMsg.style.display = 'none';
-            body.appendChild(errorMsg);
-
-            const cancelBtn = this.button('Cancel', 'secondary');
-            const okBtn = this.button(options?.okLabel || 'OK', 'primary');
-
-            footer.appendChild(cancelBtn);
-            footer.appendChild(okBtn);
-
-            let isClosing = false;
-            const doResolve = (val: string | null) => {
-                if (isClosing) return;
-                isClosing = true;
-                this.close(overlay);
-                resolve(val);
-            };
-
-            const submit = async () => {
-                if (options?.validateInput) {
-                    okBtn.disabled = true;
-                    // Note: validateInput can be async
-                    const error = await Promise.resolve(options.validateInput(input.value));
-                    okBtn.disabled = false;
-
-                    if (error) {
-                        errorMsg.textContent = error;
-                        errorMsg.style.display = 'block';
-                        input.classList.add('error');
-                        input.focus();
-                        return; // Prevent closing
-                    }
-                }
-                doResolve(input.value);
-            };
-            const cancel = () => doResolve(null);
-
-            cancelBtn.addEventListener('click', cancel);
-            okBtn.addEventListener('click', submit);
-
-            input.addEventListener('input', () => {
-                // Clear error on next type
-                errorMsg.style.display = 'none';
-                input.classList.remove('error');
+            let currentValue = options?.defaultValue || '';
+            const input = new TextInput({
+                placeholder: options?.placeholder,
+                value: currentValue,
+                type: options?.password ? 'password' : 'text',
+                onChange: (val) => { currentValue = val; }
             });
 
-            overlay.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') submit();
-                if (e.key === 'Escape') cancel();
+            const body = new Stack({
+                gap: 'md', children: [
+                    new Text({ text: message }),
+                    input
+                ]
             });
 
-            document.body.appendChild(overlay);
+            const modal = new Modal({
+                title: options?.title || 'Input',
+                children: [body],
+                footer: [
+                    new Button({
+                        label: 'Cancel',
+                        variant: 'secondary',
+                        onClick: () => { modal.hide(); resolve(null); }
+                    }),
+                    new Button({
+                        label: options?.okLabel || 'OK',
+                        variant: 'primary',
+                        onClick: () => { resolve(currentValue); modal.hide(); }
+                    })
+                ],
+                onClose: () => resolve(null)
+            });
 
-            this.trapFocus(card);
-
-            // Focus & select input text
-            requestAnimationFrame(() => { input.focus(); input.select(); });
+            modal.show();
         });
     }
-
-    // ── Internals ───────────────────────────────────────────
-
-    private scaffold(title: string) {
-        // Overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'dialog-overlay';
-
-        // Card
-        const card = document.createElement('div');
-        card.className = 'dialog-card';
-
-        // Header
-        const header = document.createElement('div');
-        header.className = 'dialog-header';
-        header.textContent = title;
-        card.appendChild(header);
-
-        // Body
-        const body = document.createElement('div');
-        body.className = 'dialog-body';
-        card.appendChild(body);
-
-        // Footer
-        const footer = document.createElement('div');
-        footer.className = 'dialog-footer';
-        card.appendChild(footer);
-
-        overlay.appendChild(card);
-
-        // Prevent clicks on the backdrop from bubbling into the IDE
-        overlay.addEventListener('mousedown', (e) => {
-            if (e.target === overlay) e.stopPropagation();
-        });
-
-        return { overlay, card, body, footer };
-    }
-
-    private button(label: string, variant: 'primary' | 'secondary'): HTMLButtonElement {
-        const btn = document.createElement('button');
-        btn.className = `dialog-btn dialog-btn-${variant}`;
-        btn.textContent = label;
-        return btn;
-    }
-
-    private close(overlay: HTMLElement): void {
-        overlay.classList.add('dialog-closing');
-        overlay.addEventListener('animationend', () => overlay.remove(), { once: true });
-        // Fallback if animation doesn't fire
-        setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
-    }
-
-    private trapFocus(element: HTMLElement) {
-        const focusableEls = element.querySelectorAll<HTMLElement>(
-            'a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="password"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled])'
-        );
-
-        if (focusableEls.length === 0) return;
-
-        const firstFocusableEl = focusableEls[0];
-        const lastFocusableEl = focusableEls[focusableEls.length - 1];
-
-        element.addEventListener('keydown', (e) => {
-            const isTabPressed = e.key === 'Tab' || e.keyCode === 9;
-
-            if (!isTabPressed) {
-                return;
-            }
-
-            if (e.shiftKey) { /* shift + tab */
-                if (document.activeElement === firstFocusableEl) {
-                    lastFocusableEl.focus();
-                    e.preventDefault();
-                }
-            } else { /* tab */
-                if (document.activeElement === lastFocusableEl) {
-                    firstFocusableEl.focus();
-                    e.preventDefault();
-                }
-            }
-        });
-    }
-
-    // ── showQuickPick() ─────────────────────────────────────
 
     /**
-     * Shows a selection list.
-     * Resolves with the selected item, or null if the user hits Escape or clicks away.
+     * Multi-input form dialog using core form components[cite: 140, 234, 278].
      */
-    public showQuickPick(items: QuickPickItem[] | Promise<QuickPickItem[]>, options?: QuickPickOptions): Promise<QuickPickItem | null> {
-        return new QuickInputController().show(items, options);
-    }
-}
-
-// ── QuickInputController ─────────────────────────────────────────────
-
-class QuickInputController {
-    private overlay!: HTMLElement;
-    private input!: HTMLInputElement;
-    private listContainer!: HTMLElement;
-
-    private allItems: QuickPickItem[] = [];
-    private visibleItems: QuickPickItem[] = [];
-    private activeIndex: number = -1;
-    private resolvePromise!: (item: QuickPickItem | null) => void;
-
-    private matchOnDescription = false;
-    private matchOnDetail = false;
-
-    public show(items: QuickPickItem[] | Promise<QuickPickItem[]>, options?: QuickPickOptions): Promise<QuickPickItem | null> {
+    public form(fields: FormField[], options?: FormOptions): Promise<Record<string, any> | null> {
         return new Promise((resolve) => {
-            this.resolvePromise = resolve;
-            this.matchOnDescription = !!options?.matchOnDescription;
-            this.matchOnDetail = !!options?.matchOnDetail;
+            const values: Record<string, any> = {};
+            const formStack = new Stack({ gap: 'md' });
+            const errorText = new Text({ text: '', variant: 'error', size: 'sm' });
+            errorText.getElement().style.display = 'none';
 
-            this.scaffold(options);
-
-            // Fetch items
-            if (items instanceof Promise) {
-                this.input.placeholder = 'Loading...';
-                this.renderLoading();
-                items.then(resolvedItems => {
-                    this.allItems = resolvedItems;
-                    this.input.placeholder = options?.placeholder || 'Type to search...';
-                    this.filterAndRender('');
-                }).catch(err => {
-                    console.error('Failed to load QuickPick items', err);
-                    this.resolvePromise(null);
-                    this.dispose();
-                });
-            } else {
-                this.allItems = items;
-                this.filterAndRender('');
-            }
-        });
-    }
-
-    private scaffold(options?: QuickPickOptions) {
-        this.overlay = document.createElement('div');
-        this.overlay.className = 'quick-pick-overlay';
-
-        // Clicking outside closes the palette
-        this.overlay.addEventListener('mousedown', (e) => {
-            if (e.target === this.overlay) {
-                e.stopPropagation();
-                this.resolvePromise(null);
-                this.dispose();
-            }
-        });
-
-        const widget = document.createElement('div');
-        widget.className = 'quick-pick-widget';
-
-        if (options?.title) {
-            const titleEl = document.createElement('div');
-            titleEl.className = 'quick-pick-title';
-            titleEl.textContent = options.title;
-            widget.appendChild(titleEl);
-        }
-
-        this.input = document.createElement('input');
-        this.input.type = 'text';
-        this.input.className = 'quick-pick-input';
-        this.input.placeholder = options?.placeholder || 'Type to search...';
-        widget.appendChild(this.input);
-
-        this.listContainer = document.createElement('div');
-        this.listContainer.className = 'quick-pick-list';
-        widget.appendChild(this.listContainer);
-
-        this.overlay.appendChild(widget);
-        document.body.appendChild(this.overlay);
-
-        // Bind events
-        this.input.addEventListener('input', () => this.filterAndRender(this.input.value));
-        this.input.addEventListener('keydown', (e) => this.onKeyDown(e));
-
-        // Focus
-        requestAnimationFrame(() => this.input.focus());
-    }
-
-    private onKeyDown(e: KeyboardEvent) {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            this.resolvePromise(null);
-            this.dispose();
-            return;
-        }
-
-        if (this.visibleItems.length === 0) return;
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            this.activeIndex = (this.activeIndex + 1) % this.visibleItems.length;
-            this.renderHighlight();
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            this.activeIndex = (this.activeIndex - 1 + this.visibleItems.length) % this.visibleItems.length;
-            this.renderHighlight();
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            const selected = this.visibleItems[this.activeIndex];
-            if (selected) {
-                this.resolvePromise(selected);
-                this.dispose();
-            }
-        }
-    }
-
-    private filterAndRender(query: string) {
-        query = query.toLowerCase().trim();
-
-        if (!query) {
-            this.visibleItems = [...this.allItems];
-        } else {
-            this.visibleItems = this.allItems.filter(item => {
-                if (item.alwaysShow) return true;
-                if (item.label.toLowerCase().includes(query)) return true;
-                if (this.matchOnDescription && item.description && item.description.toLowerCase().includes(query)) return true;
-                if (this.matchOnDetail && item.detail && item.detail.toLowerCase().includes(query)) return true;
-                return false;
-            });
-        }
-
-        this.activeIndex = this.visibleItems.length > 0 ? 0 : -1;
-        this.renderList();
-    }
-
-    private renderLoading() {
-        this.listContainer.innerHTML = '<div class="quick-pick-message">Loading...</div>';
-    }
-
-    private renderList() {
-        this.listContainer.innerHTML = '';
-
-        if (this.visibleItems.length === 0) {
-            this.listContainer.innerHTML = '<div class="quick-pick-message">No matching results</div>';
-            return;
-        }
-
-        let currentCategory: string | undefined = undefined;
-
-        this.visibleItems.forEach((item, index) => {
-            if (item.category && item.category !== currentCategory) {
-                const catHeader = document.createElement('div');
-                catHeader.className = 'quick-pick-category';
-                catHeader.textContent = item.category;
-                this.listContainer.appendChild(catHeader);
-                currentCategory = item.category;
+            if (options?.message) {
+                formStack.appendChildren(new Text({ text: options.message, variant: 'muted' }));
             }
 
-            const itemEl = document.createElement('div');
-            itemEl.className = 'quick-pick-item';
-            itemEl.dataset.index = String(index);
+            formStack.appendChildren(errorText);
 
-            // Icon
-            const iconWrap = document.createElement('div');
-            iconWrap.className = 'quick-pick-item-icon';
-            if (item.icon) {
-                const img = document.createElement('i');
-                img.className = item.icon;
-                iconWrap.appendChild(img);
-            } else {
-                // Add a placeholder spacer
-                iconWrap.style.width = '16px';
-            }
-            itemEl.appendChild(iconWrap);
+            fields.forEach(field => {
+                let control: BaseComponent<any>;
+                values[field.id] = field.value ?? field.defaultValue ?? '';
 
-            // Content container (Label + Desc row, Detail row)
-            const contentCont = document.createElement('div');
-            contentCont.className = 'quick-pick-item-content';
+                if (field.type === 'checkbox') {
+                    control = new Checkbox({
+                        label: field.label,
+                        checked: !!values[field.id],
+                        disabled: field.disabled,
+                        onChange: (val) => values[field.id] = val
+                    });
+                } else if (field.type === 'select') {
+                    control = new Select({
+                        options: field.options || [],
+                        value: values[field.id],
+                        disabled: field.disabled,
+                        onChange: (val) => values[field.id] = val
+                    });
+                } else if (field.type === 'textarea') {
+                    control = new TextArea({
+                        placeholder: field.placeholder,
+                        value: values[field.id],
+                        disabled: field.disabled,
+                        onChange: (val) => values[field.id] = val
+                    });
+                } else {
+                    control = new TextInput({
+                        type: field.type === 'password' ? 'password' : (field.type === 'email' ? 'email' : 'text'),
+                        placeholder: field.placeholder,
+                        value: values[field.id],
+                        disabled: field.disabled,
+                        onChange: (val) => values[field.id] = val
+                    });
+                }
 
-            const topRow = document.createElement('div');
-            topRow.className = 'quick-pick-item-top';
-
-            const labelEl = document.createElement('span');
-            labelEl.className = 'quick-pick-item-label';
-            labelEl.textContent = item.label;
-            topRow.appendChild(labelEl);
-
-            if (item.description) {
-                const descEl = document.createElement('span');
-                descEl.className = 'quick-pick-item-description';
-                descEl.textContent = item.description;
-                topRow.appendChild(descEl);
-            }
-            contentCont.appendChild(topRow);
-
-            if (item.detail) {
-                const detailEl = document.createElement('div');
-                detailEl.className = 'quick-pick-item-detail';
-                detailEl.textContent = item.detail;
-                contentCont.appendChild(detailEl);
-            }
-
-            itemEl.appendChild(contentCont);
-
-            // Mouse hover support
-            itemEl.addEventListener('mouseenter', () => {
-                this.activeIndex = index;
-                this.renderHighlight();
+                const fieldRow = new Stack({ gap: 'xs' });
+                if (field.type !== 'checkbox') {
+                    fieldRow.appendChildren(new Text({ text: field.label, weight: 'bold', size: 'sm' }));
+                }
+                fieldRow.appendChildren(control);
+                formStack.appendChildren(fieldRow);
             });
 
-            // Click support
-            itemEl.addEventListener('click', () => {
-                this.resolvePromise(item);
-                this.dispose();
+            const modal = new Modal({
+                title: options?.title || 'Form',
+                children: [formStack],
+                footer: [
+                    new Button({
+                        label: 'Cancel',
+                        variant: 'secondary',
+                        onClick: () => { modal.hide(); resolve(null); }
+                    }),
+                    new Button({
+                        label: options?.okLabel || 'Submit',
+                        variant: 'primary',
+                        onClick: async () => {
+                            if (options?.validateForm) {
+                                const error = await options.validateForm(values);
+                                if (error) {
+                                    errorText.updateProps({ text: error });
+                                    errorText.getElement().style.display = 'block';
+                                    return;
+                                }
+                            }
+                            resolve(values);
+                            modal.hide();
+                        }
+                    })
+                ],
+                onClose: () => resolve(null)
             });
 
-            this.listContainer.appendChild(itemEl);
-        });
-
-        this.renderHighlight();
-    }
-
-    private renderHighlight() {
-        const items = Array.from(this.listContainer.querySelectorAll('.quick-pick-item'));
-        items.forEach((el, idx) => {
-            if (idx === this.activeIndex) {
-                el.classList.add('active');
-                (el as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            } else {
-                el.classList.remove('active');
-            }
+            modal.show();
         });
     }
 
-    private dispose() {
-        if (this.overlay && this.overlay.parentNode) {
-            this.overlay.parentNode.removeChild(this.overlay);
-        }
+    /**
+     * Shows a quick pick dialog for selecting from a list of items.
+     */
+    public showQuickPick<T extends { id: string; label: string; description?: string; icon?: string }>(
+        items: T[],
+        options?: { placeholder?: string; title?: string }
+    ): Promise<T | null> {
+        return new Promise((resolve) => {
+            let filteredItems = [...items];
+            const list = new VirtualList({
+                items: filteredItems,
+                itemHeight: 32,
+                height: '300px',
+                renderItem: (item) => {
+                    const row = document.createElement('div');
+                    row.style.cssText = `
+                        padding: 4px 8px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        border-radius: 4px;
+                    `;
+                    row.onmouseenter = () => row.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                    row.onmouseleave = () => row.style.backgroundColor = 'transparent';
+                    row.onclick = () => { resolve(item); modal.hide(); };
+
+                    if (item.icon) {
+                        const icon = document.createElement('i');
+                        icon.className = item.icon;
+                        icon.style.width = '16px';
+                        icon.style.textAlign = 'center';
+                        row.appendChild(icon);
+                    }
+
+                    const label = document.createElement('span');
+                    label.textContent = item.label;
+                    row.appendChild(label);
+
+                    if (item.description) {
+                        const desc = document.createElement('span');
+                        desc.textContent = item.description;
+                        desc.style.opacity = '0.5';
+                        desc.style.fontSize = '0.9em';
+                        desc.style.marginLeft = 'auto';
+                        row.appendChild(desc);
+                    }
+
+                    return row;
+                }
+            });
+
+            const searchInput = new SearchInput({
+                placeholder: options?.placeholder || 'Search...',
+                onChange: (val) => {
+                    const term = val.toLowerCase();
+                    filteredItems = items.filter(i =>
+                        i.label.toLowerCase().includes(term) ||
+                        (i.description && i.description.toLowerCase().includes(term))
+                    );
+                    list.setItems(filteredItems);
+                }
+            });
+
+            const body = new Stack({
+                gap: 'sm',
+                children: [searchInput, list]
+            });
+
+            const modal = new Modal({
+                title: options?.title || 'Select',
+                children: [body],
+                width: '500px',
+                onClose: () => resolve(null)
+            });
+
+            modal.show();
+            // Focus search input after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                const input = searchInput.getElement().querySelector('input');
+                if (input) input.focus();
+            }, 50);
+        });
     }
 }

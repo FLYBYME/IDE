@@ -84,6 +84,7 @@ export class CommandRegistry extends EventBus {
         if (!command) {
             result.error = new Error(`Command "${commandId}" not found`);
             this.addToHistory(result);
+            console.error(`CommandRegistry: Command "${commandId}" not found`);
             return result;
         }
 
@@ -91,12 +92,14 @@ export class CommandRegistry extends EventBus {
         if (command.when && !command.when()) {
             result.error = new Error(`Command "${commandId}" is not available in current context`);
             this.addToHistory(result);
+            console.error(`CommandRegistry: Command "${commandId}" is not available in current context`);
             return result;
         }
 
         try {
             result.result = await command.handler(...args);
             result.success = true;
+            console.log(`CommandRegistry: Executed "${commandId}"`);
             this.emit(CommandEvents.COMMAND_EXECUTED, { commandId, args, result: result.result });
         } catch (error) {
             result.error = error instanceof Error ? error : new Error(String(error));

@@ -29,7 +29,7 @@ export class ExtensionManager {
     public async loadFromUrl(url: string): Promise<Extension> {
         let fullUrl = url;
         if (url.startsWith('/')) {
-            const apiBase = (this.ide.api as any).getBaseUrl();
+            const apiBase = this.ide.settings.get<string>('core.apiBase');
             // Resolve relative to the server root (remove /api suffix)
             const root = apiBase.replace(/\/api$/, '');
             fullUrl = `${root}${url}`;

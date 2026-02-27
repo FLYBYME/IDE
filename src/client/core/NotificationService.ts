@@ -4,8 +4,7 @@
  * Replaces raw `alert()` / `console.log` for user-facing feedback.
  */
 
-import { StatusBar } from '../components/StatusBar';
-import { ContextMenu, ContextMenuItem } from '../components/ContextMenu';
+import * as ui from '../ui-lib';
 
 export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
 
@@ -44,17 +43,12 @@ const SEVERITY_CONFIG: Record<NotificationSeverity, { icon: string; defaultTimeo
 };
 
 export class NotificationService {
-    private container: HTMLElement;
-    private statusBar: StatusBar;
+    private statusBar: ui.StatusBar;
     private statusTimeout: ReturnType<typeof setTimeout> | null = null;
-    private activeToasts: Set<HTMLElement> = new Set();
+    private activeToasts: Set<ui.NotificationToast> = new Set();
 
-    constructor(statusBar: StatusBar) {
+    constructor(statusBar: ui.StatusBar) {
         this.statusBar = statusBar;
-
-        this.container = document.createElement('div');
-        this.container.id = 'notification-container';
-        document.body.appendChild(this.container);
     }
 
     /**
@@ -83,13 +77,12 @@ export class NotificationService {
      * Display a transient message in the status bar (no toast).
      */
     public setStatusMessage(message: string, timeout: number = 4000): void {
-        const item = this.statusBar.getItem('notification-status');
-        if (item) item.updateLabel(message);
+        this.statusBar.setMessage(message);
 
         if (this.statusTimeout) clearTimeout(this.statusTimeout);
 
         this.statusTimeout = setTimeout(() => {
-            if (item) item.updateLabel('');
+            this.statusBar.setMessage('');
             this.statusTimeout = null;
         }, timeout);
     }
@@ -98,7 +91,7 @@ export class NotificationService {
      * Clears all active toast notifications immediately.
      */
     public clearAll(): void {
-        this.activeToasts.forEach(toast => this.dismissToast(toast, true));
+        this.activeToasts.forEach(toast => toast.destroy());
         this.activeToasts.clear();
     }
 
@@ -108,35 +101,21 @@ export class NotificationService {
         const severity = opts.severity || 'info';
         const config = SEVERITY_CONFIG[severity];
 
-        const toast = document.createElement('div');
-        toast.className = `notification-toast severity-${severity}`;
-        this.activeToasts.add(toast);
-
-        // -- Main Row --
-        const mainRow = document.createElement('div');
-        mainRow.className = 'toast-main-row';
-
-        const icon = document.createElement('i');
-        icon.className = `notification-icon ${config.icon}`;
-        mainRow.appendChild(icon);
-
-        const msgSpan = document.createElement('span');
-        msgSpan.className = 'toast-message';
-        msgSpan.textContent = opts.message;
-        mainRow.appendChild(msgSpan);
-
-        const controls = document.createElement('div');
-        controls.className = 'toast-controls';
-
-        if (opts.source) {
-            const gear = document.createElement('i');
-            gear.className = 'fas fa-cog toast-action-icon';
-            gear.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // We're taking source from the scope
-                const source = opts.source!;
-                const items: ContextMenuItem[] = [
+        const toast = new ui.NotificationToast({
+            message: opts.message,
+            type: severity,
+            duration: opts.timeout ?? config.defaultTimeout,
+            detail: opts.detail,
+            actions: opts.actions,
+            source: opts.source,
+            progress: opts.progress,
+            onClose: () => {
+                this.activeToasts.delete(toast);
+            },
+            onSourceAction: (e) => {
+                if (!opts.source) return;
+                const source = opts.source;
+                const items: ui.ContextMenuItem[] = [
                     {
                         label: `Manage Extension`,
                         icon: 'fas fa-puzzle-piece',
@@ -148,154 +127,17 @@ export class NotificationService {
                         action: () => console.log('Disable notifications for:', source.id)
                     }
                 ];
-                new ContextMenu(items, e.clientX, e.clientY);
-            });
-            controls.appendChild(gear);
-        }
-
-        const hasExpandedArea = !!opts.detail || (opts.actions && opts.actions.length > 0);
-        let chevron: HTMLElement | null = null;
-        let expandedArea: HTMLElement | null = null;
-
-        if (hasExpandedArea) {
-            chevron = document.createElement('i');
-            chevron.className = 'fas fa-chevron-down toast-action-icon';
-            controls.appendChild(chevron);
-        }
-
-        const closeBtn = document.createElement('i');
-        closeBtn.className = 'notification-close fas fa-times toast-action-icon';
-        closeBtn.addEventListener('click', () => this.dismissToast(toast));
-        controls.appendChild(closeBtn);
-
-        mainRow.appendChild(controls);
-        toast.appendChild(mainRow);
-
-        // -- Expanded Area --
-        if (hasExpandedArea) {
-            expandedArea = document.createElement('div');
-            expandedArea.className = 'toast-expanded-area';
-            expandedArea.style.display = 'none'; // hidden by default
-
-            if (opts.detail) {
-                const detailP = document.createElement('p');
-                detailP.className = 'toast-detail';
-                detailP.textContent = opts.detail;
-                expandedArea.appendChild(detailP);
+                new ui.ContextMenu(items, e.clientX, e.clientY);
             }
+        });
 
-            if (opts.actions && opts.actions.length > 0) {
-                const actionsRow = document.createElement('div');
-                actionsRow.className = 'toast-actions-row';
+        this.activeToasts.add(toast);
+        toast.show();
 
-                opts.actions.forEach(act => {
-                    const btn = document.createElement('button');
-                    btn.className = `toast-btn ${act.isPrimary ? 'toast-btn-primary' : ''}`;
-                    btn.textContent = act.label;
-                    btn.addEventListener('click', async () => {
-                        try {
-                            await Promise.resolve(act.action());
-                        } catch (err) {
-                            console.error('Action error', err);
-                        } finally {
-                            this.dismissToast(toast);
-                        }
-                    });
-                    actionsRow.appendChild(btn);
-                });
-                expandedArea.appendChild(actionsRow);
-            }
-
-            toast.appendChild(expandedArea);
-
-            chevron!.addEventListener('click', () => {
-                const isHidden = expandedArea!.style.display === 'none';
-                expandedArea!.style.display = isHidden ? 'block' : 'none';
-                chevron!.className = `fas fa-chevron-${isHidden ? 'up' : 'down'} toast-action-icon`;
-            });
-        }
-
-        // -- Footer --
-        let progressBar: HTMLElement | null = null;
-
-        if (opts.source || opts.progress) {
-            const footer = document.createElement('div');
-            footer.className = 'toast-footer';
-
-            if (opts.source) {
-                const sourceSpan = document.createElement('span');
-                sourceSpan.className = 'toast-source';
-                sourceSpan.textContent = `Source: ${opts.source.label}`;
-                footer.appendChild(sourceSpan);
-            }
-
-            if (opts.progress) {
-                progressBar = document.createElement('div');
-                progressBar.className = 'notification-progress-bar active';
-                footer.appendChild(progressBar);
-            }
-
-            toast.appendChild(footer);
-        }
-
-        this.container.appendChild(toast);
-
-        // Reflow & Show
-        void toast.offsetHeight;
-        toast.classList.add('show');
-
-        // -- Timeout Logic with Hover Pause --
-        let timeoutId: ReturnType<typeof setTimeout> | null = null;
-        let timeRemaining = opts.timeout ?? config.defaultTimeout;
-        let lastResumeTime = Date.now();
-
-        const resumeTimer = () => {
-            if (timeRemaining > 0) {
-                lastResumeTime = Date.now();
-                timeoutId = setTimeout(() => this.dismissToast(toast), timeRemaining);
-            }
-        };
-
-        const pauseTimer = () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-                timeoutId = null;
-                timeRemaining -= (Date.now() - lastResumeTime);
-            }
-        };
-
-        toast.addEventListener('mouseenter', pauseTimer);
-        toast.addEventListener('mouseleave', resumeTimer);
-
-        // Start initial timer
-        resumeTimer();
-
-        // Return a handle to the caller
         return {
-            close: () => this.dismissToast(toast),
-            updateMessage: (newMsg: string) => {
-                msgSpan.textContent = newMsg;
-            },
-            updateProgress: (isProgressing: boolean) => {
-                if (progressBar) {
-                    progressBar.style.display = isProgressing ? 'block' : 'none';
-                }
-            }
+            close: () => toast.destroy(),
+            updateMessage: (newMsg: string) => toast.updateMessage(newMsg),
+            updateProgress: (isProgressing: boolean) => toast.updateProgress(isProgressing)
         };
-    }
-
-    private dismissToast(toast: HTMLElement, immediate = false): void {
-        if (!toast.parentNode) return;
-        this.activeToasts.delete(toast);
-
-        if (immediate) {
-            toast.remove();
-            return;
-        }
-
-        toast.classList.add('hide');
-        toast.addEventListener('animationend', () => {
-            toast.remove();
-        }, { once: true });
     }
 }

@@ -335,11 +335,12 @@ export const updateProfileAction: ServiceAction = {
     auth: { required: true },
     input: z.object({
         username: z.string().min(3).max(50).optional(),
+        email: z.string().email().optional(),
         bio: z.string().optional().nullable()
     }),
     output: SuccessOutput,
     handler: async (ctx) => {
-        const { username, bio } = ctx.params as { username?: string, bio?: string | null };
+        const { username, email, bio } = ctx.params as { username?: string, email?: string, bio?: string | null };
         const userId = ctx.metadata.user.id;
 
         if (username) {
@@ -351,6 +352,7 @@ export const updateProfileAction: ServiceAction = {
             where: { id: userId },
             data: {
                 ...(username && { username }),
+                ...(email && { email }),
                 ...(bio !== undefined && { bio })
             }
         });

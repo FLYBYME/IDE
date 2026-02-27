@@ -1,10 +1,11 @@
-import { PrismaClient } from './generated/prisma/client';
-import { hashPassword } from '../src/canvas-llm-server/utils/password.helper';
+import { PrismaClient } from './generated/prisma/index.js';
+import { hashPassword } from '../src/canvas-llm-server/utils/password.helper.js';
 import * as crypto from 'crypto';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
+
 const adapter = new PrismaBetterSqlite3({
-    url: 'file:/home/ubuntu/code/IDE/prisma/dev.db',
+    url: 'file:prisma/dev.db',
 });
 const prisma = new PrismaClient({ adapter });
 

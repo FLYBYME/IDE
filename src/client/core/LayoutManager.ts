@@ -4,8 +4,7 @@
  */
 
 import { IDE } from "./IDE";
-import { Header } from "../components/Header";
-import { StatusBar } from "../components/StatusBar";
+import * as ui from "../ui-lib";
 
 export interface PanelToggleCommand {
     panelId: string;
@@ -52,8 +51,8 @@ export class LayoutManager {
     private container: HTMLElement;
 
     // Components
-    public header: Header;
-    public statusBar: StatusBar;
+    public header: ui.Header;
+    public statusBar: ui.StatusBar;
     private workspaceWrapper: HTMLElement;
 
     // Default panel sizes
@@ -71,8 +70,8 @@ export class LayoutManager {
         this.container = container;
         this.state = this.loadState();
 
-        this.header = new Header();
-        this.statusBar = new StatusBar();
+        this.header = new ui.Header();
+        this.statusBar = new ui.StatusBar();
         this.workspaceWrapper = document.createElement('div');
         this.workspaceWrapper.className = 'workspace-wrapper';
     }

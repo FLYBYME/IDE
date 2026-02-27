@@ -5,7 +5,7 @@
 
 import * as monaco from 'monaco-editor';
 import { IDE } from './IDE';
-import { EditorEvents } from './EditorManager';
+import { EditorEvents } from './editor/EditorManager';
 import { ConfigurationEvents } from './configuration/ConfigurationService';
 
 // Configure Monaco's default theme to match the IDE's dark theme
@@ -111,7 +111,7 @@ export class MonacoService {
     private updateStatusBarPosition(line: number, col: number): void {
         const item = this.ide.layout.statusBar.getItem('position');
         if (item) {
-            item.updateLabel(`Ln ${line}, Col ${col}`);
+            item.updateProps({ text: `Ln ${line}, Col ${col}` });
         }
     }
 
@@ -123,7 +123,7 @@ export class MonacoService {
         if (item) {
             // Capitalize first letter for display
             const displayLang = languageId.charAt(0).toUpperCase() + languageId.slice(1);
-            item.updateLabel(displayLang);
+            item.updateProps({ text: displayLang });
         }
     }
 

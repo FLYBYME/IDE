@@ -179,51 +179,51 @@ export class ViewRegistry {
             this.ide.activityBar.setActive(location, providerId);
         } else {
             // Center panel: open as a custom editor tab via EditorManager
-            this.ide.editor.openTab({
-                id: providerId,
-                title: provider.name,
-                providerId: providerId,
-            });
+            // this.ide.editor.openTab({
+            //     id: providerId,
+            //     title: provider.name,
+            //     providerId: providerId,
+            // });
 
-            const contentPanel = this.ide.editor.getContentPanel(providerId);
-            if (contentPanel) {
-                let container = this.activeContainers.get(providerId);
+            // const contentPanel = this.ide.editor.getContentPanel(providerId);
+            // if (contentPanel) {
+            //     let container = this.activeContainers.get(providerId);
 
-                if (!container || !contentPanel.contains(container)) {
-                    contentPanel.innerHTML = ''; // ensure clean slate
+            //     if (!container || !contentPanel.contains(container)) {
+            //         contentPanel.innerHTML = ''; // ensure clean slate
 
-                    // Create a container inside the editor content panel
-                    container = document.createElement('div');
-                    container.className = 'extension-view-container';
-                    container.style.width = '100%';
-                    container.style.height = '100%';
-                    container.style.display = 'flex';
-                    container.style.flexDirection = 'column';
-                    container.style.overflow = 'hidden';
-                    container.style.boxSizing = 'border-box';
-                    contentPanel.appendChild(container);
+            //         // Create a container inside the editor content panel
+            //         container = document.createElement('div');
+            //         container.className = 'extension-view-container';
+            //         container.style.width = '100%';
+            //         container.style.height = '100%';
+            //         container.style.display = 'flex';
+            //         container.style.flexDirection = 'column';
+            //         container.style.overflow = 'hidden';
+            //         container.style.boxSizing = 'border-box';
+            //         contentPanel.appendChild(container);
 
-                    const oldDisposables = this.activeDisposables.get(providerId);
-                    if (oldDisposables) {
-                        oldDisposables.forEach(d => d.dispose());
-                    }
-                    const disposables: { dispose: () => void }[] = [];
-                    this.activeDisposables.set(providerId, disposables);
+            //         const oldDisposables = this.activeDisposables.get(providerId);
+            //         if (oldDisposables) {
+            //             oldDisposables.forEach(d => d.dispose());
+            //         }
+            //         const disposables: { dispose: () => void }[] = [];
+            //         this.activeDisposables.set(providerId, disposables);
 
-                    try {
-                        await provider.resolveView(container, disposables);
-                        this.activeContainers.set(providerId, container);
-                    } catch (error) {
-                        console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
-                        container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
-                    }
-                } else {
-                    // Container exists and is already mounted
-                    if (provider.update) {
-                        provider.update({});
-                    }
-                }
-            }
+            //         try {
+            //             await provider.resolveView(container, disposables);
+            //             this.activeContainers.set(providerId, container);
+            //         } catch (error) {
+            //             console.error(`ViewRegistry: Error rendering view "${providerId}"`, error);
+            //             container.innerHTML = `<div style="padding: 10px; color: red;">Failed to render view: ${providerId}</div>`;
+            //         }
+            //     } else {
+            //         // Container exists and is already mounted
+            //         if (provider.update) {
+            //             provider.update({});
+            //         }
+            //     }
+            // }
         }
     }
 }

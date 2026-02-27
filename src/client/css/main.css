@@ -41,7 +41,7 @@ body {
     overflow: hidden;
 }
 
-/* --- HEADER / TITLEBAR --- */
+/* --- HEADER / TITLEBAR (DEPRECATED: NOW HANDLED BY ui-lib) ---
 .header-container {
     background-color: var(--bg-titlebar);
     display: flex;
@@ -52,7 +52,9 @@ body {
     flex-shrink: 0;
     user-select: none;
 }
+*/
 
+/*
 #menu-bar {
     display: flex;
     gap: 15px;
@@ -63,13 +65,14 @@ body {
     color: #fff;
     cursor: pointer;
 }
+*/
 
+/*
 .title-bar {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     pointer-events: none;
-    /* Let clicks pass through if needed */
 }
 
 .title-text {
@@ -77,6 +80,7 @@ body {
     font-size: 13px;
     font-weight: 500;
 }
+*/
 
 /* --- MAIN WORKSPACE AREA --- */
 /* We create a wrapper to hold Left + Center + Right panels horizontally */

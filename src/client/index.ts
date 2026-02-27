@@ -4,18 +4,8 @@
  */
 
 import { IDE } from './core/IDE';
-//import { HelloWorldExtension } from './extensions/HelloWorldExtension';
-import { FileTreeExtension } from './extensions/FileTreeExtension';
-import { ScratchpadExtension } from './extensions/ScratchpadExtension';
-import SettingsManagerExtension from './extensions/SettingsEditorExtension';
-import { SourceControlExtension } from './extensions/SourceControlExtension';
-import { OutputExtension } from './extensions/OutputExtension';
-import { ContainerBuildExtension } from './extensions/ContainerBuildExtension';
-import { TerminalExtension } from './extensions/TerminalExtension';
-import { ExtensionsManagerExtension } from './extensions/ExtensionsManagerExtension';
-import { ExtensionBuilderExtension } from './extensions/ExtensionBuilderExtension';
-import { GlobalSearchExtension } from './extensions/GlobalSearchExtension';
-import { CommandRegistryViewerExtension } from './extensions/CommandRegistryViewerExtension';
+//import { FileTreeExtension } from './extensions/FileTreeExtension';
+import { ProjectScaffolderExtension } from './extensions/ProjectScaffolderExtension';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -25,14 +15,14 @@ import * as monaco from 'monaco-editor';
 import './css/main.css';
 import './css/layout.css';
 import './css/filetree.css';
-import './css/notifications.css';
 import './css/settings.css';
 import './css/dialog.css';
 import './css/inline-edit.css';
 import './css/sourcecontrol.css';
 import './css/container-build.css';
 
-import * as Core from './core';
+//import * as Core from './core';
+
 
 // Expose dependencies to the global window object for dynamically loaded extensions
 declare global {
@@ -40,14 +30,14 @@ declare global {
         __IDE_REACT__: typeof React;
         __IDE_REACT_DOM__: typeof ReactDOM;
         __IDE_MONACO__: typeof monaco;
-        __IDE_CORE__: typeof Core;
+        //__IDE_CORE__: typeof Core;
     }
 }
 
 window.__IDE_REACT__ = React;
 window.__IDE_REACT_DOM__ = ReactDOM;
 window.__IDE_MONACO__ = monaco;
-window.__IDE_CORE__ = Core;
+//window.__IDE_CORE__ = Core;
 
 
 /**
@@ -58,18 +48,8 @@ async function initializeApp(): Promise<void> {
         const ide = new IDE();
 
         // Register extensions before initializing
-        ide.extensions.register(FileTreeExtension);
-        //ide.extensions.register(HelloWorldExtension);
-        ide.extensions.register(ScratchpadExtension);
-        //ide.extensions.register(SettingsManagerExtension);
-        ide.extensions.register(SourceControlExtension);
-        ide.extensions.register(OutputExtension);
-        ide.extensions.register(TerminalExtension);
-        ide.extensions.register(ContainerBuildExtension);
-        ide.extensions.register(ExtensionsManagerExtension);
-        ide.extensions.register(ExtensionBuilderExtension);
-        ide.extensions.register(GlobalSearchExtension);
-        ide.extensions.register(CommandRegistryViewerExtension);
+        // ide.extensions.register(FileTreeExtension);
+        ide.extensions.register(ProjectScaffolderExtension);
 
         await ide.initialize();
         hideLoadingScreen();
