@@ -1,30 +1,37 @@
-// /**
-//  * CanvasLLM - Core Public API
-//  * This file serves as the unified entry point for extensions to import core functionality.
-//  */
+/**
+ * CanvasLLM - Core Public API
+ * This file serves as the unified entry point for extensions to import core functionality.
+ */
 
-// // Export the main IDE class
-// export { IDE, IDEEvents } from './core/IDE';
+// --- UI Library ---
+// Direct access to all UI components and theme utilities
+export * from './ui-lib';
 
-// // Export Extension interfaces and types
-// export { Extension, ExtensionContext } from './core/extensions/Extension';
-// export { ViewProvider, ViewLocation } from './core/extensions/ViewProvider';
+// --- Main IDE Infrastructure ---
+export { IDE, IDEEvents } from './core/IDE';
+export { EventBus } from './core/EventBus';
 
-// // Export Registry interfaces for registering custom logic
-// export { CommandRegistry } from './core/CommandRegistry';
-// export { ConfigurationRegistry, ConfigurationNode, ConfigurationProperty } from './core/configuration/ConfigurationRegistry';
-// export { ViewRegistry } from './core/extensions/ViewRegistry';
+// --- Extension System ---
+export { Extension, ExtensionContext } from './core/extensions/Extension';
+export { ViewProvider, ViewLocation } from './core/extensions/ViewProvider';
+export { ViewRegistry } from './core/extensions/ViewRegistry';
 
-// // Export Services that extensions might want to interact with
-// export { ApiService } from './core/ApiService';
-// export { NotificationService } from './core/NotificationService';
-// export { DialogService } from './core/DialogService';
-// export { ThemeService } from './core/ThemeService';
-// export { WorkspaceManager } from './core/workspace/WorkspaceManager';
-// export { TerminalService } from './core/TerminalService';
-// export { EditorManager, EditorEvents } from './core/EditorManager';
-// export { ActivityBarService } from './core/ActivityBarService';
+// --- Registry & Service Infrastructure ---
+export { CommandRegistry } from './core/CommandRegistry';
+export { ShortcutManager } from './core/ShortcutManager';
+export { ConfigurationRegistry, ConfigurationNode, ConfigurationProperty } from './core/configuration/ConfigurationRegistry';
+export { ConfigurationService } from './core/configuration/ConfigurationService';
 
-// // Export VFS related types
-// export { FileSystemProvider, FileStat } from './core/vfs/FileSystemProvider';
+// --- UI & Layout Services ---
+export { LayoutManager } from './core/LayoutManager';
+export { ActivityBarService } from './core/ActivityBarService';
+export { ThemeService } from './core/ThemeService';
+export { NotificationService } from './core/NotificationService';
 
+// --- Editor & Content Services ---
+export { MonacoService } from './core/MonacoService';
+export { EditorManager } from './core/editor/EditorManager';
+
+// --- Workspace & State Management ---
+export { WorkspaceManager } from './core/workspace/WorkspaceManager';
+export { WorkspaceState } from './core/workspace/WorkspaceState';
