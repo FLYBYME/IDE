@@ -15,7 +15,6 @@ export interface PromptDialogOptions {
 }
 
 export class PromptDialog extends Modal {
-    private value: string;
 
     constructor(options: PromptDialogOptions, resolve: (value: string | null) => void) {
         let currentValue = options.defaultValue || '';

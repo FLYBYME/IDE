@@ -6,6 +6,10 @@ import { QuickPickDialog, QuickPickItem, QuickPickOptions } from './QuickPickDia
 
 export function withDialogs<T extends { new(...args: any[]): BaseComponent<any> }>(Base: T) {
     return class extends Base {
+        public render(): void {
+            // Subclasses will implement this
+        }
+
         public async confirm(options: ConfirmDialogOptions | string): Promise<boolean> {
             const opts = typeof options === 'string' ? { message: options } : options;
             return ConfirmDialog.show(opts);

@@ -8,7 +8,6 @@ import { ConfigurationService } from './configuration/ConfigurationService';
 import { NotificationService } from './NotificationService';
 import { WorkspaceManager } from './workspace/WorkspaceManager';
 import { Gateway } from './Gateway';
-import { DialogService } from './DialogService';
 import { ThemeService } from './ThemeService';
 import { MonacoService } from './MonacoService';
 import { EditorManager } from './editor/EditorManager';
@@ -31,7 +30,6 @@ export class IDE {
     public gateway: Gateway;
     public activeWorkspace: { id: string; name: string } | null = null;
     public workspace: WorkspaceManager;
-    public dialogs: DialogService;
     public theme: ThemeService;
     public editor: EditorManager;
     public monaco: MonacoService;
@@ -46,7 +44,6 @@ export class IDE {
         this.views = new ViewRegistry(this);
         this.activityBar = new ActivityBarService(this);
         this.settings = new ConfigurationService(this, this.configurationRegistry);
-        this.dialogs = new DialogService();
         this.gateway = new Gateway(this);
         this.workspace = new WorkspaceManager(this);
         this.theme = new ThemeService(this);

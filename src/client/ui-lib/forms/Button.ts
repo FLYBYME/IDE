@@ -6,7 +6,7 @@ import { Theme } from '../theme';
 export interface ButtonProps {
     label?: string;
     icon?: string; // e.g., 'fas fa-play' or 'lucide-play'
-    variant?: 'primary' | 'secondary' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
     size?: 'sm' | 'base' | 'lg';
     disabled?: boolean;
     loading?: boolean;
@@ -62,6 +62,11 @@ export class Button extends BaseComponent<ButtonProps> {
             this.applyStyles({
                 backgroundColor: 'transparent',
                 color: Theme.colors.textMain,
+            });
+        } else if (variant === 'danger') {
+            this.applyStyles({
+                backgroundColor: '#e74c3c',
+                color: '#ffffff',
             });
         }
 

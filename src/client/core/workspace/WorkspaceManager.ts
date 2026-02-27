@@ -3,6 +3,7 @@ import { WorkspaceState } from './WorkspaceState';
 import { SidebarView } from './SidebarView';
 import { WelcomeView } from './WelcomeView';
 import { AuthDialogs } from './AuthDialogs';
+import { QuickPickDialog } from '../../ui-lib';
 
 export class WorkspaceManager {
     private ide: IDE;
@@ -15,7 +16,7 @@ export class WorkspaceManager {
     constructor(ide: IDE) {
         this.ide = ide;
         this.state = new WorkspaceState();
-        this.authDialogs = new AuthDialogs(this.ide.dialogs);
+        this.authDialogs = new AuthDialogs();
 
         this.sidebarView = new SidebarView({
             onLoginRequested: () => this.ide.commands.execute('auth.triggerLogin'),
@@ -310,7 +311,7 @@ export class WorkspaceManager {
                         icon: 'fas fa-folder',
                     }));
                     console.log(items);
-                    const selected = await this.ide.dialogs.showQuickPick(items, {
+                    const selected = await QuickPickDialog.show(items, {
                         placeholder: 'Select a workspace...',
                     });
 
