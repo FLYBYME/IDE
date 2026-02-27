@@ -1,5 +1,5 @@
 {
-    "name": "canvas-ide-core",
+    "name": "ide-core",
     "version": "1.0.0",
     "description": "AI powered web IDE - Core Components",
     "type": "module",
