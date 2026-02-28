@@ -12,6 +12,7 @@ export interface MultiSelectProps {
 
 export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
     private container: HTMLDivElement;
+    private activePopover: Popover | null = null;
 
     constructor(props: MultiSelectProps) {
         super('div', props);
@@ -21,6 +22,7 @@ export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
 
     public render(): void {
         this.element.innerHTML = '';
+        this.container.innerHTML = '';
         const { options, selectedValues, placeholder = 'Select items...' } = this.props;
 
         this.applyStyles({
@@ -35,7 +37,7 @@ export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
             flexWrap: 'wrap',
             gap: '4px',
             padding: Theme.spacing.xs,
-            backgroundColor: Theme.colors.bgTertiary, // 
+            backgroundColor: Theme.colors.bgTertiary,
             border: `1px solid ${Theme.colors.border}`,
             borderRadius: Theme.radius,
             minHeight: '30px',
@@ -61,7 +63,9 @@ export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
                     badgeEl.style.cursor = 'pointer';
                     badgeEl.onclick = (e) => {
                         e.stopPropagation();
-                        this.props.onChange(selectedValues.filter(v => v !== val));
+                        const next = selectedValues.filter(v => v !== val);
+                        this.updateProps({ selectedValues: next });
+                        if (this.props.onChange) this.props.onChange(next);
                     };
                     this.container.appendChild(badgeEl);
                 }
@@ -70,34 +74,62 @@ export class MultiSelectTagInput extends BaseComponent<MultiSelectProps> {
 
         this.container.onclick = () => this.showDropdown();
         this.element.appendChild(this.container);
+
+        if (this.activePopover) {
+            this.activePopover.updateProps({ content: this.getDropdownItems() });
+        }
     }
 
     private showDropdown(): void {
-        const items = this.props.options.map(opt => {
+        if (this.activePopover) {
+            this.activePopover.hide();
+            this.activePopover = null;
+            return;
+        }
+
+        this.activePopover = new Popover({
+            anchor: this.container,
+            content: this.getDropdownItems(),
+            placement: 'bottom',
+            onClose: () => { this.activePopover = null; }
+        });
+        this.activePopover.show();
+    }
+
+    private getDropdownItems(): HTMLElement[] {
+        return this.props.options.map(opt => {
             const isSelected = this.props.selectedValues.includes(opt.value);
             const el = document.createElement('div');
             Object.assign(el.style, {
                 padding: `4px ${Theme.spacing.md}`,
                 cursor: 'pointer',
-                backgroundColor: isSelected ? Theme.colors.bgSecondary : 'transparent',
+                backgroundColor: isSelected ? Theme.colors.bgSecondary : Theme.colors.bgPrimary,
                 color: Theme.colors.textMain
             });
+
+            el.onmouseenter = () => {
+                if (!isSelected) el.style.backgroundColor = Theme.colors.bgTertiary;
+            };
+            el.onmouseleave = () => {
+                if (!isSelected) el.style.backgroundColor = Theme.colors.bgPrimary;
+            };
 
             el.onclick = () => {
                 const next = isSelected
                     ? this.props.selectedValues.filter(v => v !== opt.value)
                     : [...this.props.selectedValues, opt.value];
-                this.props.onChange(next);
+                this.updateProps({ selectedValues: next });
+                if (this.props.onChange) this.props.onChange(next);
             };
             el.textContent = opt.label;
             return el;
         });
+    }
 
-        const popover = new Popover({
-            anchor: this.container,
-            content: items,
-            placement: 'bottom'
-        });
-        popover.show();
+    public destroy(): void {
+        if (this.activePopover) {
+            this.activePopover.hide();
+        }
+        super.destroy();
     }
 }

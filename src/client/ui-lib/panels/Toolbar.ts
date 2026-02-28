@@ -5,6 +5,7 @@ import { Row } from '../layout/Row';
 import { Theme } from '../theme';
 
 export interface ToolbarProps {
+    variant?: 'primary' | 'secondary' | 'tertiary';
     children?: (BaseComponent<any> | Node | string)[];
 }
 
@@ -15,13 +16,13 @@ export class Toolbar extends BaseComponent<ToolbarProps> {
     }
 
     public render(): void {
-        const { children = [] } = this.props;
+        const { children = [], variant = 'primary' } = this.props;
 
         this.element.innerHTML = '';
 
         this.applyStyles({
             height: '35px',
-            backgroundColor: Theme.colors.bgSecondary,
+            backgroundColor: variant === 'primary' ? Theme.colors.bgPrimary : variant === 'secondary' ? Theme.colors.bgSecondary : Theme.colors.bgTertiary,
             borderBottom: `1px solid ${Theme.colors.border}`,
             display: 'flex',
             alignItems: 'center',

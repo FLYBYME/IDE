@@ -5,7 +5,10 @@
 
 import { IDE } from './core/IDE';
 //import { FileTreeExtension } from './extensions/FileTreeExtension';
-import { ProjectScaffolderExtension } from './extensions/ProjectScaffolderExtension';
+//import { ProjectScaffolderExtension } from './extensions/ProjectScaffolderExtension';
+
+import { ProjectScaffolderExtension } from '../../extensions/scaffolder';
+import { FileTreeExtension } from '../../extensions/FileTree';
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -48,7 +51,7 @@ async function initializeApp(): Promise<void> {
         const ide = new IDE();
 
         // Register extensions before initializing
-        // ide.extensions.register(FileTreeExtension);
+        ide.extensions.register(FileTreeExtension);
         ide.extensions.register(ProjectScaffolderExtension);
 
         await ide.initialize();

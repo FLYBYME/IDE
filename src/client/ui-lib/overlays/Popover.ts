@@ -24,6 +24,7 @@ export class Popover extends BaseComponent<PopoverProps> {
 
     public render(): void {
         const { content } = this.props;
+        this.popoverContainer.innerHTML = '';
 
         // Backdrop to detect clicks outside
         Object.assign(this.backdrop.style, {

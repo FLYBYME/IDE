@@ -1,5 +1,5 @@
 import { ViewLocation } from './extensions/ViewProvider';
-import { IDE } from './IDE';
+import { IDE, IDEEvents } from './IDE';
 
 export interface ActivityBarItem {
     id: string;                  // Unique ID, usually matching the ViewProvider ID
@@ -17,6 +17,31 @@ export class ActivityBarService {
 
     constructor(ide: IDE) {
         this.ide = ide;
+
+        // Automatically activate first items once the IDE is ready
+        this.ide.commands.on(IDEEvents.APP_READY, () => {
+            this.activateFirst('left-panel');
+            this.activateFirst('right-panel');
+            this.activateFirst('bottom-panel');
+        });
+    }
+
+    /**
+     * Finds and activates the first item for a specific location based on order.
+     */
+    private activateFirst(location: ViewLocation): void {
+        const items = Array.from(this.items.values())
+            .filter(item => item.location === location)
+            .sort((a, b) => (a.order || 100) - (b.order || 100));
+
+        const firstItem = items[0];
+        if (firstItem) {
+            if (firstItem.onClick) {
+                firstItem.onClick();
+            } else {
+                this.ide.views.renderView(firstItem.location, firstItem.id);
+            }
+        }
     }
 
     /**

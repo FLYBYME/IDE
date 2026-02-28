@@ -4,8 +4,15 @@ import { PromptDialog, PromptDialogOptions } from './PromptDialog';
 import { FormDialog, FormDialogOptions } from './FormDialog';
 import { QuickPickDialog, QuickPickItem, QuickPickOptions } from './QuickPickDialog';
 
-export function withDialogs<T extends { new(...args: any[]): BaseComponent<any> }>(Base: T) {
-    return class extends Base {
+export interface DialogMethods {
+    confirm(options: ConfirmDialogOptions | string): Promise<boolean>;
+    prompt(options: PromptDialogOptions | string): Promise<string | null>;
+    form(options: FormDialogOptions): Promise<Record<string, any> | null>;
+    quickPick<I extends QuickPickItem>(items: I[], options: QuickPickOptions): Promise<I | null>;
+}
+
+export function withDialogs<T extends { new(...args: any[]): BaseComponent<any> }>(Base: T): T & { new(...args: any[]): DialogMethods } {
+    const WithDialogs = class extends (Base as any) {
         public render(): void {
             // Subclasses will implement this
         }
@@ -28,4 +35,6 @@ export function withDialogs<T extends { new(...args: any[]): BaseComponent<any> 
             return QuickPickDialog.show(items, options);
         }
     };
+
+    return WithDialogs as any;
 }
